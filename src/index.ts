@@ -37,6 +37,7 @@ app.get('/game/:gameId', async (c) => {
   <title>スコアボード - ${gameId}</title>
   <script src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
   <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
   <style>
     [x-cloak] { display: none !important; }
   </style>
@@ -118,9 +119,10 @@ app.get('/game/:gameId', async (c) => {
             <span x-show="connected" class="text-green-400">● 接続中</span>
             <span x-show="!connected" class="text-red-400">● 切断</span>
           </div>
-          <div class="text-gray-300 text-sm">
+          <button @click="openQRModal()" class="text-gray-300 text-sm hover:text-white transition-colors cursor-pointer flex items-center gap-1">
+            <i data-lucide="qr-code" class="w-4 h-4"></i>
             Game ID: <span x-text="gameId" class="font-mono"></span>
-          </div>
+          </button>
           <div class="text-gray-400 text-xs">
             <span x-text="isDesktop ? 'PC' : 'Mobile'"></span>
           </div>
@@ -500,9 +502,10 @@ app.get('/game/:gameId', async (c) => {
             <span x-show="connected" class="text-green-400">● 接続中</span>
             <span x-show="!connected" class="text-red-400">● 切断</span>
           </div>
-          <div class="text-gray-300 text-xs">
+          <button @click="openQRModal()" class="text-gray-300 text-xs hover:text-white transition-colors cursor-pointer flex items-center gap-1">
+            <i data-lucide="qr-code" class="w-3 h-3"></i>
             ID: <span x-text="gameId" class="font-mono"></span>
-          </div>
+          </button>
           <div class="text-gray-400 text-xs">
             <span x-text="isDesktop ? 'PC' : 'Mobile'"></span>
           </div>
@@ -1383,10 +1386,120 @@ app.get('/game/:gameId', async (c) => {
           }
 
           this.connected = false;
+        },
+
+        // QRモーダル表示 (グローバル関数を呼び出す)
+        openQRModal() {
+          window.openQRModal();
         }
       };
     }
+
+    // ESCキーでモーダルを閉じる
+    document.addEventListener('keydown', function(e) {
+      if (e.key === 'Escape') {
+        const modal = document.getElementById('qrModal');
+        if (modal && !modal.classList.contains('hidden')) {
+          modal.classList.add('hidden');
+        }
+      }
+    });
+
+    // モーダル背景クリックで閉じる
+    document.addEventListener('DOMContentLoaded', function() {
+      const modal = document.getElementById('qrModal');
+      if (modal) {
+        modal.addEventListener('click', function(e) {
+          if (e.target === this) {
+            modal.classList.add('hidden');
+          }
+        });
+      }
+
+      // Lucide icons初期化
+      if (typeof lucide !== 'undefined') {
+        lucide.createIcons();
+      }
+    });
+
+    // グローバル関数として定義
+    window.openQRModal = function() {
+      const gameUrl = window.location.href;
+      const modal = document.getElementById('qrModal');
+      const gameIdElement = document.getElementById('modalGameId');
+      const urlDisplay = document.getElementById('urlDisplay');
+
+      // ゲームIDを表示
+      const gameId = window.location.pathname.split('/').pop();
+      gameIdElement.textContent = gameId;
+
+      // URLを表示
+      urlDisplay.textContent = gameUrl;
+
+      // モーダルを表示
+      modal.classList.remove('hidden');
+
+      // Lucide iconsを再初期化
+      if (typeof lucide !== 'undefined') {
+        lucide.createIcons();
+      }
+    };
+
+    window.closeQRModal = function() {
+      document.getElementById('qrModal').classList.add('hidden');
+    };
+
+    window.copyGameURL = function() {
+      const gameUrl = window.location.href;
+      navigator.clipboard.writeText(gameUrl).then(function() {
+        alert('URLをクリップボードにコピーしました');
+      }).catch(function(err) {
+        console.error('URLコピーエラー:', err);
+        // フォールバック: テキストエリアを使用
+        const textArea = document.createElement('textarea');
+        textArea.value = gameUrl;
+        document.body.appendChild(textArea);
+        textArea.select();
+        document.execCommand('copy');
+        document.body.removeChild(textArea);
+        alert('URLをクリップボードにコピーしました');
+      });
+    };
   </script>
+
+  <!-- ゲーム共有モーダル -->
+  <div id="qrModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+    <div class="bg-white rounded-lg p-6 m-4 max-w-md w-full">
+      <div class="flex items-center justify-between mb-4">
+        <h3 class="text-lg font-bold text-gray-800 flex items-center gap-2">
+          <i data-lucide="share-2" class="w-5 h-5"></i>
+          ゲーム共有
+        </h3>
+        <button onclick="closeQRModal()" class="text-gray-500 hover:text-gray-700">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <div class="space-y-4">
+        <div class="text-sm text-gray-600">
+          <p class="font-medium mb-2">ゲームID:</p>
+          <p id="modalGameId" class="font-mono text-lg text-gray-800 bg-gray-50 p-2 rounded"></p>
+        </div>
+
+        <div class="text-sm text-gray-600">
+          <p class="font-medium mb-2">URL:</p>
+          <p id="urlDisplay" class="font-mono text-sm text-gray-800 bg-gray-50 p-2 rounded break-all"></p>
+        </div>
+
+        <button onclick="copyGameURL()"
+                class="w-full bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded-lg transition-colors flex items-center justify-center gap-2">
+          <i data-lucide="copy" class="w-4 h-4"></i>
+          URLをコピー
+        </button>
+      </div>
+    </div>
+  </div>
+
 </body>
 </html>`;
 
