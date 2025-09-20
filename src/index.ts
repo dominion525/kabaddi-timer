@@ -69,7 +69,7 @@ app.get('/game/:gameId', async (c) => {
 
         <!-- タイマー -->
         <div class="flex-1 bg-gray-800 text-white flex flex-col items-center justify-center">
-          <div style="font-size: 12rem; line-height: 1;" class="font-bold font-mono" x-text="formatTime(timerSeconds)"></div>
+          <div style="font-size: 12rem; line-height: 1;" class="font-bold font-mono" x-text="formattedTimer"></div>
           <div class="text-lg opacity-75 mt-4">
             <span x-show="timerRunning" class="text-green-400">● 動作中</span>
             <span x-show="!timerRunning" class="text-gray-400">● 停止</span>
@@ -174,15 +174,15 @@ app.get('/game/:gameId', async (c) => {
                 </div>
                 <!-- プリセット -->
                 <div class="flex space-x-1">
-                  <button @click="setTimer(20, 0); timerInputMinutes = 20; timerInputSeconds = 0"
+                  <button @click="setTimerPreset('long')"
                           class="flex-1 bg-gray-600 hover:bg-gray-700 text-white p-2 rounded text-sm transition-colors">
                     20分
                   </button>
-                  <button @click="setTimer(15, 0); timerInputMinutes = 15; timerInputSeconds = 0"
+                  <button @click="setTimerPreset('medium')"
                           class="flex-1 bg-gray-600 hover:bg-gray-700 text-white p-2 rounded text-sm transition-colors">
                     15分
                   </button>
-                  <button @click="setTimer(3, 0); timerInputMinutes = 3; timerInputSeconds = 0"
+                  <button @click="setTimerPreset('short')"
                           class="flex-1 bg-gray-600 hover:bg-gray-700 text-white p-2 rounded text-sm transition-colors">
                     3分
                   </button>
@@ -302,7 +302,7 @@ app.get('/game/:gameId', async (c) => {
 
       <!-- タイマー表示 -->
       <div class="flex-1 bg-gray-800 text-white flex flex-col justify-center items-center">
-        <div style="font-size: 8rem; line-height: 1;" class="font-bold font-mono" x-text="formatTime(timerSeconds)"></div>
+        <div style="font-size: 8rem; line-height: 1;" class="font-bold font-mono" x-text="formattedTimer"></div>
         <div class="text-lg mt-4">
           <span x-show="timerRunning" class="text-green-400">● 動作中</span>
           <span x-show="!timerRunning" class="text-gray-400">● 停止</span>
@@ -394,15 +394,15 @@ app.get('/game/:gameId', async (c) => {
                 </div>
                 <!-- プリセット -->
                 <div class="flex space-x-2">
-                  <button @click="setTimer(20, 0); timerInputMinutes = 20; timerInputSeconds = 0"
+                  <button @click="setTimerPreset('long')"
                           class="flex-1 bg-gray-600 hover:bg-gray-700 text-white p-3 rounded-lg transition-colors">
                     20分
                   </button>
-                  <button @click="setTimer(15, 0); timerInputMinutes = 15; timerInputSeconds = 0"
+                  <button @click="setTimerPreset('medium')"
                           class="flex-1 bg-gray-600 hover:bg-gray-700 text-white p-3 rounded-lg transition-colors">
                     15分
                   </button>
-                  <button @click="setTimer(3, 0); timerInputMinutes = 3; timerInputSeconds = 0"
+                  <button @click="setTimerPreset('short')"
                           class="flex-1 bg-gray-600 hover:bg-gray-700 text-white p-3 rounded-lg transition-colors">
                     3分
                   </button>
@@ -537,6 +537,14 @@ app.get('/game/:gameId', async (c) => {
           }
         },
         score: 0
+      };
+
+      // アクションタイプの一元管理
+      const ACTIONS = {
+        TIMER_START: { type: 'TIMER_START' },
+        TIMER_PAUSE: { type: 'TIMER_PAUSE' },
+        TIMER_RESET: { type: 'TIMER_RESET' },
+        RESET_SCORES: { type: 'RESET_SCORES' }
       };
 
       return {
@@ -702,9 +710,7 @@ app.get('/game/:gameId', async (c) => {
         },
 
         resetScores() {
-          this.sendAction({
-            type: 'RESET_SCORES'
-          });
+          this.sendAction(ACTIONS.RESET_SCORES);
         },
 
         setTeamName(team, name) {
@@ -719,22 +725,18 @@ app.get('/game/:gameId', async (c) => {
           this.showControlPanel = !this.showControlPanel;
         },
 
-        formatTime(seconds) {
-          const minutes = Math.floor(seconds / 60);
-          const remainingSeconds = seconds % 60;
+        get formattedTimer() {
+          const minutes = Math.floor(this.timerSeconds / 60);
+          const remainingSeconds = this.timerSeconds % 60;
           return minutes.toString().padStart(2, '0') + ':' + remainingSeconds.toString().padStart(2, '0');
         },
 
         startTimer() {
-          this.sendAction({
-            type: 'TIMER_START'
-          });
+          this.sendAction(ACTIONS.TIMER_START);
         },
 
         stopTimer() {
-          this.sendAction({
-            type: 'TIMER_PAUSE'
-          });
+          this.sendAction(ACTIONS.TIMER_PAUSE);
         },
 
         adjustTimer(seconds) {
@@ -753,45 +755,53 @@ app.get('/game/:gameId', async (c) => {
           });
         },
 
+        setTimerPreset(presetKey) {
+          const minutes = DEFAULT_VALUES.timer.presetMinutes[presetKey];
+          this.timerInputMinutes = minutes;
+          this.timerInputSeconds = 0;
+          this.setTimer(minutes, 0);
+        },
+
         resetTimer() {
-          this.sendAction({
-            type: 'TIMER_RESET'
-          });
+          this.sendAction(ACTIONS.TIMER_RESET);
         },
 
         updateTimerDisplay() {
-          // 既存のタイマーをクリア
-          if (this.timerIntervalId) {
-            clearInterval(this.timerIntervalId);
-            this.timerIntervalId = null;
-          }
+          this.stopTimerUpdate(); // 既存のタイマーをクリア
 
-          // timerが存在しない場合は何もしない
-          if (!this.gameState || !this.gameState.timer) {
+          if (!this.gameState?.timer) {
             return;
           }
 
-          // 4fpsでタイマーを更新
+          this.startTimerUpdate();
+        },
+
+        startTimerUpdate() {
+          if (this.timerIntervalId) return; // 重複防止
+
           this.timerIntervalId = setInterval(() => {
             try {
-              if (this.gameState && this.gameState.timer) {
-                const timer = this.gameState.timer;
-
-                if (timer.isRunning && timer.startTime) {
-                  const serverNow = Date.now() - this.serverTimeOffset;
-                  const elapsed = (serverNow - timer.startTime) / 1000;
-                  this.timerSeconds = Math.max(0, Math.floor(timer.totalDuration - elapsed));
-                  this.timerRunning = true;
-                } else {
-                  this.timerSeconds = Math.floor(timer.remainingSeconds);
-                  this.timerRunning = timer.isRunning;
-                }
-              }
+              this.calculateTimerSeconds();
             } catch (error) {
               console.error('Timer update error:', error);
               this.stopTimerUpdate();
             }
           }, 250);
+        },
+
+        calculateTimerSeconds() {
+          const timer = this.gameState?.timer;
+          if (!timer) return;
+
+          if (timer.isRunning && timer.startTime) {
+            const serverNow = Date.now() - this.serverTimeOffset;
+            const elapsed = (serverNow - timer.startTime) / 1000;
+            this.timerSeconds = Math.max(0, Math.floor(timer.totalDuration - elapsed));
+            this.timerRunning = true;
+          } else {
+            this.timerSeconds = Math.floor(timer.remainingSeconds);
+            this.timerRunning = timer.isRunning;
+          }
         },
 
         stopTimerUpdate() {
