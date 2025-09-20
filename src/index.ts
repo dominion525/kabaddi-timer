@@ -63,8 +63,17 @@ app.get('/game/:gameId', async (c) => {
       <!-- メインスコア表示 -->
       <div class="flex-1 flex">
         <!-- チームA -->
-        <div class="w-1/4 bg-red-500 text-white flex flex-col justify-center items-center p-4">
-          <div class="font-bold font-mono" style="font-size: 16rem; line-height: 0.8; transform: scaleY(1.5);" x-text="gameState.teamA.score"></div>
+        <div class="w-1/4 bg-red-500 text-white flex flex-col relative">
+          <div class="flex-1 flex items-center justify-center p-4">
+            <div class="font-bold font-mono" style="font-size: 16rem; line-height: 0.8; transform: scaleY(1.5);" x-text="gameState.teamA.score"></div>
+          </div>
+          <!-- Do or Dieインジケーター -->
+          <div class="h-32 flex space-x-3 px-4 py-4">
+            <template x-for="(isActive, index) in teamADoOrDieIndicators" :key="index">
+              <div class="flex-1 transition-colors duration-200 rounded"
+                   :class="isActive ? 'bg-yellow-400' : 'bg-red-900'"></div>
+            </template>
+          </div>
         </div>
 
         <!-- タイマー -->
@@ -77,8 +86,17 @@ app.get('/game/:gameId', async (c) => {
         </div>
 
         <!-- チームB -->
-        <div class="w-1/4 bg-blue-500 text-white flex flex-col justify-center items-center p-4">
-          <div class="font-bold font-mono" style="font-size: 16rem; line-height: 0.8; transform: scaleY(1.5);" x-text="gameState.teamB.score"></div>
+        <div class="w-1/4 bg-blue-500 text-white flex flex-col relative">
+          <div class="flex-1 flex items-center justify-center p-4">
+            <div class="font-bold font-mono" style="font-size: 16rem; line-height: 0.8; transform: scaleY(1.5);" x-text="gameState.teamB.score"></div>
+          </div>
+          <!-- Do or Dieインジケーター -->
+          <div class="h-32 flex space-x-3 px-4 py-4">
+            <template x-for="(isActive, index) in teamBDoOrDieIndicators" :key="index">
+              <div class="flex-1 transition-colors duration-200 rounded"
+                   :class="isActive ? 'bg-yellow-400' : 'bg-blue-900'"></div>
+            </template>
+          </div>
         </div>
       </div>
 
@@ -208,20 +226,6 @@ app.get('/game/:gameId', async (c) => {
               <!-- 時間調整ボタン -->
               <div class="space-y-2">
                 <div class="flex space-x-1">
-                  <button @click="adjustTimer(-60)"
-                          class="flex-1 bg-gray-500 hover:bg-gray-600 text-white p-2 rounded text-sm transition-colors">
-                    -1分
-                  </button>
-                  <button @click="adjustTimer(-10)"
-                          class="flex-1 bg-gray-500 hover:bg-gray-600 text-white p-2 rounded text-sm transition-colors">
-                    -10秒
-                  </button>
-                  <button @click="adjustTimer(-1)"
-                          class="flex-1 bg-gray-500 hover:bg-gray-600 text-white p-2 rounded text-sm transition-colors">
-                    -1秒
-                  </button>
-                </div>
-                <div class="flex space-x-1">
                   <button @click="adjustTimer(60)"
                           class="flex-1 bg-blue-500 hover:bg-blue-600 text-white p-2 rounded text-sm transition-colors">
                     +1分
@@ -235,47 +239,134 @@ app.get('/game/:gameId', async (c) => {
                     +1秒
                   </button>
                 </div>
+                <div class="flex space-x-1">
+                  <button @click="adjustTimer(-60)"
+                          class="flex-1 bg-gray-500 hover:bg-gray-600 text-white p-2 rounded text-sm transition-colors">
+                    -1分
+                  </button>
+                  <button @click="adjustTimer(-10)"
+                          class="flex-1 bg-gray-500 hover:bg-gray-600 text-white p-2 rounded text-sm transition-colors">
+                    -10秒
+                  </button>
+                  <button @click="adjustTimer(-1)"
+                          class="flex-1 bg-gray-500 hover:bg-gray-600 text-white p-2 rounded text-sm transition-colors">
+                    -1秒
+                  </button>
+                </div>
               </div>
             </div>
 
-            <!-- スコア操作 -->
-            <div class="space-y-4">
-              <!-- チームA操作 -->
-              <div class="bg-red-50 p-4 rounded-lg border border-red-200">
-                <h3 class="font-bold text-red-700 mb-3" x-text="gameState.teamA.name + ' 操作'"></h3>
-                <div class="flex space-x-3">
-                  <button @click="updateScore('teamA', 1)"
-                          class="flex-1 bg-red-500 hover:bg-red-600 text-white p-3 rounded-lg font-bold transition-colors active:scale-95">
-                    +1
-                  </button>
-                  <button @click="updateScore('teamA', -1)"
-                          class="flex-1 bg-red-300 hover:bg-red-400 text-red-800 p-3 rounded-lg font-bold transition-colors active:scale-95">
-                    -1
-                  </button>
+            <!-- チーム操作グリッド -->
+            <div class="bg-gradient-to-r from-red-50 via-gray-50 to-blue-50 p-4 rounded-lg border border-gray-200 relative">
+              <!-- 中央セパレーター -->
+              <div class="absolute inset-y-4 left-1/2 w-px bg-gray-300 transform -translate-x-px"></div>
+              <!-- ヘッダー行 -->
+              <div class="mb-4 relative z-10">
+                <!-- チーム名行 -->
+                <div class="flex justify-between gap-x-8 mb-2">
+                  <div class="text-center flex-1">
+                    <div class="text-lg font-bold text-red-700" x-text="gameState.teamA.name"></div>
+                  </div>
+                  <div class="text-center flex-1">
+                    <div class="text-lg font-bold text-blue-700" x-text="gameState.teamB.name"></div>
+                  </div>
+                </div>
+                <!-- カテゴリー行 -->
+                <div class="flex justify-between gap-x-8">
+                  <div class="flex-1 grid grid-cols-2 gap-x-2">
+                    <div class="text-center">
+                      <div class="text-xs text-red-600">得点</div>
+                    </div>
+                    <div class="text-center">
+                      <div class="text-xs text-orange-600">Do or Die</div>
+                    </div>
+                  </div>
+                  <div class="flex-1 grid grid-cols-2 gap-x-2">
+                    <div class="text-center">
+                      <div class="text-xs text-orange-600">Do or Die</div>
+                    </div>
+                    <div class="text-center">
+                      <div class="text-xs text-blue-600">得点</div>
+                    </div>
+                  </div>
                 </div>
               </div>
 
-              <!-- チームB操作 -->
-              <div class="bg-blue-50 p-4 rounded-lg border border-blue-200">
-                <h3 class="font-bold text-blue-700 mb-3" x-text="gameState.teamB.name + ' 操作'"></h3>
-                <div class="flex space-x-3">
-                  <button @click="updateScore('teamB', 1)"
-                          class="flex-1 bg-blue-500 hover:bg-blue-600 text-white p-3 rounded-lg font-bold transition-colors active:scale-95">
-                    +1
-                  </button>
-                  <button @click="updateScore('teamB', -1)"
-                          class="flex-1 bg-blue-300 hover:bg-blue-400 text-blue-800 p-3 rounded-lg font-bold transition-colors active:scale-95">
-                    -1
-                  </button>
+              <!-- ボタングリッド -->
+              <div class="flex justify-between gap-x-8 relative z-10">
+                <!-- チームA側（左） -->
+                <div class="flex-1 space-y-3">
+                  <!-- +1ボタン行 -->
+                  <div class="grid grid-cols-2 gap-x-2">
+                    <button @click="updateScore('teamA', 1)"
+                            class="aspect-square bg-red-500 hover:bg-red-600 text-white rounded-lg font-bold transition-colors active:scale-95">
+                      +1
+                    </button>
+                    <button @click="updateDoOrDie('teamA', 1)"
+                            class="aspect-square bg-orange-400 hover:bg-orange-500 text-white rounded-lg font-bold transition-colors active:scale-95">
+                      +1
+                    </button>
+                  </div>
+                  <!-- -1ボタン行 -->
+                  <div class="grid grid-cols-2 gap-x-2">
+                    <button @click="updateScore('teamA', -1)"
+                            class="aspect-square bg-red-300 hover:bg-red-400 text-red-800 rounded-lg font-bold transition-colors active:scale-95">
+                      -1
+                    </button>
+                    <button @click="updateDoOrDie('teamA', -1)"
+                            class="aspect-square bg-orange-200 hover:bg-orange-300 text-orange-800 rounded-lg font-bold transition-colors active:scale-95">
+                      -1
+                    </button>
+                  </div>
+                  <!-- リセットボタン行 -->
+                  <div class="grid grid-cols-2 gap-x-2">
+                    <button @click="resetScores()"
+                            class="h-12 bg-gray-500 hover:bg-gray-600 text-white rounded-lg font-bold text-xs transition-colors active:scale-95">
+                      スコア<br>リセット
+                    </button>
+                    <button @click="updateDoOrDie('teamA', -gameState.teamA.doOrDieCount)"
+                            class="h-12 bg-gray-400 hover:bg-gray-500 text-white rounded-lg font-bold text-xs transition-colors active:scale-95">
+                      リセット
+                    </button>
+                  </div>
                 </div>
-              </div>
 
-              <!-- リセットボタン -->
-              <div class="bg-gray-50 p-4 rounded-lg border border-gray-200">
-                <button @click="resetScores()"
-                        class="w-full bg-gray-600 hover:bg-gray-700 text-white p-3 rounded-lg font-bold transition-colors active:scale-95">
-                  スコアリセット
-                </button>
+                <!-- チームB側（右） -->
+                <div class="flex-1 space-y-3">
+                  <!-- +1ボタン行 -->
+                  <div class="grid grid-cols-2 gap-x-2">
+                    <button @click="updateDoOrDie('teamB', 1)"
+                            class="aspect-square bg-orange-400 hover:bg-orange-500 text-white rounded-lg font-bold transition-colors active:scale-95">
+                      +1
+                    </button>
+                    <button @click="updateScore('teamB', 1)"
+                            class="aspect-square bg-blue-500 hover:bg-blue-600 text-white rounded-lg font-bold transition-colors active:scale-95">
+                      +1
+                    </button>
+                  </div>
+                  <!-- -1ボタン行 -->
+                  <div class="grid grid-cols-2 gap-x-2">
+                    <button @click="updateDoOrDie('teamB', -1)"
+                            class="aspect-square bg-orange-200 hover:bg-orange-300 text-orange-800 rounded-lg font-bold transition-colors active:scale-95">
+                      -1
+                    </button>
+                    <button @click="updateScore('teamB', -1)"
+                            class="aspect-square bg-blue-300 hover:bg-blue-400 text-blue-800 rounded-lg font-bold transition-colors active:scale-95">
+                      -1
+                    </button>
+                  </div>
+                  <!-- リセットボタン行 -->
+                  <div class="grid grid-cols-2 gap-x-2">
+                    <button @click="updateDoOrDie('teamB', -gameState.teamB.doOrDieCount)"
+                            class="h-12 bg-gray-400 hover:bg-gray-500 text-white rounded-lg font-bold text-xs transition-colors active:scale-95">
+                      リセット
+                    </button>
+                    <button @click="resetScores()"
+                            class="h-12 bg-gray-500 hover:bg-gray-600 text-white rounded-lg font-bold text-xs transition-colors active:scale-95">
+                      スコア<br>リセット
+                    </button>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -314,12 +405,26 @@ app.get('/game/:gameId', async (c) => {
         <div class="flex justify-between items-center">
           <div class="text-center">
             <div class="font-bold text-lg mb-1" x-text="gameState.teamA.name"></div>
-            <div class="text-4xl font-bold text-red-500" x-text="gameState.teamA.score"></div>
+            <div class="text-4xl font-bold text-red-500 mb-2" x-text="gameState.teamA.score"></div>
+            <!-- Do or Dieインジケーター -->
+            <div class="flex w-28 h-4 mx-auto space-x-2 my-2">
+              <template x-for="(isActive, index) in teamADoOrDieIndicators" :key="index">
+                <div class="flex-1 transition-colors duration-200 rounded-sm"
+                     :class="isActive ? 'bg-yellow-500' : 'bg-gray-300'"></div>
+              </template>
+            </div>
           </div>
           <div class="text-2xl font-bold text-gray-600">VS</div>
           <div class="text-center">
             <div class="font-bold text-lg mb-1" x-text="gameState.teamB.name"></div>
-            <div class="text-4xl font-bold text-blue-500" x-text="gameState.teamB.score"></div>
+            <div class="text-4xl font-bold text-blue-500 mb-2" x-text="gameState.teamB.score"></div>
+            <!-- Do or Dieインジケーター -->
+            <div class="flex w-28 h-4 mx-auto space-x-2 my-2">
+              <template x-for="(isActive, index) in teamBDoOrDieIndicators" :key="index">
+                <div class="flex-1 transition-colors duration-200 rounded-sm"
+                     :class="isActive ? 'bg-yellow-500' : 'bg-gray-300'"></div>
+              </template>
+            </div>
           </div>
         </div>
       </div>
@@ -428,20 +533,6 @@ app.get('/game/:gameId', async (c) => {
               <!-- 時間調整ボタン -->
               <div class="space-y-3">
                 <div class="flex space-x-2">
-                  <button @click="adjustTimer(-60)"
-                          class="flex-1 bg-gray-500 hover:bg-gray-600 text-white p-3 rounded-lg transition-colors">
-                    -1分
-                  </button>
-                  <button @click="adjustTimer(-10)"
-                          class="flex-1 bg-gray-500 hover:bg-gray-600 text-white p-3 rounded-lg transition-colors">
-                    -10秒
-                  </button>
-                  <button @click="adjustTimer(-1)"
-                          class="flex-1 bg-gray-500 hover:bg-gray-600 text-white p-3 rounded-lg transition-colors">
-                    -1秒
-                  </button>
-                </div>
-                <div class="flex space-x-2">
                   <button @click="adjustTimer(60)"
                           class="flex-1 bg-blue-500 hover:bg-blue-600 text-white p-3 rounded-lg transition-colors">
                     +1分
@@ -453,6 +544,20 @@ app.get('/game/:gameId', async (c) => {
                   <button @click="adjustTimer(1)"
                           class="flex-1 bg-blue-500 hover:bg-blue-600 text-white p-3 rounded-lg transition-colors">
                     +1秒
+                  </button>
+                </div>
+                <div class="flex space-x-2">
+                  <button @click="adjustTimer(-60)"
+                          class="flex-1 bg-gray-500 hover:bg-gray-600 text-white p-3 rounded-lg transition-colors">
+                    -1分
+                  </button>
+                  <button @click="adjustTimer(-10)"
+                          class="flex-1 bg-gray-500 hover:bg-gray-600 text-white p-3 rounded-lg transition-colors">
+                    -10秒
+                  </button>
+                  <button @click="adjustTimer(-1)"
+                          class="flex-1 bg-gray-500 hover:bg-gray-600 text-white p-3 rounded-lg transition-colors">
+                    -1秒
                   </button>
                 </div>
               </div>
@@ -477,42 +582,119 @@ app.get('/game/:gameId', async (c) => {
               </div>
             </div>
 
-            <!-- チームA操作 -->
-            <div class="bg-red-50 p-4 rounded-lg border border-red-200">
-              <h3 class="font-bold text-red-700 mb-3 text-lg" x-text="gameState.teamA.name + ' 操作'"></h3>
-              <div class="flex space-x-3">
-                <button @click="updateScore('teamA', 1)"
-                        class="flex-1 bg-red-500 hover:bg-red-600 text-white p-4 rounded-lg font-bold text-lg transition-colors active:scale-95">
-                  +1
-                </button>
-                <button @click="updateScore('teamA', -1)"
-                        class="flex-1 bg-red-300 hover:bg-red-400 text-red-800 p-4 rounded-lg font-bold text-lg transition-colors active:scale-95">
-                  -1
-                </button>
-              </div>
-            </div>
+            <!-- チーム操作グリッド -->
+            <div class="bg-gradient-to-r from-red-50 via-gray-50 to-blue-50 p-4 rounded-lg border border-gray-200 relative">
+              <!-- 中央セパレーター -->
+              <div class="absolute inset-y-4 left-1/2 w-px bg-gray-300 transform -translate-x-px"></div>
 
-            <!-- チームB操作 -->
-            <div class="bg-blue-50 p-4 rounded-lg border border-blue-200">
-              <h3 class="font-bold text-blue-700 mb-3 text-lg" x-text="gameState.teamB.name + ' 操作'"></h3>
-              <div class="flex space-x-3">
-                <button @click="updateScore('teamB', 1)"
-                        class="flex-1 bg-blue-500 hover:bg-blue-600 text-white p-4 rounded-lg font-bold text-lg transition-colors active:scale-95">
-                  +1
-                </button>
-                <button @click="updateScore('teamB', -1)"
-                        class="flex-1 bg-blue-300 hover:bg-blue-400 text-blue-800 p-4 rounded-lg font-bold text-lg transition-colors active:scale-95">
-                  -1
-                </button>
+              <!-- ヘッダー行 -->
+              <div class="mb-4 relative z-10">
+                <!-- チーム名行 -->
+                <div class="flex justify-between gap-x-6 mb-2">
+                  <div class="text-center flex-1">
+                    <div class="text-base font-bold text-red-700" x-text="gameState.teamA.name"></div>
+                  </div>
+                  <div class="text-center flex-1">
+                    <div class="text-base font-bold text-blue-700" x-text="gameState.teamB.name"></div>
+                  </div>
+                </div>
+                <!-- カテゴリー行 -->
+                <div class="flex justify-between gap-x-6">
+                  <div class="flex-1 grid grid-cols-2 gap-x-1">
+                    <div class="text-center">
+                      <div class="text-xs text-red-600">得点</div>
+                    </div>
+                    <div class="text-center">
+                      <div class="text-xs text-orange-600">Do or Die</div>
+                    </div>
+                  </div>
+                  <div class="flex-1 grid grid-cols-2 gap-x-1">
+                    <div class="text-center">
+                      <div class="text-xs text-orange-600">Do or Die</div>
+                    </div>
+                    <div class="text-center">
+                      <div class="text-xs text-blue-600">得点</div>
+                    </div>
+                  </div>
+                </div>
               </div>
-            </div>
 
-            <!-- リセットボタン -->
-            <div class="bg-gray-50 p-4 rounded-lg border border-gray-200">
-              <button @click="resetScores()"
-                      class="w-full bg-gray-600 hover:bg-gray-700 text-white p-4 rounded-lg font-bold text-lg transition-colors active:scale-95">
-                スコアリセット
-              </button>
+              <!-- ボタングリッド -->
+              <div class="flex justify-between gap-x-6 relative z-10">
+                <!-- チームA側（左） -->
+                <div class="flex-1 space-y-2">
+                  <!-- +1ボタン行 -->
+                  <div class="grid grid-cols-2 gap-x-1">
+                    <button @click="updateScore('teamA', 1)"
+                            class="h-12 bg-red-500 hover:bg-red-600 text-white rounded-lg font-bold text-base transition-colors active:scale-95">
+                      +1
+                    </button>
+                    <button @click="updateDoOrDie('teamA', 1)"
+                            class="h-12 bg-orange-400 hover:bg-orange-500 text-white rounded-lg font-bold text-base transition-colors active:scale-95">
+                      +1
+                    </button>
+                  </div>
+                  <!-- -1ボタン行 -->
+                  <div class="grid grid-cols-2 gap-x-1">
+                    <button @click="updateScore('teamA', -1)"
+                            class="h-12 bg-red-300 hover:bg-red-400 text-red-800 rounded-lg font-bold text-base transition-colors active:scale-95">
+                      -1
+                    </button>
+                    <button @click="updateDoOrDie('teamA', -1)"
+                            class="h-12 bg-orange-200 hover:bg-orange-300 text-orange-800 rounded-lg font-bold text-base transition-colors active:scale-95">
+                      -1
+                    </button>
+                  </div>
+                  <!-- リセットボタン行 -->
+                  <div class="grid grid-cols-2 gap-x-1">
+                    <button @click="resetScores()"
+                            class="h-12 bg-gray-500 hover:bg-gray-600 text-white rounded-lg font-bold text-xs transition-colors active:scale-95">
+                      スコア<br>リセット
+                    </button>
+                    <button @click="updateDoOrDie('teamA', -gameState.teamA.doOrDieCount)"
+                            class="h-12 bg-gray-400 hover:bg-gray-500 text-white rounded-lg font-bold text-xs transition-colors active:scale-95">
+                      リセット
+                    </button>
+                  </div>
+                </div>
+
+                <!-- チームB側（右） -->
+                <div class="flex-1 space-y-2">
+                  <!-- +1ボタン行 -->
+                  <div class="grid grid-cols-2 gap-x-1">
+                    <button @click="updateDoOrDie('teamB', 1)"
+                            class="h-12 bg-orange-400 hover:bg-orange-500 text-white rounded-lg font-bold text-base transition-colors active:scale-95">
+                      +1
+                    </button>
+                    <button @click="updateScore('teamB', 1)"
+                            class="h-12 bg-blue-500 hover:bg-blue-600 text-white rounded-lg font-bold text-base transition-colors active:scale-95">
+                      +1
+                    </button>
+                  </div>
+                  <!-- -1ボタン行 -->
+                  <div class="grid grid-cols-2 gap-x-1">
+                    <button @click="updateDoOrDie('teamB', -1)"
+                            class="h-12 bg-orange-200 hover:bg-orange-300 text-orange-800 rounded-lg font-bold text-base transition-colors active:scale-95">
+                      -1
+                    </button>
+                    <button @click="updateScore('teamB', -1)"
+                            class="h-12 bg-blue-300 hover:bg-blue-400 text-blue-800 rounded-lg font-bold text-base transition-colors active:scale-95">
+                      -1
+                    </button>
+                  </div>
+                  <!-- リセットボタン行 -->
+                  <div class="grid grid-cols-2 gap-x-1">
+                    <button @click="updateDoOrDie('teamB', -gameState.teamB.doOrDieCount)"
+                            class="h-12 bg-gray-400 hover:bg-gray-500 text-white rounded-lg font-bold text-xs transition-colors active:scale-95">
+                      リセット
+                    </button>
+                    <button @click="resetScores()"
+                            class="h-12 bg-gray-500 hover:bg-gray-600 text-white rounded-lg font-bold text-xs transition-colors active:scale-95">
+                      スコア<br>リセット
+                    </button>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -536,7 +718,8 @@ app.get('/game/:gameId', async (c) => {
             long: 20
           }
         },
-        score: 0
+        score: 0,
+        doOrDieCount: 0
       };
 
       // アクションタイプの一元管理
@@ -544,13 +727,14 @@ app.get('/game/:gameId', async (c) => {
         TIMER_START: { type: 'TIMER_START' },
         TIMER_PAUSE: { type: 'TIMER_PAUSE' },
         TIMER_RESET: { type: 'TIMER_RESET' },
-        RESET_SCORES: { type: 'RESET_SCORES' }
+        RESET_SCORES: { type: 'RESET_SCORES' },
+        DO_OR_DIE_RESET: { type: 'DO_OR_DIE_RESET' }
       };
 
       return {
         gameState: {
-          teamA: { name: DEFAULT_VALUES.teamNames.teamA, score: DEFAULT_VALUES.score },
-          teamB: { name: DEFAULT_VALUES.teamNames.teamB, score: DEFAULT_VALUES.score },
+          teamA: { name: DEFAULT_VALUES.teamNames.teamA, score: DEFAULT_VALUES.score, doOrDieCount: DEFAULT_VALUES.doOrDieCount },
+          teamB: { name: DEFAULT_VALUES.teamNames.teamB, score: DEFAULT_VALUES.score, doOrDieCount: DEFAULT_VALUES.doOrDieCount },
           timer: {
             totalDuration: DEFAULT_VALUES.timer.defaultDuration,
             startTime: null,
@@ -711,6 +895,26 @@ app.get('/game/:gameId', async (c) => {
 
         resetScores() {
           this.sendAction(ACTIONS.RESET_SCORES);
+        },
+
+        updateDoOrDie(team, delta) {
+          this.sendAction({
+            type: 'DO_OR_DIE_UPDATE',
+            team: team,
+            delta: delta
+          });
+        },
+
+        resetDoOrDie() {
+          this.sendAction(ACTIONS.DO_OR_DIE_RESET);
+        },
+
+        get teamADoOrDieIndicators() {
+          return Array(3).fill(0).map((_, i) => i < (this.gameState.teamA.doOrDieCount || 0));
+        },
+
+        get teamBDoOrDieIndicators() {
+          return Array(3).fill(0).map((_, i) => i < (this.gameState.teamB.doOrDieCount || 0));
         },
 
         setTeamName(team, name) {

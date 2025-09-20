@@ -12,8 +12,8 @@ export class GameSession {
 
   private getDefaultGameState(): GameState {
     return {
-      teamA: { name: 'チームA', score: 0 },
-      teamB: { name: 'チームB', score: 0 },
+      teamA: { name: 'チームA', score: 0, doOrDieCount: 0 },
+      teamB: { name: 'チームB', score: 0, doOrDieCount: 0 },
       timer: {
         totalDuration: 3 * 60, // デフォルト3分
         startTime: null,
@@ -149,6 +149,8 @@ export class GameSession {
     if (!state.teamA || !state.teamB) return false;
     if (typeof state.teamA.name !== 'string' || typeof state.teamA.score !== 'number') return false;
     if (typeof state.teamB.name !== 'string' || typeof state.teamB.score !== 'number') return false;
+    if (typeof state.teamA.doOrDieCount !== 'number' || state.teamA.doOrDieCount < 0 || state.teamA.doOrDieCount > 3) return false;
+    if (typeof state.teamB.doOrDieCount !== 'number' || state.teamB.doOrDieCount < 0 || state.teamB.doOrDieCount > 3) return false;
 
     // タイマー情報の検証
     if (!state.timer) return false;
@@ -170,11 +172,13 @@ export class GameSession {
     const repairedState: GameState = {
       teamA: {
         name: (state?.teamA?.name && typeof state.teamA.name === 'string') ? state.teamA.name : defaultState.teamA.name,
-        score: (state?.teamA?.score && typeof state.teamA.score === 'number' && state.teamA.score >= 0) ? state.teamA.score : defaultState.teamA.score
+        score: (state?.teamA?.score && typeof state.teamA.score === 'number' && state.teamA.score >= 0) ? state.teamA.score : defaultState.teamA.score,
+        doOrDieCount: (state?.teamA?.doOrDieCount && typeof state.teamA.doOrDieCount === 'number' && state.teamA.doOrDieCount >= 0 && state.teamA.doOrDieCount <= 3) ? state.teamA.doOrDieCount : defaultState.teamA.doOrDieCount
       },
       teamB: {
         name: (state?.teamB?.name && typeof state.teamB.name === 'string') ? state.teamB.name : defaultState.teamB.name,
-        score: (state?.teamB?.score && typeof state.teamB.score === 'number' && state.teamB.score >= 0) ? state.teamB.score : defaultState.teamB.score
+        score: (state?.teamB?.score && typeof state.teamB.score === 'number' && state.teamB.score >= 0) ? state.teamB.score : defaultState.teamB.score,
+        doOrDieCount: (state?.teamB?.doOrDieCount && typeof state.teamB.doOrDieCount === 'number' && state.teamB.doOrDieCount >= 0 && state.teamB.doOrDieCount <= 3) ? state.teamB.doOrDieCount : defaultState.teamB.doOrDieCount
       },
       timer: {
         totalDuration: (state?.timer?.totalDuration && typeof state.timer.totalDuration === 'number' && state.timer.totalDuration > 0) ? state.timer.totalDuration : defaultState.timer.totalDuration,
@@ -250,6 +254,19 @@ export class GameSession {
       case 'RESET_SCORES':
         this.gameState.teamA.score = 0;
         this.gameState.teamB.score = 0;
+        break;
+
+      case 'DO_OR_DIE_UPDATE':
+        if (action.team === 'teamA') {
+          this.gameState.teamA.doOrDieCount = Math.max(0, Math.min(3, this.gameState.teamA.doOrDieCount + action.delta));
+        } else {
+          this.gameState.teamB.doOrDieCount = Math.max(0, Math.min(3, this.gameState.teamB.doOrDieCount + action.delta));
+        }
+        break;
+
+      case 'DO_OR_DIE_RESET':
+        this.gameState.teamA.doOrDieCount = 0;
+        this.gameState.teamB.doOrDieCount = 0;
         break;
 
       case 'SET_TEAM_NAME':

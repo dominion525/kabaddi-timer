@@ -1,6 +1,7 @@
 export interface TeamState {
   name: string;
   score: number;
+  doOrDieCount: number; // 0-3のDo or Dieカウント
 }
 
 export interface TimerState {
@@ -29,7 +30,9 @@ export type GameAction =
   | { type: 'TIMER_RESET' }
   | { type: 'TIMER_SET'; duration: number }
   | { type: 'TIMER_ADJUST'; seconds: number }
-  | { type: 'TIME_SYNC_REQUEST'; clientRequestTime?: number };
+  | { type: 'TIME_SYNC_REQUEST'; clientRequestTime?: number }
+  | { type: 'DO_OR_DIE_UPDATE'; team: 'teamA' | 'teamB'; delta: number }
+  | { type: 'DO_OR_DIE_RESET' };
 
 export interface GameMessage {
   type: 'game_state' | 'action' | 'error' | 'time_sync';
