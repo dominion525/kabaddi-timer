@@ -78,6 +78,18 @@ app.get('/game/:gameId', async (c) => {
 
         <!-- タイマー -->
         <div class="flex-1 bg-gray-800 text-white flex flex-col items-center justify-center">
+          <!-- サブタイマー（レイドタイマー） -->
+          <div class="mb-8">
+            <div class="text-center">
+              <div style="font-size: 12rem; line-height: 1;" class="font-bold font-mono text-yellow-400" x-text="formattedSubTimer"></div>
+              <div class="text-sm opacity-75 mt-2">
+                <span x-show="gameState?.subTimer?.isRunning" class="text-green-400">● 動作中</span>
+                <span x-show="gameState?.subTimer && !gameState.subTimer.isRunning" class="text-gray-400">● 停止</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- メインタイマー -->
           <div style="font-size: 12rem; line-height: 1;" class="font-bold font-mono" x-text="formattedTimer"></div>
           <div class="text-lg opacity-75 mt-4">
             <span x-show="timerRunning" class="text-green-400">● 動作中</span>
@@ -259,6 +271,27 @@ app.get('/game/:gameId', async (c) => {
               </div>
             </div>
 
+            <!-- サブタイマー操作 -->
+            <div class="bg-yellow-50 p-4 rounded-lg border border-yellow-200">
+              <h3 class="font-bold text-lg mb-4 text-yellow-800">サブタイマー操作 (30秒レイドタイマー)</h3>
+
+              <!-- スタート/ストップ/リセット -->
+              <div class="flex space-x-2">
+                <button @click="startSubTimer()"
+                        class="flex-1 bg-yellow-500 hover:bg-yellow-600 text-white p-3 rounded-lg font-bold transition-colors">
+                  スタート
+                </button>
+                <button @click="stopSubTimer()"
+                        class="flex-1 bg-red-500 hover:bg-red-600 text-white p-3 rounded-lg font-bold transition-colors">
+                  ストップ
+                </button>
+                <button @click="resetSubTimer()"
+                        class="flex-1 bg-orange-500 hover:bg-orange-600 text-white p-3 rounded-lg font-bold transition-colors">
+                  リセット
+                </button>
+              </div>
+            </div>
+
             <!-- チーム操作グリッド -->
             <div class="bg-gradient-to-r from-red-50 via-gray-50 to-blue-50 p-4 rounded-lg border border-gray-200 relative">
               <!-- 中央セパレーター -->
@@ -396,6 +429,18 @@ app.get('/game/:gameId', async (c) => {
 
       <!-- タイマー表示 -->
       <div class="flex-1 bg-gray-800 text-white flex flex-col justify-center items-center">
+        <!-- サブタイマー（レイドタイマー） -->
+        <div class="mb-6">
+          <div class="text-center">
+            <div style="font-size: 8rem; line-height: 1;" class="font-bold font-mono text-yellow-400" x-text="formattedSubTimer"></div>
+            <div class="text-xs opacity-75 mt-1">
+              <span x-show="gameState?.subTimer?.isRunning" class="text-green-400">● 動作中</span>
+              <span x-show="gameState?.subTimer && !gameState.subTimer.isRunning" class="text-gray-400">● 停止</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- メインタイマー -->
         <div style="font-size: 8rem; line-height: 1;" class="font-bold font-mono" x-text="formattedTimer"></div>
         <div class="text-lg mt-4">
           <span x-show="timerRunning" class="text-green-400">● 動作中</span>
@@ -566,6 +611,27 @@ app.get('/game/:gameId', async (c) => {
                     -1秒
                   </button>
                 </div>
+              </div>
+            </div>
+
+            <!-- サブタイマー操作 -->
+            <div class="bg-yellow-50 p-4 rounded-lg border border-yellow-200">
+              <h3 class="font-bold text-lg mb-4 text-yellow-800">サブタイマー操作 (30秒レイドタイマー)</h3>
+
+              <!-- スタート/ストップ/リセット -->
+              <div class="flex space-x-2">
+                <button @click="startSubTimer()"
+                        class="flex-1 bg-yellow-500 hover:bg-yellow-600 text-white p-4 rounded-lg font-bold text-lg transition-colors">
+                  スタート
+                </button>
+                <button @click="stopSubTimer()"
+                        class="flex-1 bg-red-500 hover:bg-red-600 text-white p-4 rounded-lg font-bold text-lg transition-colors">
+                  ストップ
+                </button>
+                <button @click="resetSubTimer()"
+                        class="flex-1 bg-orange-500 hover:bg-orange-600 text-white p-4 rounded-lg font-bold text-lg transition-colors">
+                  リセット
+                </button>
               </div>
             </div>
 
@@ -758,6 +824,8 @@ app.get('/game/:gameId', async (c) => {
         showControlPanel: false,
         timerSeconds: DEFAULT_VALUES.timer.defaultDuration,
         timerRunning: false,
+        subTimerSeconds: 30,
+        subTimerRunning: false,
         serverTimeOffset: 0,
         timerAnimationId: null,
         timeSyncIntervalId: null,
@@ -953,6 +1021,10 @@ app.get('/game/:gameId', async (c) => {
           return minutes.toString().padStart(2, '0') + ':' + remainingSeconds.toString().padStart(2, '0');
         },
 
+        get formattedSubTimer() {
+          return this.subTimerSeconds.toString().padStart(2, '0');
+        },
+
         startTimer() {
           this.sendAction(ACTIONS.TIMER_START);
         },
@@ -988,6 +1060,18 @@ app.get('/game/:gameId', async (c) => {
           this.sendAction(ACTIONS.TIMER_RESET);
         },
 
+        startSubTimer() {
+          this.sendAction({ type: 'SUB_TIMER_START' });
+        },
+
+        stopSubTimer() {
+          this.sendAction({ type: 'SUB_TIMER_PAUSE' });
+        },
+
+        resetSubTimer() {
+          this.sendAction({ type: 'SUB_TIMER_RESET' });
+        },
+
         updateTimerDisplay() {
           this.stopTimerUpdate(); // 既存のタイマーをクリア
 
@@ -1004,6 +1088,7 @@ app.get('/game/:gameId', async (c) => {
           const updateLoop = () => {
             try {
               this.calculateTimerSeconds();
+              this.calculateSubTimerSeconds();
               this.timerAnimationId = requestAnimationFrame(updateLoop);
             } catch (error) {
               console.error('Timer update error:', error);
@@ -1021,10 +1106,27 @@ app.get('/game/:gameId', async (c) => {
             const serverNow = Date.now() - this.serverTimeOffset;
             const elapsed = (serverNow - timer.startTime) / 1000;
             this.timerSeconds = Math.max(0, Math.floor(timer.totalDuration - elapsed));
-            this.timerRunning = true;
+            // タイマーが0になったら停止状態として表示
+            this.timerRunning = this.timerSeconds > 0;
           } else {
             this.timerSeconds = Math.floor(timer.remainingSeconds);
             this.timerRunning = timer.isRunning;
+          }
+        },
+
+        calculateSubTimerSeconds() {
+          const subTimer = this.gameState?.subTimer;
+          if (!subTimer) return;
+
+          if (subTimer.isRunning && subTimer.startTime) {
+            const serverNow = Date.now() - this.serverTimeOffset;
+            const elapsed = (serverNow - subTimer.startTime) / 1000;
+            this.subTimerSeconds = Math.max(0, Math.floor(subTimer.totalDuration - elapsed));
+            // サブタイマーが0になったら停止状態として表示
+            this.subTimerRunning = this.subTimerSeconds > 0;
+          } else {
+            this.subTimerSeconds = Math.floor(subTimer.remainingSeconds);
+            this.subTimerRunning = subTimer.isRunning;
           }
         },
 

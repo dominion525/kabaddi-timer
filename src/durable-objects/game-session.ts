@@ -22,6 +22,14 @@ export class GameSession {
         pausedAt: null,
         remainingSeconds: 3 * 60
       },
+      subTimer: {
+        totalDuration: 30, // 固定30秒
+        startTime: null,
+        isRunning: false,
+        isPaused: false,
+        pausedAt: null,
+        remainingSeconds: 30
+      },
       serverTime: Date.now(),
       lastUpdated: Date.now()
     };
@@ -160,6 +168,15 @@ export class GameSession {
     if (typeof timer.isPaused !== 'boolean') return false;
     if (typeof timer.remainingSeconds !== 'number' || timer.remainingSeconds < 0) return false;
 
+    // サブタイマー情報の検証（オプショナルなのでstateにない場合はスキップ）
+    if (state.subTimer) {
+      const subTimer = state.subTimer;
+      if (typeof subTimer.totalDuration !== 'number' || subTimer.totalDuration <= 0) return false;
+      if (typeof subTimer.isRunning !== 'boolean') return false;
+      if (typeof subTimer.isPaused !== 'boolean') return false;
+      if (typeof subTimer.remainingSeconds !== 'number' || subTimer.remainingSeconds < 0) return false;
+    }
+
     // 基本時刻情報の検証
     if (typeof state.serverTime !== 'number' || typeof state.lastUpdated !== 'number') return false;
 
@@ -188,6 +205,14 @@ export class GameSession {
         pausedAt: (state?.timer?.pausedAt && (typeof state.timer.pausedAt === 'number' || state.timer.pausedAt === null)) ? state.timer.pausedAt : defaultState.timer.pausedAt,
         remainingSeconds: (state?.timer?.remainingSeconds && typeof state.timer.remainingSeconds === 'number' && state.timer.remainingSeconds >= 0) ? state.timer.remainingSeconds : defaultState.timer.remainingSeconds
       },
+      subTimer: state?.subTimer ? {
+        totalDuration: (state.subTimer?.totalDuration && typeof state.subTimer.totalDuration === 'number' && state.subTimer.totalDuration > 0) ? state.subTimer.totalDuration : defaultState.subTimer!.totalDuration,
+        startTime: (state.subTimer?.startTime && (typeof state.subTimer.startTime === 'number' || state.subTimer.startTime === null)) ? state.subTimer.startTime : defaultState.subTimer!.startTime,
+        isRunning: (state.subTimer?.isRunning && typeof state.subTimer.isRunning === 'boolean') ? state.subTimer.isRunning : defaultState.subTimer!.isRunning,
+        isPaused: (state.subTimer?.isPaused && typeof state.subTimer.isPaused === 'boolean') ? state.subTimer.isPaused : defaultState.subTimer!.isPaused,
+        pausedAt: (state.subTimer?.pausedAt && (typeof state.subTimer.pausedAt === 'number' || state.subTimer.pausedAt === null)) ? state.subTimer.pausedAt : defaultState.subTimer!.pausedAt,
+        remainingSeconds: (state.subTimer?.remainingSeconds && typeof state.subTimer.remainingSeconds === 'number' && state.subTimer.remainingSeconds >= 0) ? state.subTimer.remainingSeconds : defaultState.subTimer!.remainingSeconds
+      } : defaultState.subTimer,
       serverTime: Date.now(),
       lastUpdated: Date.now()
     };
@@ -206,6 +231,11 @@ export class GameSession {
         // タイマーが実行中の場合、残り時間を更新
         if (this.gameState.timer && this.gameState.timer.isRunning) {
           this.updateRemainingTime();
+        }
+
+        // サブタイマーが実行中の場合、残り時間を更新
+        if (this.gameState.subTimer && this.gameState.subTimer.isRunning) {
+          this.updateSubTimerRemainingTime();
         }
 
         await this.state.storage.put('gameState', this.gameState);
@@ -299,11 +329,11 @@ export class GameSession {
 
       case 'TIMER_PAUSE':
         if (this.gameState.timer.isRunning) {
+          // 現在の残り時間を計算して保存（isRunning = falseにする前に実行）
+          this.updateRemainingTime();
           this.gameState.timer.isRunning = false;
           this.gameState.timer.isPaused = true;
           this.gameState.timer.pausedAt = Date.now();
-          // 現在の残り時間を計算して保存
-          this.updateRemainingTime();
         }
         await this.saveGameState();
         await this.broadcastState();
@@ -340,6 +370,71 @@ export class GameSession {
         } else {
           // 停止中の場合、remainingSecondsを直接調整
           this.gameState.timer.remainingSeconds = Math.max(0, this.gameState.timer.remainingSeconds + action.seconds);
+        }
+        await this.saveGameState();
+        await this.broadcastState();
+        await this.broadcastTimeSync();
+        return;
+
+      case 'SUB_TIMER_START':
+        if (!this.gameState.subTimer?.isRunning) {
+          if (!this.gameState.subTimer) {
+            this.gameState.subTimer = {
+              totalDuration: 30,
+              startTime: null,
+              isRunning: false,
+              isPaused: false,
+              pausedAt: null,
+              remainingSeconds: 30
+            };
+          }
+          const now = Date.now();
+          if (this.gameState.subTimer.isPaused) {
+            // 一時停止からの再開
+            const pausedDuration = now - (this.gameState.subTimer.pausedAt || now);
+            this.gameState.subTimer.startTime = (this.gameState.subTimer.startTime || now) + pausedDuration;
+            this.gameState.subTimer.isPaused = false;
+            this.gameState.subTimer.pausedAt = null;
+          } else {
+            // 新規開始
+            this.gameState.subTimer.startTime = now;
+          }
+          this.gameState.subTimer.isRunning = true;
+        }
+        await this.saveGameState();
+        await this.broadcastState();
+        await this.broadcastTimeSync();
+        return;
+
+      case 'SUB_TIMER_PAUSE':
+        if (this.gameState.subTimer?.isRunning) {
+          // 現在の残り時間を計算して保存（isRunning = falseにする前に実行）
+          this.updateSubTimerRemainingTime();
+          this.gameState.subTimer.isRunning = false;
+          this.gameState.subTimer.isPaused = true;
+          this.gameState.subTimer.pausedAt = Date.now();
+        }
+        await this.saveGameState();
+        await this.broadcastState();
+        await this.broadcastTimeSync();
+        return;
+
+      case 'SUB_TIMER_RESET':
+        if (!this.gameState.subTimer) {
+          this.gameState.subTimer = {
+            totalDuration: 30,
+            startTime: null,
+            isRunning: false,
+            isPaused: false,
+            pausedAt: null,
+            remainingSeconds: 30
+          };
+        } else {
+          this.gameState.subTimer.startTime = null;
+          this.gameState.subTimer.isRunning = false;
+          this.gameState.subTimer.isPaused = false;
+          this.gameState.subTimer.pausedAt = null;
+          this.gameState.subTimer.remainingSeconds = this.gameState.subTimer.totalDuration;
         }
         await this.saveGameState();
         await this.broadcastState();
@@ -436,6 +531,13 @@ export class GameSession {
     if (this.gameState.timer.startTime && this.gameState.timer.isRunning) {
       const elapsed = (Date.now() - this.gameState.timer.startTime) / 1000;
       this.gameState.timer.remainingSeconds = Math.max(0, this.gameState.timer.totalDuration - elapsed);
+    }
+  }
+
+  private updateSubTimerRemainingTime(): void {
+    if (this.gameState.subTimer?.startTime && this.gameState.subTimer.isRunning) {
+      const elapsed = (Date.now() - this.gameState.subTimer.startTime) / 1000;
+      this.gameState.subTimer.remainingSeconds = Math.max(0, this.gameState.subTimer.totalDuration - elapsed);
     }
   }
 

@@ -13,10 +13,20 @@ export interface TimerState {
   remainingSeconds: number; // 現在の残り時間（秒）
 }
 
+export interface SubTimerState {
+  totalDuration: number;    // 固定30秒
+  startTime: number | null; // サブタイマー開始時のサーバー時刻（ミリ秒）
+  isRunning: boolean;       // サブタイマーが動作中かどうか
+  isPaused: boolean;        // 一時停止中かどうか
+  pausedAt: number | null;  // 一時停止したサーバー時刻（ミリ秒）
+  remainingSeconds: number; // 現在の残り時間（秒）
+}
+
 export interface GameState {
   teamA: TeamState;
   teamB: TeamState;
   timer: TimerState;
+  subTimer?: SubTimerState;
   serverTime: number;
   lastUpdated: number;
 }
@@ -30,6 +40,9 @@ export type GameAction =
   | { type: 'TIMER_RESET' }
   | { type: 'TIMER_SET'; duration: number }
   | { type: 'TIMER_ADJUST'; seconds: number }
+  | { type: 'SUB_TIMER_START' }
+  | { type: 'SUB_TIMER_PAUSE' }
+  | { type: 'SUB_TIMER_RESET' }
   | { type: 'TIME_SYNC_REQUEST'; clientRequestTime?: number }
   | { type: 'DO_OR_DIE_UPDATE'; team: 'teamA' | 'teamB'; delta: number }
   | { type: 'DO_OR_DIE_RESET' };
