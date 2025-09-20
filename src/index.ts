@@ -54,7 +54,16 @@ app.get('/game/:gameId', async (c) => {
   <script src="https://unpkg.com/qrious@4.0.2/dist/qrious.min.js"></script>
   <style>
     [x-cloak] { display: none !important; }
-    html, body { overflow-x: hidden; max-width: 100vw; }
+    html, body {
+      overflow-x: hidden;
+      max-width: 100vw;
+      overflow-y: hidden;
+      height: 100vh;
+      max-height: 100vh;
+      overscroll-behavior: none;
+      position: fixed;
+      width: 100%;
+    }
   </style>
 </head>
 <body class="bg-gray-100 min-h-screen">
@@ -139,13 +148,6 @@ app.get('/game/:gameId', async (c) => {
             Game ID: <span x-text="gameId" class="font-mono"></span>
           </button>
           <div class="text-gray-400 text-xs whitespace-nowrap">
-            <span x-text="isDesktop ? 'PC' : 'Mobile'"></span>
-            <span class="mx-2">|</span>
-            <a href="/" class="text-blue-400 hover:text-blue-300 transition-colors inline-flex items-center gap-1">
-              <i data-lucide="home" class="w-3 h-3"></i>
-              kabaddi-timer
-            </a>
-            <span class="mx-2">|</span>
             <span>Powered by </span>
             <a href="https://dominion525.com" target="_blank" class="text-blue-400 hover:text-blue-300 transition-colors">
               Dominion525.com
@@ -162,19 +164,19 @@ app.get('/game/:gameId', async (c) => {
 
     <!-- タブレット用コントロールパネル -->
     <div x-show="showControlPanel"
-         x-transition:enter="transition ease-out duration-300"
+         x-transition:enter="transition ease-out duration-100"
          x-transition:enter-start="transform translate-y-full"
          x-transition:enter-end="transform translate-y-0"
          x-transition:leave="transition ease-in duration-200"
          x-transition:leave-start="transform translate-y-0"
          x-transition:leave-end="transform translate-y-full"
          class="hidden md:block fixed inset-x-0 bottom-0 bg-white shadow-2xl z-50"
-         style="height: 60vh;">
+         style="height: 50vh;">
 
       <!-- オーバーレイ背景 -->
       <div x-show="showControlPanel"
            @click="toggleControlPanel()"
-           x-transition:enter="transition ease-out duration-300"
+           x-transition:enter="transition ease-out duration-100"
            x-transition:enter-start="opacity-0"
            x-transition:enter-end="opacity-50"
            x-transition:leave="transition ease-in duration-200"
@@ -198,13 +200,11 @@ app.get('/game/:gameId', async (c) => {
               <h3 class="font-bold text-lg mb-4">チーム名設定</h3>
               <div class="space-y-3">
                 <div>
-                  <label class="block text-sm font-medium text-gray-700 mb-1">チームA</label>
                   <input type="text" x-model="teamANameInput"
                          @change="setTeamName('teamA', teamANameInput)"
                          class="w-full p-3 border rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500">
                 </div>
                 <div>
-                  <label class="block text-sm font-medium text-gray-700 mb-1">チームB</label>
                   <input type="text" x-model="teamBNameInput"
                          @change="setTeamName('teamB', teamBNameInput)"
                          class="w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
@@ -437,11 +437,11 @@ app.get('/game/:gameId', async (c) => {
               <h3 class="font-bold text-lg mb-4">全体コントロール</h3>
               <div class="flex space-x-4 justify-center">
                 <button @click="courtChange()"
-                        class="bg-orange-500 hover:bg-orange-600 text-white px-8 py-3 rounded-lg font-bold text-lg transition-colors">
+                        class="bg-orange-500 hover:bg-orange-600 text-white px-3 py-1 rounded-lg font-bold text-lg transition-colors">
                   コートチェンジ
                 </button>
                 <button @click="resetAll()"
-                        class="bg-red-600 hover:bg-red-700 text-white px-8 py-3 rounded-lg font-bold text-lg transition-colors">
+                        class="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded-lg font-bold text-lg transition-colors">
                   全リセット
                 </button>
               </div>
@@ -532,12 +532,6 @@ app.get('/game/:gameId', async (c) => {
             ID: <span x-text="gameId" class="font-mono"></span>
           </button>
           <div class="text-gray-400 text-xs whitespace-nowrap">
-            <span x-text="isDesktop ? 'PC' : 'Mobile'"></span>
-            <span class="mx-1">|</span>
-            <a href="/" class="text-blue-400 hover:text-blue-300 transition-colors inline-flex items-center gap-1">
-              <i data-lucide="home" class="w-3 h-3"></i>
-              kabaddi-timer
-            </a>
           </div>
         </div>
         <button @click="toggleControlPanel()"
@@ -551,7 +545,7 @@ app.get('/game/:gameId', async (c) => {
       <!-- オーバーレイ背景 -->
       <div x-show="showControlPanel"
            @click="toggleControlPanel()"
-           x-transition:enter="transition ease-out duration-300"
+           x-transition:enter="transition ease-out duration-100"
            x-transition:enter-start="opacity-0"
            x-transition:enter-end="opacity-50"
            x-transition:leave="transition ease-in duration-200"
@@ -560,14 +554,14 @@ app.get('/game/:gameId', async (c) => {
            class="md:hidden fixed inset-0 bg-black opacity-50 z-40"></div>
 
       <div x-show="showControlPanel"
-           x-transition:enter="transition ease-out duration-300"
+           x-transition:enter="transition ease-out duration-100"
            x-transition:enter-start="transform translate-y-full"
            x-transition:enter-end="transform translate-y-0"
            x-transition:leave="transition ease-in duration-200"
            x-transition:leave-start="transform translate-y-0"
            x-transition:leave-end="transform translate-y-full"
            class="md:hidden fixed inset-x-0 bottom-0 bg-white shadow-2xl z-50"
-           style="height: 55vh;">
+           style="height: 40vh;">
 
         <!-- パネル内容 -->
         <div class="relative z-50 h-full flex flex-col">
@@ -597,13 +591,11 @@ app.get('/game/:gameId', async (c) => {
               <h3 class="font-bold text-base mb-3">チーム名設定</h3>
               <div class="space-y-3">
                 <div>
-                  <label class="block text-sm font-medium text-gray-700 mb-1">チームA</label>
                   <input type="text" x-model="teamANameInput"
                          @change="setTeamName('teamA', teamANameInput)"
                          class="w-full p-3 border rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500">
                 </div>
                 <div>
-                  <label class="block text-sm font-medium text-gray-700 mb-1">チームB</label>
                   <input type="text" x-model="teamBNameInput"
                          @change="setTeamName('teamB', teamBNameInput)"
                          class="w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
@@ -837,11 +829,11 @@ app.get('/game/:gameId', async (c) => {
               <h3 class="font-bold text-base mb-3">全体コントロール</h3>
               <div class="grid grid-cols-2 gap-3">
                 <button @click="courtChange()"
-                        class="bg-orange-500 hover:bg-orange-600 text-white py-4 rounded-lg font-bold text-base transition-colors">
+                        class="bg-orange-500 hover:bg-orange-600 text-white px-4 py-1 rounded-lg font-bold text-base transition-colors">
                   コートチェンジ
                 </button>
                 <button @click="resetAll()"
-                        class="bg-red-600 hover:bg-red-700 text-white py-4 rounded-lg font-bold text-base transition-colors">
+                        class="bg-red-600 hover:bg-red-700 text-white px-4 py-1 rounded-lg font-bold text-base transition-colors">
                   全リセット
                 </button>
               </div>
@@ -850,7 +842,7 @@ app.get('/game/:gameId', async (c) => {
           </div>
 
           <!-- シンプルモードのコンテンツエリア -->
-          <div x-show="simpleMode" class="flex-1 p-3 overflow-y-auto space-y-3">
+          <div x-show="simpleMode" class="flex-1 p-3 space-y-3">
 
             <!-- タイマー制御 -->
             <div class="bg-gray-50 p-2 rounded-lg">
@@ -878,11 +870,11 @@ app.get('/game/:gameId', async (c) => {
                 <div class="flex gap-1 flex-1">
                   <button @click="startSubTimer()"
                           class="bg-yellow-500 hover:bg-yellow-600 text-white py-2 px-1 rounded text-xs font-bold transition-colors flex-1">
-                    30開始
+                    30秒<br>開始
                   </button>
                   <button @click="pauseSubTimer()"
                           class="bg-orange-500 hover:bg-orange-600 text-white py-2 px-1 rounded text-xs font-bold transition-colors flex-1">
-                    30停止
+                    30秒<br>停止
                   </button>
                   <button @click="resetSubTimer()"
                           class="bg-red-500 hover:bg-red-600 text-white py-2 px-1 rounded text-xs font-bold transition-colors flex-1">
@@ -899,15 +891,6 @@ app.get('/game/:gameId', async (c) => {
 
               <!-- ヘッダー行 -->
               <div class="mb-2 relative z-10">
-                <!-- チーム名行 -->
-                <div class="flex justify-between gap-x-3 mb-1">
-                  <div class="text-center flex-1">
-                    <div class="text-sm font-bold text-red-700" x-text="gameState.teamA.name"></div>
-                  </div>
-                  <div class="text-center flex-1">
-                    <div class="text-sm font-bold text-blue-700" x-text="gameState.teamB.name"></div>
-                  </div>
-                </div>
                 <!-- カテゴリー行 -->
                 <div class="flex justify-between gap-x-3">
                   <div class="flex-1 grid grid-cols-2 gap-x-1">
@@ -931,7 +914,7 @@ app.get('/game/:gameId', async (c) => {
 
               <!-- ボタングリッド -->
               <div class="flex justify-between gap-x-3 relative z-10">
-                <!-- チームA側（左） -->
+                <!-- 左側 -->
                 <div class="flex-1 space-y-1">
                   <!-- +1ボタン行 -->
                   <div class="grid grid-cols-2 gap-x-1">
@@ -968,7 +951,7 @@ app.get('/game/:gameId', async (c) => {
                   </div>
                 </div>
 
-                <!-- チームB側（右） -->
+                <!-- 右側 -->
                 <div class="flex-1 space-y-1">
                   <!-- +1ボタン行 -->
                   <div class="grid grid-cols-2 gap-x-1">
