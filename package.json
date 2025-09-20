@@ -1,0 +1,37 @@
+{
+  "name": "kabaddi-timer",
+  "version": "1.0.0",
+  "description": "カバディ用のタイマー・スコアボードアプリケーション",
+  "main": "src/index.ts",
+  "scripts": {
+    "dev": "wrangler dev",
+    "build": "tsc",
+    "deploy": "wrangler deploy",
+    "typecheck": "tsc --noEmit",
+    "build:frontend": "vite build",
+    "dev:frontend": "vite dev --port 3000"
+  },
+  "keywords": [
+    "kabaddi",
+    "timer",
+    "scoreboard",
+    "cloudflare",
+    "durable-objects"
+  ],
+  "author": "Satoshi",
+  "license": "MIT",
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20241127.0",
+    "@types/node": "^22.0.0",
+    "typescript": "^5.6.3",
+    "vite": "^5.4.8",
+    "wrangler": "^4.38.0"
+  },
+  "dependencies": {
+    "alpinejs": "^3.14.0",
+    "autoprefixer": "^10.4.20",
+    "hono": "^4.6.0",
+    "postcss": "^8.4.47",
+    "tailwindcss": "^3.4.0"
+  }
+}
