@@ -110,6 +110,9 @@ app.get('/game/:gameId', async (c) => {
           <div class="text-gray-300 text-sm">
             Game ID: <span x-text="gameId" class="font-mono"></span>
           </div>
+          <div class="text-gray-400 text-xs">
+            <span x-text="isDesktop ? 'PC' : 'Mobile'"></span>
+          </div>
         </div>
         <button @click="toggleControlPanel()"
                 class="bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded transition-colors">
@@ -439,6 +442,9 @@ app.get('/game/:gameId', async (c) => {
           <div class="text-gray-300 text-xs">
             ID: <span x-text="gameId" class="font-mono"></span>
           </div>
+          <div class="text-gray-400 text-xs">
+            <span x-text="isDesktop ? 'PC' : 'Mobile'"></span>
+          </div>
         </div>
         <button @click="toggleControlPanel()"
                 class="bg-blue-600 hover:bg-blue-700 px-6 py-2 rounded-lg transition-colors flex items-center space-x-2">
@@ -761,6 +767,7 @@ app.get('/game/:gameId', async (c) => {
         timerInputSeconds: 0,
         teamANameInput: DEFAULT_VALUES.teamNames.teamA,
         teamBNameInput: DEFAULT_VALUES.teamNames.teamB,
+        isDesktop: window.matchMedia('(min-width: 768px)').matches,
 
         init() {
           // 既存のインターバルをクリアして重複を防止
@@ -772,6 +779,13 @@ app.get('/game/:gameId', async (c) => {
           this.connectWebSocket();
           // タイマー更新の初期化
           this.updateTimerDisplay();
+
+          // 画面サイズ変更監視
+          const mediaQuery = window.matchMedia('(min-width: 768px)');
+          const handleMediaChange = (e) => {
+            this.isDesktop = e.matches;
+          };
+          mediaQuery.addListener(handleMediaChange);
 
           // 定期的な時刻同期リクエスト（60秒ごと）
           this.timeSyncIntervalId = setInterval(() => {
