@@ -46,17 +46,25 @@ app.get('/game/:gameId', async (c) => {
     <!-- タブレット表示用 (md以上) -->
     <div class="hidden md:flex h-screen flex-col">
       <!-- ヘッダー -->
-      <div class="bg-blue-600 text-white p-4 text-center">
-        <h1 class="text-3xl font-bold">スコアボード</h1>
-        <p class="text-lg opacity-90">ゲーム: ${gameId}</p>
+      <div class="text-white">
+        <div class="grid w-full" style="grid-template-columns: 2fr 1fr 2fr;">
+          <div class="bg-red-500 p-4">
+            <h1 class="text-3xl font-bold text-center" x-text="gameState.teamA.name"></h1>
+          </div>
+          <div class="bg-blue-600 p-4">
+            <div class="text-3xl font-bold text-center">vs</div>
+          </div>
+          <div class="bg-blue-500 p-4">
+            <h1 class="text-3xl font-bold text-center" x-text="gameState.teamB.name"></h1>
+          </div>
+        </div>
       </div>
 
       <!-- メインスコア表示 -->
       <div class="flex-1 flex">
         <!-- チームA -->
         <div class="w-1/4 bg-red-500 text-white flex flex-col justify-center items-center p-4">
-          <h2 class="text-2xl font-bold mb-2" x-text="gameState.teamA.name"></h2>
-          <div class="text-6xl font-bold" x-text="gameState.teamA.score"></div>
+          <div class="font-bold font-mono" style="font-size: 16rem; line-height: 0.8; transform: scaleY(1.5);" x-text="gameState.teamA.score"></div>
         </div>
 
         <!-- タイマー -->
@@ -70,16 +78,20 @@ app.get('/game/:gameId', async (c) => {
 
         <!-- チームB -->
         <div class="w-1/4 bg-blue-500 text-white flex flex-col justify-center items-center p-4">
-          <h2 class="text-2xl font-bold mb-2" x-text="gameState.teamB.name"></h2>
-          <div class="text-6xl font-bold" x-text="gameState.teamB.score"></div>
+          <div class="font-bold font-mono" style="font-size: 16rem; line-height: 0.8; transform: scaleY(1.5);" x-text="gameState.teamB.score"></div>
         </div>
       </div>
 
       <!-- 接続状態とコントロールボタン -->
       <div class="bg-gray-800 text-white p-2 flex justify-between items-center">
-        <div>
-          <span x-show="connected" class="text-green-400">● 接続中</span>
-          <span x-show="!connected" class="text-red-400">● 切断</span>
+        <div class="flex items-center space-x-4">
+          <div>
+            <span x-show="connected" class="text-green-400">● 接続中</span>
+            <span x-show="!connected" class="text-red-400">● 切断</span>
+          </div>
+          <div class="text-gray-300 text-sm">
+            Game ID: <span x-text="gameId" class="font-mono"></span>
+          </div>
         </div>
         <button @click="toggleControlPanel()"
                 class="bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded transition-colors">
@@ -274,9 +286,18 @@ app.get('/game/:gameId', async (c) => {
     <!-- スマホ表示用 (md未満) -->
     <div class="md:hidden min-h-screen flex flex-col relative">
       <!-- ヘッダー -->
-      <div class="bg-blue-600 text-white p-4 text-center">
-        <h1 class="text-xl font-bold">スコアボード</h1>
-        <p class="opacity-90">ゲーム: ${gameId}</p>
+      <div class="text-white">
+        <div class="grid w-full" style="grid-template-columns: 2fr 1fr 2fr;">
+          <div class="bg-red-500 p-4">
+            <h1 class="text-xl font-bold text-center" x-text="gameState.teamA.name"></h1>
+          </div>
+          <div class="bg-blue-600 p-4">
+            <div class="text-xl font-bold text-center">vs</div>
+          </div>
+          <div class="bg-blue-500 p-4">
+            <h1 class="text-xl font-bold text-center" x-text="gameState.teamB.name"></h1>
+          </div>
+        </div>
       </div>
 
       <!-- タイマー表示 -->
@@ -305,9 +326,14 @@ app.get('/game/:gameId', async (c) => {
 
       <!-- 接続状態とコントロールボタン -->
       <div class="bg-gray-800 text-white p-3 flex justify-between items-center">
-        <div class="flex items-center space-x-2">
-          <span x-show="connected" class="text-green-400">● 接続中</span>
-          <span x-show="!connected" class="text-red-400">● 切断</span>
+        <div class="flex items-center space-x-3">
+          <div>
+            <span x-show="connected" class="text-green-400">● 接続中</span>
+            <span x-show="!connected" class="text-red-400">● 切断</span>
+          </div>
+          <div class="text-gray-300 text-xs">
+            ID: <span x-text="gameId" class="font-mono"></span>
+          </div>
         </div>
         <button @click="toggleControlPanel()"
                 class="bg-blue-600 hover:bg-blue-700 px-6 py-2 rounded-lg transition-colors flex items-center space-x-2">
