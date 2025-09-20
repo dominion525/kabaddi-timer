@@ -161,28 +161,28 @@ app.get('/game/:gameId', async (c) => {
               <div class="mb-4">
                 <label class="block text-sm font-medium text-gray-700 mb-2">時間設定</label>
                 <div class="flex space-x-2 mb-3">
-                  <input type="number" min="0" max="99" value="3" id="timerMinutes"
+                  <input type="number" min="0" max="99" x-model.number="timerInputMinutes"
                          class="w-16 p-2 border rounded focus:ring-2 focus:ring-blue-500 text-center">
                   <span class="flex items-center text-sm">分</span>
-                  <input type="number" min="0" max="59" value="0" id="timerSeconds"
+                  <input type="number" min="0" max="59" x-model.number="timerInputSeconds"
                          class="w-16 p-2 border rounded focus:ring-2 focus:ring-blue-500 text-center">
                   <span class="flex items-center text-sm">秒</span>
-                  <button @click="setTimer(parseInt(document.getElementById('timerMinutes').value), parseInt(document.getElementById('timerSeconds').value))"
+                  <button @click="setTimer(timerInputMinutes, timerInputSeconds)"
                           class="bg-blue-500 hover:bg-blue-600 text-white px-3 py-2 rounded transition-colors text-sm">
                     設定
                   </button>
                 </div>
                 <!-- プリセット -->
                 <div class="flex space-x-1">
-                  <button @click="setTimer(20, 0); document.getElementById('timerMinutes').value = '20'; document.getElementById('timerSeconds').value = '0'"
+                  <button @click="setTimer(20, 0); timerInputMinutes = 20; timerInputSeconds = 0"
                           class="flex-1 bg-gray-600 hover:bg-gray-700 text-white p-2 rounded text-sm transition-colors">
                     20分
                   </button>
-                  <button @click="setTimer(15, 0); document.getElementById('timerMinutes').value = '15'; document.getElementById('timerSeconds').value = '0'"
+                  <button @click="setTimer(15, 0); timerInputMinutes = 15; timerInputSeconds = 0"
                           class="flex-1 bg-gray-600 hover:bg-gray-700 text-white p-2 rounded text-sm transition-colors">
                     15分
                   </button>
-                  <button @click="setTimer(3, 0); document.getElementById('timerMinutes').value = '3'; document.getElementById('timerSeconds').value = '0'"
+                  <button @click="setTimer(3, 0); timerInputMinutes = 3; timerInputSeconds = 0"
                           class="flex-1 bg-gray-600 hover:bg-gray-700 text-white p-2 rounded text-sm transition-colors">
                     3分
                   </button>
@@ -381,28 +381,28 @@ app.get('/game/:gameId', async (c) => {
               <div class="mb-4">
                 <label class="block text-sm font-medium text-gray-700 mb-2">時間設定</label>
                 <div class="flex space-x-2 mb-3">
-                  <input type="number" min="0" max="99" value="3" id="timerMinutesMobile"
+                  <input type="number" min="0" max="99" x-model.number="timerInputMinutes"
                          class="w-18 p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 text-center">
                   <span class="flex items-center">分</span>
-                  <input type="number" min="0" max="59" value="0" id="timerSecondsMobile"
+                  <input type="number" min="0" max="59" x-model.number="timerInputSeconds"
                          class="w-18 p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 text-center">
                   <span class="flex items-center">秒</span>
-                  <button @click="setTimer(parseInt(document.getElementById('timerMinutesMobile').value), parseInt(document.getElementById('timerSecondsMobile').value))"
+                  <button @click="setTimer(timerInputMinutes, timerInputSeconds)"
                           class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-3 rounded-lg transition-colors">
                     設定
                   </button>
                 </div>
                 <!-- プリセット -->
                 <div class="flex space-x-2">
-                  <button @click="setTimer(20, 0); document.getElementById('timerMinutesMobile').value = '20'; document.getElementById('timerSecondsMobile').value = '0'"
+                  <button @click="setTimer(20, 0); timerInputMinutes = 20; timerInputSeconds = 0"
                           class="flex-1 bg-gray-600 hover:bg-gray-700 text-white p-3 rounded-lg transition-colors">
                     20分
                   </button>
-                  <button @click="setTimer(15, 0); document.getElementById('timerMinutesMobile').value = '15'; document.getElementById('timerSecondsMobile').value = '0'"
+                  <button @click="setTimer(15, 0); timerInputMinutes = 15; timerInputSeconds = 0"
                           class="flex-1 bg-gray-600 hover:bg-gray-700 text-white p-3 rounded-lg transition-colors">
                     15分
                   </button>
-                  <button @click="setTimer(3, 0); document.getElementById('timerMinutesMobile').value = '3'; document.getElementById('timerSecondsMobile').value = '0'"
+                  <button @click="setTimer(3, 0); timerInputMinutes = 3; timerInputSeconds = 0"
                           class="flex-1 bg-gray-600 hover:bg-gray-700 text-white p-3 rounded-lg transition-colors">
                     3分
                   </button>
@@ -546,6 +546,8 @@ app.get('/game/:gameId', async (c) => {
         serverTimeOffset: 0,
         animationFrameId: null,
         lastSyncRequest: 0,
+        timerInputMinutes: 3,
+        timerInputSeconds: 0,
 
         init() {
           this.connectWebSocket();
