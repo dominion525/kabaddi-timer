@@ -45,7 +45,9 @@ export type GameAction =
   | { type: 'SUB_TIMER_RESET' }
   | { type: 'TIME_SYNC_REQUEST'; clientRequestTime?: number }
   | { type: 'DO_OR_DIE_UPDATE'; team: 'teamA' | 'teamB'; delta: number }
-  | { type: 'DO_OR_DIE_RESET' };
+  | { type: 'DO_OR_DIE_RESET' }
+  | { type: 'COURT_CHANGE' }
+  | { type: 'RESET_ALL' };
 
 export interface GameMessage {
   type: 'game_state' | 'action' | 'error' | 'time_sync';

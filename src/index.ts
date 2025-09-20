@@ -404,6 +404,22 @@ app.get('/game/:gameId', async (c) => {
                 </div>
               </div>
             </div>
+
+            <!-- 全体コントロール -->
+            <div class="bg-gray-50 p-4 rounded-lg lg:col-span-2">
+              <h3 class="font-bold text-lg mb-4">全体コントロール</h3>
+              <div class="flex space-x-4 justify-center">
+                <button @click="courtChange()"
+                        class="bg-orange-500 hover:bg-orange-600 text-white px-8 py-3 rounded-lg font-bold text-lg transition-colors">
+                  コートチェンジ
+                </button>
+                <button @click="resetAll()"
+                        class="bg-red-600 hover:bg-red-700 text-white px-8 py-3 rounded-lg font-bold text-lg transition-colors">
+                  全リセット
+                </button>
+              </div>
+            </div>
+
           </div>
         </div>
       </div>
@@ -519,6 +535,26 @@ app.get('/game/:gameId', async (c) => {
 
           <!-- コンテンツエリア -->
           <div class="flex-1 p-3 overflow-y-auto space-y-3">
+
+            <!-- チーム名設定 -->
+            <div class="bg-gray-50 p-3 rounded-lg">
+              <h3 class="font-bold text-base mb-3">チーム名設定</h3>
+              <div class="space-y-3">
+                <div>
+                  <label class="block text-sm font-medium text-gray-700 mb-1">チームA</label>
+                  <input type="text" x-model="teamANameInput"
+                         @change="setTeamName('teamA', teamANameInput)"
+                         class="w-full p-3 border rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500">
+                </div>
+                <div>
+                  <label class="block text-sm font-medium text-gray-700 mb-1">チームB</label>
+                  <input type="text" x-model="teamBNameInput"
+                         @change="setTeamName('teamB', teamBNameInput)"
+                         class="w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                </div>
+              </div>
+            </div>
+
             <!-- タイマー操作 -->
             <div class="bg-gray-50 p-3 rounded-lg">
               <h3 class="font-bold text-base mb-3">タイマー操作</h3>
@@ -622,25 +658,6 @@ app.get('/game/:gameId', async (c) => {
                         class="flex-1 bg-orange-500 hover:bg-orange-600 text-white p-4 rounded-lg font-bold text-lg transition-colors">
                   リセット
                 </button>
-              </div>
-            </div>
-
-            <!-- チーム名設定 -->
-            <div class="bg-gray-50 p-4 rounded-lg">
-              <h3 class="font-bold text-lg mb-4">チーム名設定</h3>
-              <div class="space-y-3">
-                <div>
-                  <label class="block text-sm font-medium text-gray-700 mb-1">チームA</label>
-                  <input type="text" x-model="teamANameInput"
-                         @change="setTeamName('teamA', teamANameInput)"
-                         class="w-full p-3 border rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500">
-                </div>
-                <div>
-                  <label class="block text-sm font-medium text-gray-700 mb-1">チームB</label>
-                  <input type="text" x-model="teamBNameInput"
-                         @change="setTeamName('teamB', teamBNameInput)"
-                         class="w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
-                </div>
               </div>
             </div>
 
@@ -758,6 +775,22 @@ app.get('/game/:gameId', async (c) => {
                 </div>
               </div>
             </div>
+
+            <!-- 全体コントロール -->
+            <div class="bg-gray-50 p-3 rounded-lg">
+              <h3 class="font-bold text-base mb-3">全体コントロール</h3>
+              <div class="grid grid-cols-2 gap-3">
+                <button @click="courtChange()"
+                        class="bg-orange-500 hover:bg-orange-600 text-white py-4 rounded-lg font-bold text-base transition-colors">
+                  コートチェンジ
+                </button>
+                <button @click="resetAll()"
+                        class="bg-red-600 hover:bg-red-700 text-white py-4 rounded-lg font-bold text-base transition-colors">
+                  全リセット
+                </button>
+              </div>
+            </div>
+
           </div>
         </div>
       </div>
@@ -972,6 +1005,14 @@ app.get('/game/:gameId', async (c) => {
 
         resetScores() {
           this.sendAction(ACTIONS.RESET_SCORES);
+        },
+
+        courtChange() {
+          this.sendAction({ type: 'COURT_CHANGE' });
+        },
+
+        resetAll() {
+          this.sendAction({ type: 'RESET_ALL' });
         },
 
         updateDoOrDie(team, delta) {

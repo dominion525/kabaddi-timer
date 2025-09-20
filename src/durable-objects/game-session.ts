@@ -299,6 +299,43 @@ export class GameSession {
         this.gameState.teamB.doOrDieCount = 0;
         break;
 
+      case 'COURT_CHANGE':
+        const tempTeam = {
+          name: this.gameState.teamA.name,
+          score: this.gameState.teamA.score,
+          doOrDieCount: this.gameState.teamA.doOrDieCount
+        };
+
+        this.gameState.teamA.name = this.gameState.teamB.name;
+        this.gameState.teamA.score = this.gameState.teamB.score;
+        this.gameState.teamA.doOrDieCount = this.gameState.teamB.doOrDieCount;
+
+        this.gameState.teamB.name = tempTeam.name;
+        this.gameState.teamB.score = tempTeam.score;
+        this.gameState.teamB.doOrDieCount = tempTeam.doOrDieCount;
+        break;
+
+      case 'RESET_ALL':
+        this.gameState.teamA.score = 0;
+        this.gameState.teamB.score = 0;
+        this.gameState.teamA.doOrDieCount = 0;
+        this.gameState.teamB.doOrDieCount = 0;
+
+        this.gameState.timer.startTime = null;
+        this.gameState.timer.isRunning = false;
+        this.gameState.timer.isPaused = false;
+        this.gameState.timer.pausedAt = null;
+        this.gameState.timer.remainingSeconds = this.gameState.timer.totalDuration;
+
+        if (this.gameState.subTimer) {
+          this.gameState.subTimer.startTime = null;
+          this.gameState.subTimer.isRunning = false;
+          this.gameState.subTimer.isPaused = false;
+          this.gameState.subTimer.pausedAt = null;
+          this.gameState.subTimer.remainingSeconds = this.gameState.subTimer.totalDuration;
+        }
+        break;
+
       case 'SET_TEAM_NAME':
         if (action.team === 'teamA') {
           this.gameState.teamA.name = action.name;
