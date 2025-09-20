@@ -759,7 +759,7 @@ app.get('/game/:gameId', async (c) => {
         timerSeconds: DEFAULT_VALUES.timer.defaultDuration,
         timerRunning: false,
         serverTimeOffset: 0,
-        timerIntervalId: null,
+        timerAnimationId: null,
         timeSyncIntervalId: null,
         reconnectTimeoutId: null,
         lastSyncRequest: 0,
@@ -770,7 +770,11 @@ app.get('/game/:gameId', async (c) => {
         isDesktop: window.matchMedia('(min-width: 768px)').matches,
 
         init() {
-          // 既存のインターバルをクリアして重複を防止
+          // 既存のアニメーション・インターバルをクリアして重複を防止
+          if (this.timerAnimationId) {
+            cancelAnimationFrame(this.timerAnimationId);
+            this.timerAnimationId = null;
+          }
           if (this.timeSyncIntervalId) {
             clearInterval(this.timeSyncIntervalId);
             this.timeSyncIntervalId = null;
@@ -995,16 +999,18 @@ app.get('/game/:gameId', async (c) => {
         },
 
         startTimerUpdate() {
-          if (this.timerIntervalId) return; // 重複防止
+          if (this.timerAnimationId) return; // 重複防止
 
-          this.timerIntervalId = setInterval(() => {
+          const updateLoop = () => {
             try {
               this.calculateTimerSeconds();
+              this.timerAnimationId = requestAnimationFrame(updateLoop);
             } catch (error) {
               console.error('Timer update error:', error);
               this.stopTimerUpdate();
             }
-          }, 250);
+          };
+          this.timerAnimationId = requestAnimationFrame(updateLoop);
         },
 
         calculateTimerSeconds() {
@@ -1023,17 +1029,17 @@ app.get('/game/:gameId', async (c) => {
         },
 
         stopTimerUpdate() {
-          if (this.timerIntervalId) {
-            clearInterval(this.timerIntervalId);
-            this.timerIntervalId = null;
+          if (this.timerAnimationId) {
+            cancelAnimationFrame(this.timerAnimationId);
+            this.timerAnimationId = null;
           }
         },
 
         cleanup() {
-          // 全てのインターバルをクリア
-          if (this.timerIntervalId) {
-            clearInterval(this.timerIntervalId);
-            this.timerIntervalId = null;
+          // 全てのアニメーション・インターバルをクリア
+          if (this.timerAnimationId) {
+            cancelAnimationFrame(this.timerAnimationId);
+            this.timerAnimationId = null;
           }
           if (this.timeSyncIntervalId) {
             clearInterval(this.timeSyncIntervalId);
