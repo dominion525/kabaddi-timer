@@ -54,6 +54,7 @@ app.get('/game/:gameId', async (c) => {
   <script src="https://unpkg.com/qrious@4.0.2/dist/qrious.min.js"></script>
   <style>
     [x-cloak] { display: none !important; }
+    html, body { overflow-x: hidden; max-width: 100vw; }
   </style>
 </head>
 <body class="bg-gray-100 min-h-screen">
@@ -118,7 +119,7 @@ app.get('/game/:gameId', async (c) => {
 
         <!-- 下段：メインタイマー（3列全体を使用） -->
         <div class="col-span-3 bg-gray-800 text-white flex flex-col items-center justify-center px-8">
-          <div style="font-size: 20rem; line-height: 0.8;" class="font-bold font-mono" x-text="formattedTimer"></div>
+          <div style="font-size: 15rem; line-height: 0.8;" class="font-bold font-mono" x-text="formattedTimer"></div>
           <div class="text-xl opacity-75">
             <span x-show="timerRunning" class="text-green-400">● 動作中</span>
             <span x-show="!timerRunning" class="text-gray-400">● 停止</span>
@@ -511,7 +512,7 @@ app.get('/game/:gameId', async (c) => {
 
         <!-- 下段：メインタイマー（3列全体を使用） -->
         <div class="col-span-3 bg-gray-800 text-white flex flex-col items-center justify-center px-2">
-          <div style="font-size: 8rem; line-height: 0.8;" class="font-bold font-mono" x-text="formattedTimer"></div>
+          <div style="font-size: 6rem; line-height: 0.8;" class="font-bold font-mono" x-text="formattedTimer"></div>
           <div class="text-sm opacity-75">
             <span x-show="timerRunning" class="text-green-400">● 動作中</span>
             <span x-show="!timerRunning" class="text-gray-400">● 停止</span>
