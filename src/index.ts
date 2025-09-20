@@ -140,14 +140,14 @@ app.get('/game/:gameId', async (c) => {
               <div class="space-y-3">
                 <div>
                   <label class="block text-sm font-medium text-gray-700 mb-1">チームA</label>
-                  <input type="text" :value="gameState.teamA.name"
-                         @change="setTeamName('teamA', $event.target.value)"
+                  <input type="text" x-model="teamANameInput"
+                         @change="setTeamName('teamA', teamANameInput)"
                          class="w-full p-3 border rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500">
                 </div>
                 <div>
                   <label class="block text-sm font-medium text-gray-700 mb-1">チームB</label>
-                  <input type="text" :value="gameState.teamB.name"
-                         @change="setTeamName('teamB', $event.target.value)"
+                  <input type="text" x-model="teamBNameInput"
+                         @change="setTeamName('teamB', teamBNameInput)"
                          class="w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
                 </div>
               </div>
@@ -464,14 +464,14 @@ app.get('/game/:gameId', async (c) => {
               <div class="space-y-3">
                 <div>
                   <label class="block text-sm font-medium text-gray-700 mb-1">チームA</label>
-                  <input type="text" :value="gameState.teamA.name"
-                         @change="setTeamName('teamA', $event.target.value)"
+                  <input type="text" x-model="teamANameInput"
+                         @change="setTeamName('teamA', teamANameInput)"
                          class="w-full p-3 border rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500">
                 </div>
                 <div>
                   <label class="block text-sm font-medium text-gray-700 mb-1">チームB</label>
-                  <input type="text" :value="gameState.teamB.name"
-                         @change="setTeamName('teamB', $event.target.value)"
+                  <input type="text" x-model="teamBNameInput"
+                         @change="setTeamName('teamB', teamBNameInput)"
                          class="w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
                 </div>
               </div>
@@ -548,6 +548,8 @@ app.get('/game/:gameId', async (c) => {
         lastSyncRequest: 0,
         timerInputMinutes: 3,
         timerInputSeconds: 0,
+        teamANameInput: 'チームA',
+        teamBNameInput: 'チームB',
 
         init() {
           this.connectWebSocket();
@@ -587,6 +589,10 @@ app.get('/game/:gameId', async (c) => {
               if (message.type === 'game_state') {
                 console.log('Received game state:', message.data);
                 this.gameState = message.data;
+
+                // ローカルのチーム名入力をサーバーの値で同期
+                this.teamANameInput = this.gameState.teamA.name;
+                this.teamBNameInput = this.gameState.teamB.name;
 
                 // タイマーが停止している場合、直接値を更新
                 if (this.gameState.timer && !this.gameState.timer.isRunning) {
