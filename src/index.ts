@@ -38,6 +38,7 @@ app.get('/game/:gameId', async (c) => {
   <script src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+  <script src="https://unpkg.com/qrious@4.0.2/dist/qrious.min.js"></script>
   <style>
     [x-cloak] { display: none !important; }
   </style>
@@ -123,8 +124,18 @@ app.get('/game/:gameId', async (c) => {
             <i data-lucide="qr-code" class="w-4 h-4"></i>
             Game ID: <span x-text="gameId" class="font-mono"></span>
           </button>
-          <div class="text-gray-400 text-xs">
+          <div class="text-gray-400 text-xs whitespace-nowrap">
             <span x-text="isDesktop ? 'PC' : 'Mobile'"></span>
+            <span class="mx-2">|</span>
+            <a href="/" class="text-blue-400 hover:text-blue-300 transition-colors inline-flex items-center gap-1">
+              <i data-lucide="home" class="w-3 h-3"></i>
+              kabaddi-timer
+            </a>
+            <span class="mx-2">|</span>
+            <span>Powered by </span>
+            <a href="https://dominion525.com" target="_blank" class="text-blue-400 hover:text-blue-300 transition-colors">
+              Dominion525.com
+            </a>
           </div>
         </div>
         <button @click="toggleControlPanel()"
@@ -506,8 +517,18 @@ app.get('/game/:gameId', async (c) => {
             <i data-lucide="qr-code" class="w-3 h-3"></i>
             ID: <span x-text="gameId" class="font-mono"></span>
           </button>
-          <div class="text-gray-400 text-xs">
+          <div class="text-gray-400 text-xs whitespace-nowrap">
             <span x-text="isDesktop ? 'PC' : 'Mobile'"></span>
+            <span class="mx-1">|</span>
+            <a href="/" class="text-blue-400 hover:text-blue-300 transition-colors inline-flex items-center gap-1">
+              <i data-lucide="home" class="w-3 h-3"></i>
+              kabaddi-timer
+            </a>
+            <span class="mx-1">|</span>
+            <span>Powered by </span>
+            <a href="https://dominion525.com" target="_blank" class="text-blue-400 hover:text-blue-300 transition-colors">
+              Dominion525.com
+            </a>
           </div>
         </div>
         <button @click="toggleControlPanel()"
@@ -1426,6 +1447,7 @@ app.get('/game/:gameId', async (c) => {
     window.openQRModal = function() {
       const gameUrl = window.location.href;
       const modal = document.getElementById('qrModal');
+      const canvas = document.getElementById('qrCanvas');
       const gameIdElement = document.getElementById('modalGameId');
       const urlDisplay = document.getElementById('urlDisplay');
 
@@ -1436,6 +1458,26 @@ app.get('/game/:gameId', async (c) => {
       // URLを表示
       urlDisplay.textContent = gameUrl;
 
+      // QRコードを生成
+      try {
+        if (typeof QRious !== 'undefined') {
+          const qr = new QRious({
+            element: canvas,
+            value: gameUrl,
+            size: 200,
+            level: 'M'
+          });
+          console.log('QRコード生成成功');
+        } else {
+          console.error('QRiousライブラリが読み込まれていません');
+          // フォールバック表示
+          showQRFallback(canvas);
+        }
+      } catch (error) {
+        console.error('QRコード生成エラー:', error);
+        showQRFallback(canvas);
+      }
+
       // モーダルを表示
       modal.classList.remove('hidden');
 
@@ -1445,8 +1487,39 @@ app.get('/game/:gameId', async (c) => {
       }
     };
 
+    // QRコード生成失敗時のフォールバック表示
+    function showQRFallback(canvas) {
+      const ctx = canvas.getContext('2d');
+      canvas.width = 200;
+      canvas.height = 200;
+      ctx.fillStyle = '#f0f0f0';
+      ctx.fillRect(0, 0, 200, 200);
+      ctx.fillStyle = '#666';
+      ctx.font = '14px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText('QRコードが生成できません', 100, 90);
+      ctx.fillText('URLをコピーしてください', 100, 110);
+    }
+
     window.closeQRModal = function() {
       document.getElementById('qrModal').classList.add('hidden');
+    };
+
+    window.copyGameId = function() {
+      const gameId = window.location.pathname.split('/').pop();
+      navigator.clipboard.writeText(gameId).then(function() {
+        alert('ゲームIDをクリップボードにコピーしました');
+      }).catch(function(err) {
+        console.error('ゲームIDコピーエラー:', err);
+        // フォールバック: テキストエリアを使用
+        const textArea = document.createElement('textarea');
+        textArea.value = gameId;
+        document.body.appendChild(textArea);
+        textArea.select();
+        document.execCommand('copy');
+        document.body.removeChild(textArea);
+        alert('ゲームIDをクリップボードにコピーしました');
+      });
     };
 
     window.copyGameURL = function() {
@@ -1465,6 +1538,7 @@ app.get('/game/:gameId', async (c) => {
         alert('URLをクリップボードにコピーしました');
       });
     };
+
   </script>
 
   <!-- ゲーム共有モーダル -->
@@ -1481,21 +1555,32 @@ app.get('/game/:gameId', async (c) => {
       </div>
 
       <div class="space-y-4">
+        <!-- QRコード表示 -->
+        <div class="text-center">
+          <canvas id="qrCanvas" class="mx-auto border border-gray-200 rounded"></canvas>
+        </div>
+
+        <!-- ゲームID -->
         <div class="text-sm text-gray-600">
           <p class="font-medium mb-2">ゲームID:</p>
-          <p id="modalGameId" class="font-mono text-lg text-gray-800 bg-gray-50 p-2 rounded"></p>
+          <div class="flex items-center gap-2">
+            <p id="modalGameId" class="font-mono text-lg text-gray-800 bg-gray-50 p-2 rounded flex-1"></p>
+            <button onclick="copyGameId()" class="text-gray-500 hover:text-gray-700 p-2 hover:bg-gray-100 rounded transition-colors" title="ゲームIDをコピー">
+              <i data-lucide="copy" class="w-4 h-4"></i>
+            </button>
+          </div>
         </div>
 
+        <!-- URL -->
         <div class="text-sm text-gray-600">
           <p class="font-medium mb-2">URL:</p>
-          <p id="urlDisplay" class="font-mono text-sm text-gray-800 bg-gray-50 p-2 rounded break-all"></p>
+          <div class="flex items-center gap-2">
+            <p id="urlDisplay" class="font-mono text-sm text-gray-800 bg-gray-50 p-2 rounded break-all flex-1"></p>
+            <button onclick="copyGameURL()" class="text-gray-500 hover:text-gray-700 p-2 hover:bg-gray-100 rounded transition-colors" title="URLをコピー">
+              <i data-lucide="copy" class="w-4 h-4"></i>
+            </button>
+          </div>
         </div>
-
-        <button onclick="copyGameURL()"
-                class="w-full bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded-lg transition-colors flex items-center justify-center gap-2">
-          <i data-lucide="copy" class="w-4 h-4"></i>
-          URLをコピー
-        </button>
       </div>
     </div>
   </div>
