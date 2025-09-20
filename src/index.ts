@@ -524,11 +524,6 @@ app.get('/game/:gameId', async (c) => {
               <i data-lucide="home" class="w-3 h-3"></i>
               kabaddi-timer
             </a>
-            <span class="mx-1">|</span>
-            <span>Powered by </span>
-            <a href="https://dominion525.com" target="_blank" class="text-blue-400 hover:text-blue-300 transition-colors">
-              Dominion525.com
-            </a>
           </div>
         </div>
         <button @click="toggleControlPanel()"
@@ -539,6 +534,17 @@ app.get('/game/:gameId', async (c) => {
       </div>
 
       <!-- スマホ用コントロールパネル -->
+      <!-- オーバーレイ背景 -->
+      <div x-show="showControlPanel"
+           @click="toggleControlPanel()"
+           x-transition:enter="transition ease-out duration-300"
+           x-transition:enter-start="opacity-0"
+           x-transition:enter-end="opacity-50"
+           x-transition:leave="transition ease-in duration-200"
+           x-transition:leave-start="opacity-50"
+           x-transition:leave-end="opacity-0"
+           class="md:hidden fixed inset-0 bg-black opacity-50 z-40"></div>
+
       <div x-show="showControlPanel"
            x-transition:enter="transition ease-out duration-300"
            x-transition:enter-start="transform translate-y-full"
@@ -548,7 +554,6 @@ app.get('/game/:gameId', async (c) => {
            x-transition:leave-end="transform translate-y-full"
            class="md:hidden fixed inset-x-0 bottom-0 bg-white shadow-2xl z-50"
            style="height: 55vh;">
-
 
         <!-- パネル内容 -->
         <div class="relative z-50 h-full flex flex-col">
