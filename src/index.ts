@@ -410,74 +410,75 @@ app.get('/game/:gameId', async (c) => {
     </div>
 
     <!-- スマホ表示用 (md未満) -->
-    <div class="md:hidden min-h-screen flex flex-col relative">
+    <div class="md:hidden min-h-screen flex flex-col bg-gray-900">
       <!-- ヘッダー -->
       <div class="text-white">
         <div class="grid w-full" style="grid-template-columns: 2fr 1fr 2fr;">
-          <div class="bg-red-500 p-4">
-            <h1 class="text-xl font-bold text-center" x-text="gameState.teamA.name"></h1>
+          <div class="bg-red-500 p-3">
+            <h1 class="text-lg font-bold text-center" x-text="gameState.teamA.name"></h1>
           </div>
-          <div class="bg-blue-600 p-4">
-            <div class="text-xl font-bold text-center">vs</div>
+          <div class="bg-blue-600 p-3">
+            <div class="text-lg font-bold text-center">vs</div>
           </div>
-          <div class="bg-blue-500 p-4">
-            <h1 class="text-xl font-bold text-center" x-text="gameState.teamB.name"></h1>
+          <div class="bg-blue-500 p-3">
+            <h1 class="text-lg font-bold text-center" x-text="gameState.teamB.name"></h1>
           </div>
         </div>
       </div>
 
-      <!-- タイマー表示 -->
-      <div class="flex-1 bg-gray-800 text-white flex flex-col justify-center items-center">
-        <!-- サブタイマー（レイドタイマー） -->
-        <div class="mb-6">
+      <!-- メインスコア表示 -->
+      <div class="flex-1 grid grid-cols-3 gap-0" :class="showStatusBar ? 'pb-16' : 'pb-0'" style="grid-template-rows: 0.6fr 1fr; max-height: 50vh;">
+        <!-- 上段：チームA -->
+        <div class="bg-red-500 text-white flex flex-col">
+          <div class="flex-1 flex items-center justify-center py-1 px-1">
+            <div class="font-bold font-mono" style="font-size: 4rem; line-height: 1;" x-text="gameState.teamA.score"></div>
+          </div>
+          <!-- Do or Dieインジケーター -->
+          <div class="h-3 flex space-x-1 px-2 pb-1">
+            <template x-for="(isActive, index) in teamADoOrDieIndicators" :key="index">
+              <div class="flex-1 transition-colors duration-200 rounded-sm"
+                   :class="isActive ? 'bg-yellow-400' : 'bg-red-900'"></div>
+            </template>
+          </div>
+        </div>
+
+        <!-- 上段：サブタイマー -->
+        <div class="bg-gray-800 text-white flex flex-col items-center justify-center py-1 px-1 cursor-pointer" @click="toggleStatusBar()">
           <div class="text-center">
-            <div style="font-size: 8rem; line-height: 1;" class="font-bold font-mono text-yellow-400" x-text="formattedSubTimer"></div>
-            <div class="text-xs opacity-75 mt-1">
+            <div style="font-size: 4rem; line-height: 1;" class="font-bold font-mono text-yellow-400" x-text="formattedSubTimer"></div>
+            <div class="text-xs opacity-75">
               <span x-show="gameState?.subTimer?.isRunning" class="text-green-400">● 動作中</span>
               <span x-show="gameState?.subTimer && !gameState.subTimer.isRunning" class="text-gray-400">● 停止</span>
             </div>
           </div>
         </div>
 
-        <!-- メインタイマー -->
-        <div style="font-size: 8rem; line-height: 1;" class="font-bold font-mono" x-text="formattedTimer"></div>
-        <div class="text-lg mt-4">
-          <span x-show="timerRunning" class="text-green-400">● 動作中</span>
-          <span x-show="!timerRunning" class="text-gray-400">● 停止</span>
-        </div>
-      </div>
-
-      <!-- コンパクトスコア表示 -->
-      <div class="bg-white p-4">
-        <div class="flex justify-between items-center">
-          <div class="text-center">
-            <div class="font-bold text-lg mb-1" x-text="gameState.teamA.name"></div>
-            <div class="text-4xl font-bold text-red-500 mb-2" x-text="gameState.teamA.score"></div>
-            <!-- Do or Dieインジケーター -->
-            <div class="flex w-28 h-4 mx-auto space-x-2 my-2">
-              <template x-for="(isActive, index) in teamADoOrDieIndicators" :key="index">
-                <div class="flex-1 transition-colors duration-200 rounded-sm"
-                     :class="isActive ? 'bg-yellow-500' : 'bg-gray-300'"></div>
-              </template>
-            </div>
+        <!-- 上段：チームB -->
+        <div class="bg-blue-500 text-white flex flex-col">
+          <div class="flex-1 flex items-center justify-center py-1 px-1">
+            <div class="font-bold font-mono" style="font-size: 4rem; line-height: 1;" x-text="gameState.teamB.score"></div>
           </div>
-          <div class="text-2xl font-bold text-gray-600">VS</div>
-          <div class="text-center">
-            <div class="font-bold text-lg mb-1" x-text="gameState.teamB.name"></div>
-            <div class="text-4xl font-bold text-blue-500 mb-2" x-text="gameState.teamB.score"></div>
-            <!-- Do or Dieインジケーター -->
-            <div class="flex w-28 h-4 mx-auto space-x-2 my-2">
-              <template x-for="(isActive, index) in teamBDoOrDieIndicators" :key="index">
-                <div class="flex-1 transition-colors duration-200 rounded-sm"
-                     :class="isActive ? 'bg-yellow-500' : 'bg-gray-300'"></div>
-              </template>
-            </div>
+          <!-- Do or Dieインジケーター -->
+          <div class="h-3 flex space-x-1 px-2 pb-1">
+            <template x-for="(isActive, index) in teamBDoOrDieIndicators" :key="index">
+              <div class="flex-1 transition-colors duration-200 rounded-sm"
+                   :class="isActive ? 'bg-yellow-400' : 'bg-blue-900'"></div>
+            </template>
+          </div>
+        </div>
+
+        <!-- 下段：メインタイマー（3列全体を使用） -->
+        <div class="col-span-3 bg-gray-800 text-white flex flex-col items-center justify-center px-2">
+          <div style="font-size: 8rem; line-height: 0.8;" class="font-bold font-mono" x-text="formattedTimer"></div>
+          <div class="text-sm opacity-75">
+            <span x-show="timerRunning" class="text-green-400">● 動作中</span>
+            <span x-show="!timerRunning" class="text-gray-400">● 停止</span>
           </div>
         </div>
       </div>
 
       <!-- 接続状態とコントロールボタン -->
-      <div class="bg-gray-800 text-white p-3 flex justify-between items-center">
+      <div x-show="showStatusBar" class="bg-gray-800 text-white p-3 flex justify-between items-center fixed bottom-0 left-0 right-0 z-50">
         <div class="flex items-center space-x-3">
           <div>
             <span x-show="connected" class="text-green-400">● 接続中</span>
@@ -506,18 +507,8 @@ app.get('/game/:gameId', async (c) => {
            x-transition:leave-start="transform translate-y-0"
            x-transition:leave-end="transform translate-y-full"
            class="md:hidden fixed inset-x-0 bottom-0 bg-white shadow-2xl z-50"
-           style="height: 65vh;">
+           style="height: 55vh;">
 
-        <!-- オーバーレイ背景 -->
-        <div x-show="showControlPanel"
-             @click="toggleControlPanel()"
-             x-transition:enter="transition ease-out duration-300"
-             x-transition:enter-start="opacity-0"
-             x-transition:enter-end="opacity-50"
-             x-transition:leave="transition ease-in duration-200"
-             x-transition:leave-start="opacity-50"
-             x-transition:leave-end="opacity-0"
-             class="fixed inset-0 bg-black opacity-50 z-40"></div>
 
         <!-- パネル内容 -->
         <div class="relative z-50 h-full flex flex-col">
@@ -527,10 +518,10 @@ app.get('/game/:gameId', async (c) => {
           </div>
 
           <!-- コンテンツエリア -->
-          <div class="flex-1 p-4 overflow-y-auto space-y-4">
+          <div class="flex-1 p-3 overflow-y-auto space-y-3">
             <!-- タイマー操作 -->
-            <div class="bg-gray-50 p-4 rounded-lg">
-              <h3 class="font-bold text-lg mb-4">タイマー操作</h3>
+            <div class="bg-gray-50 p-3 rounded-lg">
+              <h3 class="font-bold text-base mb-3">タイマー操作</h3>
 
               <!-- 時間設定 -->
               <div class="mb-4">
