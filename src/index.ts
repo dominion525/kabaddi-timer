@@ -187,7 +187,7 @@ app.get('/game/:gameId', async (c) => {
                         class="flex-1 bg-red-500 hover:bg-red-600 text-white p-3 rounded-lg font-bold transition-colors">
                   ストップ
                 </button>
-                <button @click="setTimer(3, 0)"
+                <button @click="resetTimer()"
                         class="flex-1 bg-orange-500 hover:bg-orange-600 text-white p-3 rounded-lg font-bold transition-colors">
                   リセット
                 </button>
@@ -393,7 +393,7 @@ app.get('/game/:gameId', async (c) => {
                         class="flex-1 bg-red-500 hover:bg-red-600 text-white p-4 rounded-lg font-bold text-lg transition-colors">
                   ストップ
                 </button>
-                <button @click="setTimer(3, 0)"
+                <button @click="resetTimer()"
                         class="flex-1 bg-orange-500 hover:bg-orange-600 text-white p-4 rounded-lg font-bold text-lg transition-colors">
                   リセット
                 </button>
@@ -500,6 +500,15 @@ app.get('/game/:gameId', async (c) => {
         gameState: {
           teamA: { name: 'チームA', score: 0 },
           teamB: { name: 'チームB', score: 0 },
+          timer: {
+            totalDuration: 180,
+            startTime: null,
+            isRunning: false,
+            isPaused: false,
+            pausedAt: null,
+            remainingSeconds: 180
+          },
+          serverTime: 0,
           lastUpdated: 0
         },
         connected: false,
@@ -508,10 +517,21 @@ app.get('/game/:gameId', async (c) => {
         showControlPanel: false,
         timerSeconds: 180,
         timerRunning: false,
-        intervalId: null,
+        serverTimeOffset: 0,
+        animationFrameId: null,
+        lastSyncRequest: 0,
 
         init() {
           this.connectWebSocket();
+          // 定期的な時刻同期リクエスト（60秒ごと）
+          setInterval(() => {
+            if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+              this.sendAction({
+                type: 'TIME_SYNC_REQUEST',
+                clientRequestTime: Date.now()
+              });
+            }
+          }, 60000);
         },
 
         connectWebSocket() {
@@ -523,30 +543,65 @@ app.get('/game/:gameId', async (c) => {
           this.ws.onopen = () => {
             this.connected = true;
             console.log('WebSocket connected');
+            // 接続成功時に初期時刻同期を要求
+            this.sendAction({
+              type: 'TIME_SYNC_REQUEST',
+              clientRequestTime: Date.now()
+            });
           };
 
           this.ws.onmessage = (event) => {
-            const message = JSON.parse(event.data);
-            if (message.type === 'game_state') {
-              this.gameState = message.data;
+            try {
+              const message = JSON.parse(event.data);
+
+              if (message.type === 'game_state') {
+                console.log('Received game state:', message.data);
+                this.gameState = message.data;
+                this.updateTimerDisplay();
+              }
+
+              else if (message.type === 'time_sync') {
+                const clientTime = Date.now();
+                const serverTime = message.data.serverTime;
+                const rtt = message.data.clientRequestTime ?
+                  (clientTime - message.data.clientRequestTime) : 0;
+                this.serverTimeOffset = serverTime - clientTime + (rtt / 2);
+                console.log('Time sync: offset =', this.serverTimeOffset, 'ms, RTT =', rtt, 'ms');
+              }
+
+              else if (message.type === 'error') {
+                console.error('Server error:', message.data);
+              }
+
+            } catch (error) {
+              console.error('WebSocket message parse error:', error);
             }
           };
 
           this.ws.onclose = () => {
             this.connected = false;
             console.log('WebSocket disconnected');
+            this.stopTimerDisplay(); // アニメーションを停止
             setTimeout(() => this.connectWebSocket(), 3000);
           };
 
           this.ws.onerror = (error) => {
             console.error('WebSocket error:', error);
             this.connected = false;
+            this.stopTimerDisplay(); // アニメーションを停止
           };
         },
 
         sendAction(action) {
           if (this.ws && this.ws.readyState === WebSocket.OPEN) {
-            this.ws.send(JSON.stringify({ action }));
+            try {
+              this.ws.send(JSON.stringify({ action }));
+              console.log('Sent action:', action);
+            } catch (error) {
+              console.error('Failed to send action:', error);
+            }
+          } else {
+            console.warn('WebSocket not connected, action not sent:', action);
           }
         },
 
@@ -583,33 +638,83 @@ app.get('/game/:gameId', async (c) => {
         },
 
         startTimer() {
-          if (!this.timerRunning && this.timerSeconds > 0) {
-            this.timerRunning = true;
-            this.intervalId = setInterval(() => {
-              if (this.timerSeconds > 0) {
-                this.timerSeconds--;
-              } else {
-                this.stopTimer();
-              }
-            }, 1000);
-          }
+          this.sendAction({
+            type: 'TIMER_START'
+          });
         },
 
         stopTimer() {
-          this.timerRunning = false;
-          if (this.intervalId) {
-            clearInterval(this.intervalId);
-            this.intervalId = null;
-          }
+          this.sendAction({
+            type: 'TIMER_PAUSE'
+          });
         },
 
         adjustTimer(seconds) {
-          this.timerSeconds = Math.max(0, this.timerSeconds + seconds);
+          this.sendAction({
+            type: 'TIMER_ADJUST',
+            seconds: seconds
+          });
         },
 
         setTimer(minutes, seconds) {
-          this.stopTimer();
-          this.timerSeconds = (minutes * 60) + seconds;
+          this.sendAction({
+            type: 'TIMER_SET',
+            duration: (minutes * 60) + seconds
+          });
+        },
+
+        resetTimer() {
+          this.sendAction({
+            type: 'TIMER_RESET'
+          });
+        },
+
+        updateTimerDisplay() {
+          // アニメーションフレームをクリア
+          if (this.animationFrameId) {
+            cancelAnimationFrame(this.animationFrameId);
+            this.animationFrameId = null;
+          }
+
+          // timerが存在しない場合は何もしない
+          if (!this.gameState || !this.gameState.timer) {
+            return;
+          }
+
+          const animate = () => {
+            try {
+              if (this.gameState && this.gameState.timer) {
+                const timer = this.gameState.timer;
+
+                if (timer.isRunning && timer.startTime) {
+                  const serverNow = Date.now() - this.serverTimeOffset;
+                  const elapsed = (serverNow - timer.startTime) / 1000;
+                  this.timerSeconds = Math.max(0, Math.floor(timer.totalDuration - elapsed));
+                  this.timerRunning = true;
+                } else {
+                  this.timerSeconds = Math.floor(timer.remainingSeconds);
+                  this.timerRunning = timer.isRunning;
+                }
+
+                // 次のフレームをスケジュール（アニメーションIDが残っている場合のみ）
+                if (this.animationFrameId !== null) {
+                  this.animationFrameId = requestAnimationFrame(animate);
+                }
+              }
+            } catch (error) {
+              console.error('Timer display error:', error);
+              this.animationFrameId = null;
+            }
+          };
+
+          this.animationFrameId = requestAnimationFrame(animate);
+        },
+
+        stopTimerDisplay() {
+          if (this.animationFrameId) {
+            cancelAnimationFrame(this.animationFrameId);
+            this.animationFrameId = null;
+          }
         }
       };
     }

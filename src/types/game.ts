@@ -1,23 +1,45 @@
-export interface GameState {
-  teamA: TeamState;
-  teamB: TeamState;
-  lastUpdated: number;
-}
-
 export interface TeamState {
   name: string;
   score: number;
 }
 
+export interface TimerState {
+  totalDuration: number;    // 設定された総時間（秒）
+  startTime: number | null; // タイマー開始時のサーバー時刻（ミリ秒）
+  isRunning: boolean;       // タイマーが動作中かどうか
+  isPaused: boolean;        // 一時停止中かどうか
+  pausedAt: number | null;  // 一時停止したサーバー時刻（ミリ秒）
+  remainingSeconds: number; // 現在の残り時間（秒）
+}
+
+export interface GameState {
+  teamA: TeamState;
+  teamB: TeamState;
+  timer: TimerState;
+  serverTime: number;
+  lastUpdated: number;
+}
+
 export type GameAction =
   | { type: 'SCORE_UPDATE'; team: 'teamA' | 'teamB'; points: number }
   | { type: 'RESET_SCORES' }
-  | { type: 'SET_TEAM_NAME'; team: 'teamA' | 'teamB'; name: string };
+  | { type: 'SET_TEAM_NAME'; team: 'teamA' | 'teamB'; name: string }
+  | { type: 'TIMER_START' }
+  | { type: 'TIMER_PAUSE' }
+  | { type: 'TIMER_RESET' }
+  | { type: 'TIMER_SET'; duration: number }
+  | { type: 'TIMER_ADJUST'; seconds: number }
+  | { type: 'TIME_SYNC_REQUEST'; clientRequestTime?: number };
 
 export interface GameMessage {
-  type: 'game_state' | 'action' | 'error';
-  data: GameState | GameAction | string;
+  type: 'game_state' | 'action' | 'error' | 'time_sync';
+  data: GameState | GameAction | string | TimeSyncData;
   timestamp: number;
+}
+
+export interface TimeSyncData {
+  serverTime: number;
+  clientRequestTime?: number;
 }
 
 export interface WebSocketMessage {
