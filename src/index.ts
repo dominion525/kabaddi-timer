@@ -150,10 +150,10 @@ app.get('/game/:gameId', async (c) => {
                 <label class="block text-sm font-medium text-gray-700 mb-2">時間設定</label>
                 <div class="flex space-x-2 mb-3">
                   <input type="number" min="0" max="99" value="3" id="timerMinutes"
-                         class="w-12 p-2 border rounded focus:ring-2 focus:ring-blue-500 text-center">
+                         class="w-16 p-2 border rounded focus:ring-2 focus:ring-blue-500 text-center">
                   <span class="flex items-center text-sm">分</span>
                   <input type="number" min="0" max="59" value="0" id="timerSeconds"
-                         class="w-12 p-2 border rounded focus:ring-2 focus:ring-blue-500 text-center">
+                         class="w-16 p-2 border rounded focus:ring-2 focus:ring-blue-500 text-center">
                   <span class="flex items-center text-sm">秒</span>
                   <button @click="setTimer(parseInt(document.getElementById('timerMinutes').value), parseInt(document.getElementById('timerSeconds').value))"
                           class="bg-blue-500 hover:bg-blue-600 text-white px-3 py-2 rounded transition-colors text-sm">
@@ -162,13 +162,13 @@ app.get('/game/:gameId', async (c) => {
                 </div>
                 <!-- プリセット -->
                 <div class="flex space-x-1">
-                  <button @click="setTimer(15, 0); document.getElementById('timerMinutes').value = '15'; document.getElementById('timerSeconds').value = '0'"
-                          class="flex-1 bg-gray-600 hover:bg-gray-700 text-white p-2 rounded text-sm transition-colors">
-                    15分
-                  </button>
                   <button @click="setTimer(20, 0); document.getElementById('timerMinutes').value = '20'; document.getElementById('timerSeconds').value = '0'"
                           class="flex-1 bg-gray-600 hover:bg-gray-700 text-white p-2 rounded text-sm transition-colors">
                     20分
+                  </button>
+                  <button @click="setTimer(15, 0); document.getElementById('timerMinutes').value = '15'; document.getElementById('timerSeconds').value = '0'"
+                          class="flex-1 bg-gray-600 hover:bg-gray-700 text-white p-2 rounded text-sm transition-colors">
+                    15分
                   </button>
                   <button @click="setTimer(3, 0); document.getElementById('timerMinutes').value = '3'; document.getElementById('timerSeconds').value = '0'"
                           class="flex-1 bg-gray-600 hover:bg-gray-700 text-white p-2 rounded text-sm transition-colors">
@@ -210,17 +210,17 @@ app.get('/game/:gameId', async (c) => {
                   </button>
                 </div>
                 <div class="flex space-x-1">
-                  <button @click="adjustTimer(1)"
+                  <button @click="adjustTimer(60)"
                           class="flex-1 bg-blue-500 hover:bg-blue-600 text-white p-2 rounded text-sm transition-colors">
-                    +1秒
+                    +1分
                   </button>
                   <button @click="adjustTimer(10)"
                           class="flex-1 bg-blue-500 hover:bg-blue-600 text-white p-2 rounded text-sm transition-colors">
                     +10秒
                   </button>
-                  <button @click="adjustTimer(60)"
+                  <button @click="adjustTimer(1)"
                           class="flex-1 bg-blue-500 hover:bg-blue-600 text-white p-2 rounded text-sm transition-colors">
-                    +1分
+                    +1秒
                   </button>
                 </div>
               </div>
@@ -356,10 +356,10 @@ app.get('/game/:gameId', async (c) => {
                 <label class="block text-sm font-medium text-gray-700 mb-2">時間設定</label>
                 <div class="flex space-x-2 mb-3">
                   <input type="number" min="0" max="99" value="3" id="timerMinutesMobile"
-                         class="w-14 p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 text-center">
+                         class="w-18 p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 text-center">
                   <span class="flex items-center">分</span>
                   <input type="number" min="0" max="59" value="0" id="timerSecondsMobile"
-                         class="w-14 p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 text-center">
+                         class="w-18 p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 text-center">
                   <span class="flex items-center">秒</span>
                   <button @click="setTimer(parseInt(document.getElementById('timerMinutesMobile').value), parseInt(document.getElementById('timerSecondsMobile').value))"
                           class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-3 rounded-lg transition-colors">
@@ -368,13 +368,13 @@ app.get('/game/:gameId', async (c) => {
                 </div>
                 <!-- プリセット -->
                 <div class="flex space-x-2">
-                  <button @click="setTimer(15, 0); document.getElementById('timerMinutesMobile').value = '15'; document.getElementById('timerSecondsMobile').value = '0'"
-                          class="flex-1 bg-gray-600 hover:bg-gray-700 text-white p-3 rounded-lg transition-colors">
-                    15分
-                  </button>
                   <button @click="setTimer(20, 0); document.getElementById('timerMinutesMobile').value = '20'; document.getElementById('timerSecondsMobile').value = '0'"
                           class="flex-1 bg-gray-600 hover:bg-gray-700 text-white p-3 rounded-lg transition-colors">
                     20分
+                  </button>
+                  <button @click="setTimer(15, 0); document.getElementById('timerMinutesMobile').value = '15'; document.getElementById('timerSecondsMobile').value = '0'"
+                          class="flex-1 bg-gray-600 hover:bg-gray-700 text-white p-3 rounded-lg transition-colors">
+                    15分
                   </button>
                   <button @click="setTimer(3, 0); document.getElementById('timerMinutesMobile').value = '3'; document.getElementById('timerSecondsMobile').value = '0'"
                           class="flex-1 bg-gray-600 hover:bg-gray-700 text-white p-3 rounded-lg transition-colors">
@@ -416,17 +416,17 @@ app.get('/game/:gameId', async (c) => {
                   </button>
                 </div>
                 <div class="flex space-x-2">
-                  <button @click="adjustTimer(1)"
+                  <button @click="adjustTimer(60)"
                           class="flex-1 bg-blue-500 hover:bg-blue-600 text-white p-3 rounded-lg transition-colors">
-                    +1秒
+                    +1分
                   </button>
                   <button @click="adjustTimer(10)"
                           class="flex-1 bg-blue-500 hover:bg-blue-600 text-white p-3 rounded-lg transition-colors">
                     +10秒
                   </button>
-                  <button @click="adjustTimer(60)"
+                  <button @click="adjustTimer(1)"
                           class="flex-1 bg-blue-500 hover:bg-blue-600 text-white p-3 rounded-lg transition-colors">
-                    +1分
+                    +1秒
                   </button>
                 </div>
               </div>
@@ -557,6 +557,13 @@ app.get('/game/:gameId', async (c) => {
               if (message.type === 'game_state') {
                 console.log('Received game state:', message.data);
                 this.gameState = message.data;
+
+                // タイマーが停止している場合、直接値を更新
+                if (this.gameState.timer && !this.gameState.timer.isRunning) {
+                  this.timerSeconds = Math.floor(this.gameState.timer.remainingSeconds);
+                  console.log('Timer updated to:', this.timerSeconds, 'seconds');
+                }
+
                 this.updateTimerDisplay();
               }
 
@@ -657,9 +664,11 @@ app.get('/game/:gameId', async (c) => {
         },
 
         setTimer(minutes, seconds) {
+          const duration = (minutes * 60) + seconds;
+          console.log('Setting timer to:', minutes, 'minutes,', seconds, 'seconds (', duration, 'total seconds)');
           this.sendAction({
             type: 'TIMER_SET',
-            duration: (minutes * 60) + seconds
+            duration: duration
           });
         },
 
