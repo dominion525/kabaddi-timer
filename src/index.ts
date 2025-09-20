@@ -29,6 +29,19 @@ app.get('/game/:gameId', async (c) => {
     return c.text('Game ID is required', 400);
   }
 
+  // セキュリティバリデーション
+  const safePattern = /^[a-zA-Z0-9-]+$/;
+  const maxLength = 50;
+
+  if (!safePattern.test(gameId) || gameId.length > maxLength) {
+    return c.text('Invalid game ID format', 400);
+  }
+
+  // パストラバーサルのチェック
+  if (gameId.includes('..') || gameId.includes('//')) {
+    return c.text('Invalid game ID', 400);
+  }
+
   const html = `<!DOCTYPE html>
 <html lang="ja">
 <head>
@@ -1686,7 +1699,7 @@ app.get('/', (c) => {
       // 新しいタイマーを作成
       function createNewTimer() {
         const timerId = generateShortId();
-        window.location.href = \`/game/\${timerId}\`;
+        window.location.href = \`/game/\${encodeURIComponent(timerId)}\`;
       }
 
       // 既存タイマーに移動
@@ -1699,8 +1712,28 @@ app.get('/', (c) => {
           return;
         }
 
+        // セキュリティバリデーション
+        const safePattern = /^[a-zA-Z0-9-]+$/;
+        const maxLength = 50;
 
-        window.location.href = \`/game/\${timerId}\`;
+        if (!safePattern.test(timerId)) {
+          alert('タイマーIDは英数字とハイフンのみ使用できます');
+          return;
+        }
+
+        if (timerId.length > maxLength) {
+          alert('タイマーIDが長すぎます（最大50文字）');
+          return;
+        }
+
+        // パストラバーサルのチェック
+        if (timerId.includes('..') || timerId.includes('//')) {
+          alert('不正なタイマーIDです');
+          return;
+        }
+
+        // URLエンコーディングして安全に遷移
+        window.location.href = \`/game/\${encodeURIComponent(timerId)}\`;
       }
 
       // Enterキーでタイマーへ移動
