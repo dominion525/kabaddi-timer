@@ -7,7 +7,11 @@ export class GameSession {
 
   constructor(state: DurableObjectState) {
     this.state = state;
-    this.gameState = {
+    this.gameState = this.getDefaultGameState();
+  }
+
+  private getDefaultGameState(): GameState {
+    return {
       teamA: { name: 'チームA', score: 0 },
       teamB: { name: 'チームB', score: 0 },
       timer: {
@@ -51,7 +55,7 @@ export class GameSession {
 
     await this.loadGameState();
 
-    // ゲーム状態を送信
+    // ゲーム状態を送信（gameStateは常に利用可能）
     this.sendToClient(webSocket, {
       type: 'game_state',
       data: this.gameState,
@@ -87,50 +91,153 @@ export class GameSession {
         console.error('Raw data:', event.data);
         this.sendToClient(webSocket, {
           type: 'error',
-          data: `Invalid message format: ${error instanceof Error ? error.message : 'Unknown error'}`,
+          data: `Invalid message format: ${error instanceof Error ? error.message : String(error)}`,
           timestamp: Date.now()
         });
       }
     });
 
     webSocket.addEventListener('close', () => {
-      this.connections.delete(webSocket);
+      this.safelyDeleteConnection(webSocket);
     });
 
-    webSocket.addEventListener('error', () => {
-      this.connections.delete(webSocket);
+    webSocket.addEventListener('error', (event) => {
+      console.warn('WebSocket error:', event);
+      this.safelyDeleteConnection(webSocket);
     });
   }
 
+  private isStateLoaded = false;
+
   private async loadGameState(): Promise<void> {
-    const stored = await this.state.storage.get<GameState>('gameState');
-    if (stored) {
-      this.gameState = stored;
-      // 古いデータにtimerプロパティがない場合の対応
-      if (!this.gameState.timer) {
-        this.gameState.timer = {
-          totalDuration: 3 * 60,
-          startTime: null,
-          isRunning: false,
-          isPaused: false,
-          pausedAt: null,
-          remainingSeconds: 3 * 60
-        };
+    if (this.isStateLoaded) {
+      return;
+    }
+
+    try {
+      const stored = await this.state.storage.get<any>('gameState');
+
+      if (stored) {
+        // データ検証を実行
+        if (this.validateGameState(stored)) {
+          this.gameState = stored;
+          console.log('Valid game state loaded from storage');
+        } else {
+          // 検証失敗の場合は修復を試行
+          console.warn('Invalid game state detected, attempting repair');
+          this.gameState = this.repairGameState(stored);
+          console.log('Game state repaired successfully');
+        }
+      } else {
+        // 初回アクセス時はデフォルト状態を使用（既に初期化済み）
+        console.log('No stored state found, using default state');
+      }
+    } catch (error) {
+      // ストレージアクセスエラーの場合はデフォルト状態で継続（既に初期化済み）
+      console.error('Failed to load game state from storage:', error);
+    }
+
+    this.isStateLoaded = true;
+    // 初期化完了後に即座に保存
+    await this.saveGameState();
+  }
+
+  private validateGameState(state: any): state is GameState {
+    if (!state || typeof state !== 'object') return false;
+
+    // チーム情報の検証
+    if (!state.teamA || !state.teamB) return false;
+    if (typeof state.teamA.name !== 'string' || typeof state.teamA.score !== 'number') return false;
+    if (typeof state.teamB.name !== 'string' || typeof state.teamB.score !== 'number') return false;
+
+    // タイマー情報の検証
+    if (!state.timer) return false;
+    const timer = state.timer;
+    if (typeof timer.totalDuration !== 'number' || timer.totalDuration <= 0) return false;
+    if (typeof timer.isRunning !== 'boolean') return false;
+    if (typeof timer.isPaused !== 'boolean') return false;
+    if (typeof timer.remainingSeconds !== 'number' || timer.remainingSeconds < 0) return false;
+
+    // 基本時刻情報の検証
+    if (typeof state.serverTime !== 'number' || typeof state.lastUpdated !== 'number') return false;
+
+    return true;
+  }
+
+  private repairGameState(state: any): GameState {
+    const defaultState = this.getDefaultGameState();
+
+    const repairedState: GameState = {
+      teamA: {
+        name: (state?.teamA?.name && typeof state.teamA.name === 'string') ? state.teamA.name : defaultState.teamA.name,
+        score: (state?.teamA?.score && typeof state.teamA.score === 'number' && state.teamA.score >= 0) ? state.teamA.score : defaultState.teamA.score
+      },
+      teamB: {
+        name: (state?.teamB?.name && typeof state.teamB.name === 'string') ? state.teamB.name : defaultState.teamB.name,
+        score: (state?.teamB?.score && typeof state.teamB.score === 'number' && state.teamB.score >= 0) ? state.teamB.score : defaultState.teamB.score
+      },
+      timer: {
+        totalDuration: (state?.timer?.totalDuration && typeof state.timer.totalDuration === 'number' && state.timer.totalDuration > 0) ? state.timer.totalDuration : defaultState.timer.totalDuration,
+        startTime: (state?.timer?.startTime && (typeof state.timer.startTime === 'number' || state.timer.startTime === null)) ? state.timer.startTime : defaultState.timer.startTime,
+        isRunning: (state?.timer?.isRunning && typeof state.timer.isRunning === 'boolean') ? state.timer.isRunning : defaultState.timer.isRunning,
+        isPaused: (state?.timer?.isPaused && typeof state.timer.isPaused === 'boolean') ? state.timer.isPaused : defaultState.timer.isPaused,
+        pausedAt: (state?.timer?.pausedAt && (typeof state.timer.pausedAt === 'number' || state.timer.pausedAt === null)) ? state.timer.pausedAt : defaultState.timer.pausedAt,
+        remainingSeconds: (state?.timer?.remainingSeconds && typeof state.timer.remainingSeconds === 'number' && state.timer.remainingSeconds >= 0) ? state.timer.remainingSeconds : defaultState.timer.remainingSeconds
+      },
+      serverTime: Date.now(),
+      lastUpdated: Date.now()
+    };
+
+    return repairedState;
+  }
+
+  private async saveGameStateWithRetry(maxRetries: number = 3, retryDelay: number = 100): Promise<void> {
+    let lastError: Error | null = null;
+
+    for (let attempt = 0; attempt < maxRetries; attempt++) {
+      try {
+        this.gameState.serverTime = Date.now();
+        this.gameState.lastUpdated = Date.now();
+
+        // タイマーが実行中の場合、残り時間を更新
+        if (this.gameState.timer && this.gameState.timer.isRunning) {
+          this.updateRemainingTime();
+        }
+
+        await this.state.storage.put('gameState', this.gameState);
+        console.log(`Game state saved successfully (attempt ${attempt + 1})`);
+        return; // 成功した場合は即座に終了
+
+      } catch (error) {
+        lastError = error instanceof Error ? error : new Error(String(error));
+        console.warn(`Save attempt ${attempt + 1} failed:`, lastError.message);
+
+        if (attempt < maxRetries - 1) {
+          // 最後の試行でなければ遅延後にリトライ
+          await new Promise(resolve => setTimeout(resolve, retryDelay * (attempt + 1)));
+        }
       }
     }
+
+    // すべてのリトライが失敗した場合
+    console.error(`Failed to save game state after ${maxRetries} attempts. Last error:`, lastError);
+    // 最後のエラーを再スローしてコール元に伝播
+    throw lastError || new Error('Save failed after all retries');
   }
 
   private async saveGameState(): Promise<void> {
-    this.gameState.serverTime = Date.now();
-    this.gameState.lastUpdated = Date.now();
-    // タイマーが実行中の場合、残り時間を更新
-    if (this.gameState.timer && this.gameState.timer.isRunning) {
-      this.updateRemainingTime();
+    try {
+      await this.saveGameStateWithRetry();
+    } catch (error) {
+      // 保存に失敗してもアプリケーションの動作は継続
+      console.error('Critical: Game state could not be saved:', error);
+      // ここでアラートや他の通知手段を使って問題を報告することもできる
     }
-    await this.state.storage.put('gameState', this.gameState);
   }
 
   private async handleAction(action: GameAction): Promise<void> {
+    await this.loadGameState(); // 必要に応じて状態を初期化
+
     switch (action.type) {
       case 'SCORE_UPDATE':
         if (action.team === 'teamA') {
@@ -169,8 +276,8 @@ export class GameSession {
           this.gameState.timer.isRunning = true;
         }
         await this.saveGameState();
-        this.broadcastState();
-        this.broadcastTimeSync();
+        await this.broadcastState();
+        await this.broadcastTimeSync();
         return;
 
       case 'TIMER_PAUSE':
@@ -182,8 +289,8 @@ export class GameSession {
           this.updateRemainingTime();
         }
         await this.saveGameState();
-        this.broadcastState();
-        this.broadcastTimeSync();
+        await this.broadcastState();
+        await this.broadcastTimeSync();
         return;
 
       case 'TIMER_RESET':
@@ -193,8 +300,8 @@ export class GameSession {
         this.gameState.timer.pausedAt = null;
         this.gameState.timer.remainingSeconds = this.gameState.timer.totalDuration;
         await this.saveGameState();
-        this.broadcastState();
-        this.broadcastTimeSync();
+        await this.broadcastState();
+        await this.broadcastTimeSync();
         return;
 
       case 'TIMER_SET':
@@ -205,8 +312,8 @@ export class GameSession {
         this.gameState.timer.isPaused = false;
         this.gameState.timer.pausedAt = null;
         await this.saveGameState();
-        this.broadcastState();
-        this.broadcastTimeSync();
+        await this.broadcastState();
+        await this.broadcastTimeSync();
         return;
 
       case 'TIMER_ADJUST':
@@ -218,8 +325,8 @@ export class GameSession {
           this.gameState.timer.remainingSeconds = Math.max(0, this.gameState.timer.remainingSeconds + action.seconds);
         }
         await this.saveGameState();
-        this.broadcastState();
-        this.broadcastTimeSync();
+        await this.broadcastState();
+        await this.broadcastTimeSync();
         return;
 
       case 'TIME_SYNC_REQUEST':
@@ -250,10 +357,12 @@ export class GameSession {
     }
 
     await this.saveGameState();
-    this.broadcastState();
+    await this.broadcastState();
   }
 
-  private broadcastState(): void {
+  private async broadcastState(): Promise<void> {
+    await this.loadGameState(); // 状態の存在を保証
+
     // サーバー時刻を更新
     this.gameState.serverTime = Date.now();
 
@@ -264,13 +373,20 @@ export class GameSession {
     };
 
     const messageString = JSON.stringify(message);
+    const failedConnections: WebSocket[] = [];
 
     for (const connection of this.connections) {
       try {
         connection.send(messageString);
       } catch (error) {
-        this.connections.delete(connection);
+        console.warn('Failed to broadcast state to connection:', error);
+        failedConnections.push(connection);
       }
+    }
+
+    // 失敗したコネクションを削除
+    for (const connection of failedConnections) {
+      await this.safelyDeleteConnection(connection);
     }
   }
 
@@ -278,7 +394,24 @@ export class GameSession {
     try {
       webSocket.send(JSON.stringify(message));
     } catch (error) {
+      console.warn('Failed to send message to client:', error);
       this.connections.delete(webSocket);
+    }
+  }
+
+  private async safelyDeleteConnection(webSocket: WebSocket): Promise<void> {
+    try {
+      this.connections.delete(webSocket);
+      console.log('WebSocket connection removed, remaining connections:', this.connections.size);
+
+      // 最後のコネクションが削除された場合の処理
+      if (this.connections.size === 0) {
+        console.log('No active connections remaining, preparing for hibernation');
+        // 最終的な状態を保存
+        await this.saveGameState();
+      }
+    } catch (error) {
+      console.error('Error during connection cleanup:', error);
     }
   }
 
@@ -289,7 +422,7 @@ export class GameSession {
     }
   }
 
-  private broadcastTimeSync(): void {
+  private async broadcastTimeSync(): Promise<void> {
     const syncData: TimeSyncData = {
       serverTime: Date.now()
     };
@@ -301,20 +434,27 @@ export class GameSession {
     };
 
     const messageString = JSON.stringify(message);
+    const failedConnections: WebSocket[] = [];
 
     for (const connection of this.connections) {
       try {
         connection.send(messageString);
       } catch (error) {
-        this.connections.delete(connection);
+        console.warn('Failed to broadcast time sync to connection:', error);
+        failedConnections.push(connection);
       }
+    }
+
+    // 失敗したコネクションを削除
+    for (const connection of failedConnections) {
+      await this.safelyDeleteConnection(connection);
     }
   }
 
   async alarm(): Promise<void> {
     // 接続が残っている場合のみ時刻同期を実行
     if (this.connections.size > 0) {
-      this.broadcastTimeSync();
+      await this.broadcastTimeSync();
       // 次のアラームを設定（60秒後）
       await this.state.storage.setAlarm(Date.now() + 60000);
     }
