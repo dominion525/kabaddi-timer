@@ -522,17 +522,34 @@ app.get('/game/:gameId', async (c) => {
 
   <script>
     function gameApp(gameId) {
+      // デフォルト値の一元管理（Single Source of Truth）
+      const DEFAULT_VALUES = {
+        teamNames: {
+          teamA: 'チームA',
+          teamB: 'チームB'
+        },
+        timer: {
+          defaultDuration: 180, // 3分
+          presetMinutes: {
+            short: 3,
+            medium: 15,
+            long: 20
+          }
+        },
+        score: 0
+      };
+
       return {
         gameState: {
-          teamA: { name: 'チームA', score: 0 },
-          teamB: { name: 'チームB', score: 0 },
+          teamA: { name: DEFAULT_VALUES.teamNames.teamA, score: DEFAULT_VALUES.score },
+          teamB: { name: DEFAULT_VALUES.teamNames.teamB, score: DEFAULT_VALUES.score },
           timer: {
-            totalDuration: 180,
+            totalDuration: DEFAULT_VALUES.timer.defaultDuration,
             startTime: null,
             isRunning: false,
             isPaused: false,
             pausedAt: null,
-            remainingSeconds: 180
+            remainingSeconds: DEFAULT_VALUES.timer.defaultDuration
           },
           serverTime: 0,
           lastUpdated: 0
@@ -541,22 +558,31 @@ app.get('/game/:gameId', async (c) => {
         ws: null,
         gameId: gameId,
         showControlPanel: false,
-        timerSeconds: 180,
+        timerSeconds: DEFAULT_VALUES.timer.defaultDuration,
         timerRunning: false,
         serverTimeOffset: 0,
         timerIntervalId: null,
+        timeSyncIntervalId: null,
+        reconnectTimeoutId: null,
         lastSyncRequest: 0,
-        timerInputMinutes: 3,
+        timerInputMinutes: DEFAULT_VALUES.timer.presetMinutes.short,
         timerInputSeconds: 0,
-        teamANameInput: 'チームA',
-        teamBNameInput: 'チームB',
+        teamANameInput: DEFAULT_VALUES.teamNames.teamA,
+        teamBNameInput: DEFAULT_VALUES.teamNames.teamB,
 
         init() {
+          // 既存のインターバルをクリアして重複を防止
+          if (this.timeSyncIntervalId) {
+            clearInterval(this.timeSyncIntervalId);
+            this.timeSyncIntervalId = null;
+          }
+
           this.connectWebSocket();
           // タイマー更新の初期化
           this.updateTimerDisplay();
+
           // 定期的な時刻同期リクエスト（60秒ごと）
-          setInterval(() => {
+          this.timeSyncIntervalId = setInterval(() => {
             if (this.ws && this.ws.readyState === WebSocket.OPEN) {
               this.sendAction({
                 type: 'TIME_SYNC_REQUEST',
@@ -567,6 +593,12 @@ app.get('/game/:gameId', async (c) => {
         },
 
         connectWebSocket() {
+          // 既存のWebSocket接続をクリーンアップ
+          if (this.ws) {
+            this.ws.close();
+            this.ws = null;
+          }
+
           const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
           const wsUrl = \`\${protocol}//\${window.location.host}/ws/\${this.gameId}\`;
 
@@ -597,6 +629,11 @@ app.get('/game/:gameId', async (c) => {
                 // タイマーが停止している場合、直接値を更新
                 if (this.gameState.timer && !this.gameState.timer.isRunning) {
                   this.timerSeconds = Math.floor(this.gameState.timer.remainingSeconds);
+
+                  // タイマー入力値も同期
+                  this.timerInputMinutes = Math.floor(this.gameState.timer.remainingSeconds / 60);
+                  this.timerInputSeconds = this.gameState.timer.remainingSeconds % 60;
+
                   console.log('Timer updated to:', this.timerSeconds, 'seconds');
                 }
 
@@ -625,7 +662,15 @@ app.get('/game/:gameId', async (c) => {
             this.connected = false;
             console.log('WebSocket disconnected');
             this.stopTimerUpdate(); // タイマー更新を停止
-            setTimeout(() => this.connectWebSocket(), 3000);
+
+            // 既存の再接続タイマーをクリア
+            if (this.reconnectTimeoutId) {
+              clearTimeout(this.reconnectTimeoutId);
+              this.reconnectTimeoutId = null;
+            }
+
+            // 3秒後に再接続
+            this.reconnectTimeoutId = setTimeout(() => this.connectWebSocket(), 3000);
           };
 
           this.ws.onerror = (error) => {
@@ -754,6 +799,32 @@ app.get('/game/:gameId', async (c) => {
             clearInterval(this.timerIntervalId);
             this.timerIntervalId = null;
           }
+        },
+
+        cleanup() {
+          // 全てのインターバルをクリア
+          if (this.timerIntervalId) {
+            clearInterval(this.timerIntervalId);
+            this.timerIntervalId = null;
+          }
+          if (this.timeSyncIntervalId) {
+            clearInterval(this.timeSyncIntervalId);
+            this.timeSyncIntervalId = null;
+          }
+
+          // 再接続タイマーをクリア
+          if (this.reconnectTimeoutId) {
+            clearTimeout(this.reconnectTimeoutId);
+            this.reconnectTimeoutId = null;
+          }
+
+          // WebSocket接続をクローズ
+          if (this.ws) {
+            this.ws.close();
+            this.ws = null;
+          }
+
+          this.connected = false;
         }
       };
     }
