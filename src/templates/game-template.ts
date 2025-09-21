@@ -998,15 +998,15 @@ export const gameTemplate = `<!DOCTYPE html>
               <div class="flex gap-1">
                 <!-- 左側プリセット -->
                 <div class="flex gap-1 flex-1">
-                  <button @click="setTimer(20, 0)"
+                  <button @click="setTimerPreset('long')"
                           class="bg-blue-500 hover:bg-blue-600 text-white py-2 px-1 rounded text-xs font-bold transition-colors flex-1">
                     20分
                   </button>
-                  <button @click="setTimer(15, 0)"
+                  <button @click="setTimerPreset('medium')"
                           class="bg-blue-500 hover:bg-blue-600 text-white py-2 px-1 rounded text-xs font-bold transition-colors flex-1">
                     15分
                   </button>
-                  <button @click="setTimer(3, 0)"
+                  <button @click="setTimerPreset('short')"
                           class="bg-blue-500 hover:bg-blue-600 text-white py-2 px-1 rounded text-xs font-bold transition-colors flex-1">
                     3分
                   </button>
