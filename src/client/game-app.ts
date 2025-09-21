@@ -120,6 +120,14 @@ function gameApp(gameId) {
       if (typeof lucide !== 'undefined') {
         lucide.createIcons();
       }
+
+      // チーム名入力の監視
+      this.$watch('teamANameInput', (newValue) => {
+        this.setTeamName('teamA', newValue);
+      });
+      this.$watch('teamBNameInput', (newValue) => {
+        this.setTeamName('teamB', newValue);
+      });
     },
 
     connectWebSocket() {

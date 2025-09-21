@@ -187,12 +187,10 @@ export const gameTemplate = `<!DOCTYPE html>
               <div class="space-y-3">
                 <div>
                   <input type="text" x-model="teamANameInput"
-                         @change="setTeamName('teamA', teamANameInput)"
                          class="w-full p-3 border rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500">
                 </div>
                 <div>
                   <input type="text" x-model="teamBNameInput"
-                         @change="setTeamName('teamB', teamBNameInput)"
                          class="w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
                 </div>
               </div>
@@ -589,13 +587,11 @@ export const gameTemplate = `<!DOCTYPE html>
               <div class="space-y-3">
                 <div>
                   <input type="text" x-model="teamANameInput"
-                         @change="setTeamName('teamA', teamANameInput)"
                          class="w-full p-3 border rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
                          style="font-size: 16px;">
                 </div>
                 <div>
                   <input type="text" x-model="teamBNameInput"
-                         @change="setTeamName('teamB', teamBNameInput)"
                          class="w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                          style="font-size: 16px;">
                 </div>
