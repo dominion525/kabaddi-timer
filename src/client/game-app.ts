@@ -8,7 +8,7 @@ function gameApp(gameId) {
       teamB: 'チームB'
     },
     timer: {
-      defaultDuration: 180, // 3分
+      defaultDuration: 900, // 15分
       presetMinutes: {
         short: 3,
         medium: 15,
@@ -58,7 +58,7 @@ function gameApp(gameId) {
     timeSyncIntervalId: null,
     reconnectTimeoutId: null,
     lastSyncRequest: 0,
-    timerInputMinutes: DEFAULT_VALUES.timer.presetMinutes.short,
+    timerInputMinutes: DEFAULT_VALUES.timer.presetMinutes.medium,
     timerInputSeconds: 0,
     teamANameInput: DEFAULT_VALUES.teamNames.teamA,
     teamBNameInput: DEFAULT_VALUES.teamNames.teamB,
@@ -143,7 +143,7 @@ function gameApp(gameId) {
 
               // タイマー入力値も同期
               this.timerInputMinutes = Math.floor(this.gameState.timer.remainingSeconds / 60);
-              this.timerInputSeconds = this.gameState.timer.remainingSeconds % 60;
+              this.timerInputSeconds = Math.floor(this.gameState.timer.remainingSeconds % 60);
 
               console.log('Timer updated to:', this.timerSeconds, 'seconds');
             }
