@@ -1038,57 +1038,56 @@ export const gameTemplate = `<!DOCTYPE html>
         </div>
       </div>
     </div>
-  </div>
 
-  <script>
-{{gameAppScript}}
-
-{{qrModalScript}}
-  </script>
-
-  <!-- ゲーム共有モーダル -->
-  <div id="qrModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
-    <div class="bg-white rounded-lg p-6 m-4 max-w-md w-full">
-      <div class="flex items-center justify-between mb-4">
-        <h3 class="text-lg font-bold text-gray-800 flex items-center gap-2">
-          <i data-lucide="share-2" class="w-5 h-5"></i>
-          ゲーム共有
-        </h3>
-        <button onclick="closeQRModal()" class="text-gray-500 hover:text-gray-700">
-          <i data-lucide="x" class="w-5 h-5"></i>
-        </button>
-      </div>
-
-      <div class="space-y-4">
-        <!-- QRコード表示 -->
-        <div class="text-center">
-          <canvas id="qrCanvas" class="mx-auto border border-gray-200 rounded"></canvas>
+    <!-- ゲーム共有モーダル -->
+    <div x-show="showQRModal" @click.self="closeQRModal()" @keydown.escape.window="closeQRModal()" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" x-cloak>
+      <div class="bg-white rounded-lg p-6 m-4 max-w-md w-full">
+        <div class="flex items-center justify-between mb-4">
+          <h3 class="text-lg font-bold text-gray-800 flex items-center gap-2">
+            <i data-lucide="share-2" class="w-5 h-5"></i>
+            ゲーム共有
+          </h3>
+          <button @click="closeQRModal()" class="text-gray-500 hover:text-gray-700">
+            <i data-lucide="x" class="w-5 h-5"></i>
+          </button>
         </div>
 
-        <!-- ゲームID -->
-        <div class="text-sm text-gray-600">
-          <p class="font-medium mb-2">ゲームID:</p>
-          <div class="flex items-center gap-2">
-            <p id="modalGameId" class="font-mono text-lg text-gray-800 bg-gray-50 p-2 rounded flex-1"></p>
-            <button onclick="copyGameId()" class="text-gray-500 hover:text-gray-700 p-2 hover:bg-gray-100 rounded transition-colors" title="ゲームIDをコピー">
-              <i data-lucide="copy" class="w-4 h-4"></i>
-            </button>
+        <div class="space-y-4">
+          <!-- QRコード表示 -->
+          <div class="text-center">
+            <canvas id="qrCanvas" class="mx-auto border border-gray-200 rounded"></canvas>
           </div>
-        </div>
 
-        <!-- URL -->
-        <div class="text-sm text-gray-600">
-          <p class="font-medium mb-2">URL:</p>
-          <div class="flex items-center gap-2">
-            <p id="urlDisplay" class="font-mono text-sm text-gray-800 bg-gray-50 p-2 rounded break-all flex-1"></p>
-            <button onclick="copyGameURL()" class="text-gray-500 hover:text-gray-700 p-2 hover:bg-gray-100 rounded transition-colors" title="URLをコピー">
-              <i data-lucide="copy" class="w-4 h-4"></i>
-            </button>
+          <!-- ゲームID -->
+          <div class="text-sm text-gray-600">
+            <p class="font-medium mb-2">ゲームID:</p>
+            <div class="flex items-center gap-2">
+              <p x-text="gameIdText" class="font-mono text-lg text-gray-800 bg-gray-50 p-2 rounded flex-1"></p>
+              <button @click="copyGameId()" class="text-gray-500 hover:text-gray-700 p-2 hover:bg-gray-100 rounded transition-colors" title="ゲームIDをコピー">
+                <i data-lucide="copy" class="w-4 h-4"></i>
+              </button>
+            </div>
+          </div>
+
+          <!-- URL -->
+          <div class="text-sm text-gray-600">
+            <p class="font-medium mb-2">URL:</p>
+            <div class="flex items-center gap-2">
+              <p x-text="gameUrl" class="font-mono text-sm text-gray-800 bg-gray-50 p-2 rounded break-all flex-1"></p>
+              <button @click="copyGameURL()" class="text-gray-500 hover:text-gray-700 p-2 hover:bg-gray-100 rounded transition-colors" title="URLをコピー">
+                <i data-lucide="copy" class="w-4 h-4"></i>
+              </button>
+            </div>
           </div>
         </div>
       </div>
     </div>
   </div>
+
+  <script>
+{{gameAppScript}}
+  </script>
+
 
 </body>
 </html>`;

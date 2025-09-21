@@ -64,6 +64,9 @@ function gameApp(gameId) {
     teamANameInput: DEFAULT_VALUES.teamNames.teamA,
     teamBNameInput: DEFAULT_VALUES.teamNames.teamB,
     isDesktop: window.matchMedia('(min-width: 768px)').matches,
+    showQRModal: false,
+    gameUrl: '',
+    gameIdText: '',
 
     init() {
       // localStorageからsimpleModeを読み込み
@@ -88,6 +91,10 @@ function gameApp(gameId) {
         this.timeSyncIntervalId = null;
       }
 
+      // QRモーダル関連の初期化
+      this.gameUrl = window.location.href;
+      this.gameIdText = this.gameId;
+
       this.connectWebSocket();
       // タイマー更新の初期化
       this.updateTimerDisplay();
@@ -108,6 +115,11 @@ function gameApp(gameId) {
           });
         }
       }, 60000);
+
+      // Lucide アイコンを初期化
+      if (typeof lucide !== 'undefined') {
+        lucide.createIcons();
+      }
     },
 
     connectWebSocket() {
@@ -436,9 +448,94 @@ function gameApp(gameId) {
       this.connected = false;
     },
 
-    // QRモーダル表示 (グローバル関数を呼び出す)
+    // QRモーダル表示
     openQRModal() {
-      window.openQRModal();
+      this.showQRModal = true;
+      // QRコードを生成
+      this.$nextTick(() => {
+        this.generateQRCode();
+        // Lucide iconsを再初期化
+        if (typeof lucide !== 'undefined') {
+          lucide.createIcons();
+        }
+      });
+    },
+
+    // QRモーダル閉じる
+    closeQRModal() {
+      this.showQRModal = false;
+    },
+
+    // QRコード生成
+    generateQRCode() {
+      const canvas = document.getElementById('qrCanvas');
+      if (!canvas) return;
+
+      try {
+        if (typeof QRious !== 'undefined') {
+          const qr = new QRious({
+            element: canvas,
+            value: this.gameUrl,
+            size: 200,
+            level: 'M'
+          });
+          console.log('QRコード生成成功');
+        } else {
+          console.error('QRiousライブラリが読み込まれていません');
+          this.showQRFallback(canvas);
+        }
+      } catch (error) {
+        console.error('QRコード生成エラー:', error);
+        this.showQRFallback(canvas);
+      }
+    },
+
+    // QRコード生成失敗時のフォールバック表示
+    showQRFallback(canvas) {
+      const ctx = canvas.getContext('2d');
+      canvas.width = 200;
+      canvas.height = 200;
+      ctx.fillStyle = '#f0f0f0';
+      ctx.fillRect(0, 0, 200, 200);
+      ctx.fillStyle = '#666';
+      ctx.font = '14px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText('QRコードが生成できません', 100, 90);
+      ctx.fillText('URLをコピーしてください', 100, 110);
+    },
+
+    // ゲームIDをコピー
+    copyGameId() {
+      navigator.clipboard.writeText(this.gameIdText).then(() => {
+        alert('ゲームIDをクリップボードにコピーしました');
+      }).catch((err) => {
+        console.error('ゲームIDコピーエラー:', err);
+        // フォールバック: テキストエリアを使用
+        const textArea = document.createElement('textarea');
+        textArea.value = this.gameIdText;
+        document.body.appendChild(textArea);
+        textArea.select();
+        document.execCommand('copy');
+        document.body.removeChild(textArea);
+        alert('ゲームIDをクリップボードにコピーしました');
+      });
+    },
+
+    // ゲームURLをコピー
+    copyGameURL() {
+      navigator.clipboard.writeText(this.gameUrl).then(() => {
+        alert('URLをクリップボードにコピーしました');
+      }).catch((err) => {
+        console.error('URLコピーエラー:', err);
+        // フォールバック: テキストエリアを使用
+        const textArea = document.createElement('textarea');
+        textArea.value = this.gameUrl;
+        document.body.appendChild(textArea);
+        textArea.select();
+        document.execCommand('copy');
+        document.body.removeChild(textArea);
+        alert('URLをクリップボードにコピーしました');
+      });
     }
   };
 }
