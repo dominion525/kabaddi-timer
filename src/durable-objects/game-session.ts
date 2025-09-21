@@ -403,7 +403,7 @@ export class GameSession {
       case 'TIMER_ADJUST':
         if (this.gameState.timer.isRunning) {
           // タイマー実行中の場合、startTimeを調整
-          this.gameState.timer.startTime = (this.gameState.timer.startTime || Date.now()) - (action.seconds * 1000);
+          this.gameState.timer.startTime = (this.gameState.timer.startTime || Date.now()) + (action.seconds * 1000);
         } else {
           // 停止中の場合、remainingSecondsを直接調整
           this.gameState.timer.remainingSeconds = Math.max(0, this.gameState.timer.remainingSeconds + action.seconds);
