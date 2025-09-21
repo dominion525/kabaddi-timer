@@ -269,9 +269,7 @@ export class GameSession {
     }
   }
 
-  private async handleAction(action: GameAction): Promise<void> {
-    await this.loadGameState(); // 必要に応じて状態を初期化
-
+  private async handleScoreActions(action: GameAction): Promise<void> {
     switch (action.type) {
       case 'SCORE_UPDATE':
         if (action.team === 'teamA') {
@@ -285,7 +283,11 @@ export class GameSession {
         this.gameState.teamA.score = 0;
         this.gameState.teamB.score = 0;
         break;
+    }
+  }
 
+  private async handleDoOrDieActions(action: GameAction): Promise<void> {
+    switch (action.type) {
       case 'DO_OR_DIE_UPDATE':
         if (action.team === 'teamA') {
           this.gameState.teamA.doOrDieCount = Math.max(0, Math.min(3, this.gameState.teamA.doOrDieCount + action.delta));
@@ -298,214 +300,122 @@ export class GameSession {
         this.gameState.teamA.doOrDieCount = 0;
         this.gameState.teamB.doOrDieCount = 0;
         break;
+    }
+  }
 
+  private async handleGameManagementActions(action: GameAction): Promise<void> {
+    switch (action.type) {
       case 'COURT_CHANGE':
-        const tempTeam = {
-          name: this.gameState.teamA.name,
-          score: this.gameState.teamA.score,
-          doOrDieCount: this.gameState.teamA.doOrDieCount
-        };
-
-        this.gameState.teamA.name = this.gameState.teamB.name;
-        this.gameState.teamA.score = this.gameState.teamB.score;
-        this.gameState.teamA.doOrDieCount = this.gameState.teamB.doOrDieCount;
-
-        this.gameState.teamB.name = tempTeam.name;
-        this.gameState.teamB.score = tempTeam.score;
-        this.gameState.teamB.doOrDieCount = tempTeam.doOrDieCount;
+        this.changeCourtSides();
         break;
 
       case 'RESET_ALL':
-        this.gameState.teamA.score = 0;
-        this.gameState.teamB.score = 0;
-        this.gameState.teamA.doOrDieCount = 0;
-        this.gameState.teamB.doOrDieCount = 0;
-
-        this.gameState.timer.startTime = null;
-        this.gameState.timer.isRunning = false;
-        this.gameState.timer.isPaused = false;
-        this.gameState.timer.pausedAt = null;
-        this.gameState.timer.remainingSeconds = this.gameState.timer.totalDuration;
-
-        if (this.gameState.subTimer) {
-          this.gameState.subTimer.startTime = null;
-          this.gameState.subTimer.isRunning = false;
-          this.gameState.subTimer.isPaused = false;
-          this.gameState.subTimer.pausedAt = null;
-          this.gameState.subTimer.remainingSeconds = this.gameState.subTimer.totalDuration;
-        }
+        this.resetAllGame();
         break;
 
       case 'SET_TEAM_NAME':
-        if (action.team === 'teamA') {
-          this.gameState.teamA.name = action.name;
-        } else {
-          this.gameState.teamB.name = action.name;
-        }
+        this.setTeamName(action.team, action.name);
         break;
+    }
+  }
 
+  private async handleTimerActions(action: GameAction): Promise<boolean> {
+    switch (action.type) {
       case 'TIMER_START':
-        if (!this.gameState.timer.isRunning) {
-          const now = Date.now();
-          if (this.gameState.timer.isPaused) {
-            // 一時停止からの再開
-            this.gameState.timer.totalDuration = this.gameState.timer.remainingSeconds;
-            this.gameState.timer.startTime = now;
-            this.gameState.timer.isPaused = false;
-            this.gameState.timer.pausedAt = null;
-          } else {
-            // 新規開始
-            this.gameState.timer.totalDuration = this.gameState.timer.remainingSeconds;
-            this.gameState.timer.startTime = now;
-          }
-          this.gameState.timer.isRunning = true;
-        }
-        await this.saveGameState();
-        await this.broadcastState();
-        await this.broadcastTimeSync();
-        return;
+        await this.startTimer();
+        return true;
 
       case 'TIMER_PAUSE':
-        if (this.gameState.timer.isRunning) {
-          // 現在の残り時間を計算して保存（isRunning = falseにする前に実行）
-          this.updateRemainingTime();
-          this.gameState.timer.isRunning = false;
-          this.gameState.timer.isPaused = true;
-          this.gameState.timer.pausedAt = Date.now();
-        }
-        await this.saveGameState();
-        await this.broadcastState();
-        await this.broadcastTimeSync();
-        return;
+        await this.pauseTimer();
+        return true;
 
       case 'TIMER_RESET':
-        this.gameState.timer.startTime = null;
-        this.gameState.timer.isRunning = false;
-        this.gameState.timer.isPaused = false;
-        this.gameState.timer.pausedAt = null;
-        this.gameState.timer.remainingSeconds = this.gameState.timer.totalDuration;
-        await this.saveGameState();
-        await this.broadcastState();
-        await this.broadcastTimeSync();
-        return;
+        await this.resetTimer();
+        return true;
 
       case 'TIMER_SET':
-        this.gameState.timer.totalDuration = action.duration;
-        this.gameState.timer.remainingSeconds = action.duration;
-        this.gameState.timer.startTime = null;
-        this.gameState.timer.isRunning = false;
-        this.gameState.timer.isPaused = false;
-        this.gameState.timer.pausedAt = null;
-        await this.saveGameState();
-        await this.broadcastState();
-        await this.broadcastTimeSync();
-        return;
+        await this.setTimerDuration(action.duration);
+        return true;
 
       case 'TIMER_ADJUST':
-        if (this.gameState.timer.isRunning) {
-          // タイマー実行中の場合、startTimeを調整
-          this.gameState.timer.startTime = (this.gameState.timer.startTime || Date.now()) + (action.seconds * 1000);
-        } else {
-          // 停止中の場合、remainingSecondsを直接調整
-          this.gameState.timer.remainingSeconds = Math.max(0, this.gameState.timer.remainingSeconds + action.seconds);
-        }
-        await this.saveGameState();
-        await this.broadcastState();
-        await this.broadcastTimeSync();
-        return;
-
-      case 'SUB_TIMER_START':
-        if (!this.gameState.subTimer?.isRunning) {
-          if (!this.gameState.subTimer) {
-            this.gameState.subTimer = {
-              totalDuration: 30,
-              startTime: null,
-              isRunning: false,
-              isPaused: false,
-              pausedAt: null,
-              remainingSeconds: 30
-            };
-          }
-          const now = Date.now();
-          if (this.gameState.subTimer.isPaused) {
-            // 一時停止からの再開
-            const pausedDuration = now - (this.gameState.subTimer.pausedAt || now);
-            this.gameState.subTimer.startTime = (this.gameState.subTimer.startTime || now) + pausedDuration;
-            this.gameState.subTimer.isPaused = false;
-            this.gameState.subTimer.pausedAt = null;
-          } else {
-            // 新規開始
-            this.gameState.subTimer.startTime = now;
-          }
-          this.gameState.subTimer.isRunning = true;
-        }
-        await this.saveGameState();
-        await this.broadcastState();
-        await this.broadcastTimeSync();
-        return;
-
-      case 'SUB_TIMER_PAUSE':
-        if (this.gameState.subTimer?.isRunning) {
-          // 現在の残り時間を計算して保存（isRunning = falseにする前に実行）
-          this.updateSubTimerRemainingTime();
-          this.gameState.subTimer.isRunning = false;
-          this.gameState.subTimer.isPaused = true;
-          this.gameState.subTimer.pausedAt = Date.now();
-        }
-        await this.saveGameState();
-        await this.broadcastState();
-        await this.broadcastTimeSync();
-        return;
-
-      case 'SUB_TIMER_RESET':
-        if (!this.gameState.subTimer) {
-          this.gameState.subTimer = {
-            totalDuration: 30,
-            startTime: null,
-            isRunning: false,
-            isPaused: false,
-            pausedAt: null,
-            remainingSeconds: 30
-          };
-        } else {
-          this.gameState.subTimer.startTime = null;
-          this.gameState.subTimer.isRunning = false;
-          this.gameState.subTimer.isPaused = false;
-          this.gameState.subTimer.pausedAt = null;
-          this.gameState.subTimer.remainingSeconds = this.gameState.subTimer.totalDuration;
-        }
-        await this.saveGameState();
-        await this.broadcastState();
-        await this.broadcastTimeSync();
-        return;
-
-      case 'TIME_SYNC_REQUEST':
-        // 時刻同期レスポンスを送信（状態は変更しない）
-        const syncData: TimeSyncData = {
-          serverTime: Date.now(),
-          clientRequestTime: action.clientRequestTime
-        };
-
-        const syncMessage: GameMessage = {
-          type: 'time_sync',
-          data: syncData,
-          timestamp: Date.now()
-        };
-
-        // リクエスト元にのみ送信
-        for (const connection of this.connections) {
-          try {
-            connection.send(JSON.stringify(syncMessage));
-          } catch (error) {
-            this.connections.delete(connection);
-          }
-        }
-        return;
+        await this.adjustTimerTime(action.seconds);
+        return true;
 
       default:
-        return;
+        return false;
+    }
+  }
+
+  private async handleSubTimerActions(action: GameAction): Promise<boolean> {
+    switch (action.type) {
+      case 'SUB_TIMER_START':
+        await this.startSubTimer();
+        return true;
+
+      case 'SUB_TIMER_PAUSE':
+        await this.pauseSubTimer();
+        return true;
+
+      case 'SUB_TIMER_RESET':
+        await this.resetSubTimer();
+        return true;
+
+      default:
+        return false;
+    }
+  }
+
+  private async handleTimeSyncRequest(action: GameAction): Promise<boolean> {
+    if (action.type === 'TIME_SYNC_REQUEST') {
+      // 時刻同期レスポンスを送信（状態は変更しない）
+      const syncData: TimeSyncData = {
+        serverTime: Date.now(),
+        clientRequestTime: action.clientRequestTime
+      };
+
+      const syncMessage: GameMessage = {
+        type: 'time_sync',
+        data: syncData,
+        timestamp: Date.now()
+      };
+
+      // リクエスト元にのみ送信
+      for (const connection of this.connections) {
+        try {
+          connection.send(JSON.stringify(syncMessage));
+        } catch (error) {
+          this.connections.delete(connection);
+        }
+      }
+      return true;
+    }
+    return false;
+  }
+
+  private async handleAction(action: GameAction): Promise<void> {
+    await this.loadGameState(); // 必要に応じて状態を初期化
+
+    // 時刻同期リクエストは状態変更を伴わないため先に処理
+    if (await this.handleTimeSyncRequest(action)) {
+      return;
     }
 
+    // タイマー関連アクションは状態保存・ブロードキャストを内部で行う
+    if (await this.handleTimerActions(action)) {
+      return;
+    }
+
+    // サブタイマー関連アクションは状態保存・ブロードキャストを内部で行う
+    if (await this.handleSubTimerActions(action)) {
+      return;
+    }
+
+    // その他のアクションは状態変更のみ行い、最後に保存・ブロードキャストする
+    await this.handleScoreActions(action);
+    await this.handleDoOrDieActions(action);
+    await this.handleGameManagementActions(action);
+
+    // 状態保存とブロードキャスト
     await this.saveGameState();
     await this.broadcastState();
   }
@@ -576,6 +486,176 @@ export class GameSession {
     if (this.gameState.subTimer?.startTime && this.gameState.subTimer.isRunning) {
       const elapsed = (Date.now() - this.gameState.subTimer.startTime) / 1000;
       this.gameState.subTimer.remainingSeconds = Math.max(0, this.gameState.subTimer.totalDuration - elapsed);
+    }
+  }
+
+  private async saveAndBroadcast(): Promise<void> {
+    await this.saveGameState();
+    await this.broadcastState();
+    await this.broadcastTimeSync();
+  }
+
+  private async startTimer(): Promise<void> {
+    if (!this.gameState.timer.isRunning) {
+      const now = Date.now();
+      if (this.gameState.timer.isPaused) {
+        // 一時停止からの再開
+        this.gameState.timer.totalDuration = this.gameState.timer.remainingSeconds;
+        this.gameState.timer.startTime = now;
+        this.gameState.timer.isPaused = false;
+        this.gameState.timer.pausedAt = null;
+      } else {
+        // 新規開始
+        this.gameState.timer.totalDuration = this.gameState.timer.remainingSeconds;
+        this.gameState.timer.startTime = now;
+      }
+      this.gameState.timer.isRunning = true;
+    }
+    await this.saveAndBroadcast();
+  }
+
+  private async pauseTimer(): Promise<void> {
+    if (this.gameState.timer.isRunning) {
+      // 現在の残り時間を計算して保存（isRunning = falseにする前に実行）
+      this.updateRemainingTime();
+      this.gameState.timer.isRunning = false;
+      this.gameState.timer.isPaused = true;
+      this.gameState.timer.pausedAt = Date.now();
+    }
+    await this.saveAndBroadcast();
+  }
+
+  private async resetTimer(): Promise<void> {
+    this.gameState.timer.startTime = null;
+    this.gameState.timer.isRunning = false;
+    this.gameState.timer.isPaused = false;
+    this.gameState.timer.pausedAt = null;
+    this.gameState.timer.remainingSeconds = this.gameState.timer.totalDuration;
+    await this.saveAndBroadcast();
+  }
+
+  private async setTimerDuration(duration: number): Promise<void> {
+    this.gameState.timer.totalDuration = duration;
+    this.gameState.timer.remainingSeconds = duration;
+    this.gameState.timer.startTime = null;
+    this.gameState.timer.isRunning = false;
+    this.gameState.timer.isPaused = false;
+    this.gameState.timer.pausedAt = null;
+    await this.saveAndBroadcast();
+  }
+
+  private async adjustTimerTime(seconds: number): Promise<void> {
+    if (this.gameState.timer.isRunning) {
+      // タイマー実行中の場合、startTimeを調整
+      this.gameState.timer.startTime = (this.gameState.timer.startTime || Date.now()) + (seconds * 1000);
+    } else {
+      // 停止中の場合、remainingSecondsを直接調整
+      this.gameState.timer.remainingSeconds = Math.max(0, this.gameState.timer.remainingSeconds + seconds);
+    }
+    await this.saveAndBroadcast();
+  }
+
+  private async startSubTimer(): Promise<void> {
+    if (!this.gameState.subTimer?.isRunning) {
+      if (!this.gameState.subTimer) {
+        this.gameState.subTimer = {
+          totalDuration: 30,
+          startTime: null,
+          isRunning: false,
+          isPaused: false,
+          pausedAt: null,
+          remainingSeconds: 30
+        };
+      }
+      const now = Date.now();
+      if (this.gameState.subTimer.isPaused) {
+        // 一時停止からの再開
+        const pausedDuration = now - (this.gameState.subTimer.pausedAt || now);
+        this.gameState.subTimer.startTime = (this.gameState.subTimer.startTime || now) + pausedDuration;
+        this.gameState.subTimer.isPaused = false;
+        this.gameState.subTimer.pausedAt = null;
+      } else {
+        // 新規開始
+        this.gameState.subTimer.startTime = now;
+      }
+      this.gameState.subTimer.isRunning = true;
+    }
+    await this.saveAndBroadcast();
+  }
+
+  private async pauseSubTimer(): Promise<void> {
+    if (this.gameState.subTimer?.isRunning) {
+      // 現在の残り時間を計算して保存（isRunning = falseにする前に実行）
+      this.updateSubTimerRemainingTime();
+      this.gameState.subTimer.isRunning = false;
+      this.gameState.subTimer.isPaused = true;
+      this.gameState.subTimer.pausedAt = Date.now();
+    }
+    await this.saveAndBroadcast();
+  }
+
+  private async resetSubTimer(): Promise<void> {
+    if (!this.gameState.subTimer) {
+      this.gameState.subTimer = {
+        totalDuration: 30,
+        startTime: null,
+        isRunning: false,
+        isPaused: false,
+        pausedAt: null,
+        remainingSeconds: 30
+      };
+    } else {
+      this.gameState.subTimer.startTime = null;
+      this.gameState.subTimer.isRunning = false;
+      this.gameState.subTimer.isPaused = false;
+      this.gameState.subTimer.pausedAt = null;
+      this.gameState.subTimer.remainingSeconds = this.gameState.subTimer.totalDuration;
+    }
+    await this.saveAndBroadcast();
+  }
+
+  private changeCourtSides(): void {
+    const tempTeam = {
+      name: this.gameState.teamA.name,
+      score: this.gameState.teamA.score,
+      doOrDieCount: this.gameState.teamA.doOrDieCount
+    };
+
+    this.gameState.teamA.name = this.gameState.teamB.name;
+    this.gameState.teamA.score = this.gameState.teamB.score;
+    this.gameState.teamA.doOrDieCount = this.gameState.teamB.doOrDieCount;
+
+    this.gameState.teamB.name = tempTeam.name;
+    this.gameState.teamB.score = tempTeam.score;
+    this.gameState.teamB.doOrDieCount = tempTeam.doOrDieCount;
+  }
+
+  private resetAllGame(): void {
+    this.gameState.teamA.score = 0;
+    this.gameState.teamB.score = 0;
+    this.gameState.teamA.doOrDieCount = 0;
+    this.gameState.teamB.doOrDieCount = 0;
+
+    this.gameState.timer.startTime = null;
+    this.gameState.timer.isRunning = false;
+    this.gameState.timer.isPaused = false;
+    this.gameState.timer.pausedAt = null;
+    this.gameState.timer.remainingSeconds = this.gameState.timer.totalDuration;
+
+    if (this.gameState.subTimer) {
+      this.gameState.subTimer.startTime = null;
+      this.gameState.subTimer.isRunning = false;
+      this.gameState.subTimer.isPaused = false;
+      this.gameState.subTimer.pausedAt = null;
+      this.gameState.subTimer.remainingSeconds = this.gameState.subTimer.totalDuration;
+    }
+  }
+
+  private setTeamName(team: 'teamA' | 'teamB', name: string): void {
+    if (team === 'teamA') {
+      this.gameState.teamA.name = name;
+    } else {
+      this.gameState.teamB.name = name;
     }
   }
 
