@@ -349,12 +349,13 @@ export class GameSession {
           const now = Date.now();
           if (this.gameState.timer.isPaused) {
             // 一時停止からの再開
-            const pausedDuration = now - (this.gameState.timer.pausedAt || now);
-            this.gameState.timer.startTime = (this.gameState.timer.startTime || now) + pausedDuration;
+            this.gameState.timer.totalDuration = this.gameState.timer.remainingSeconds;
+            this.gameState.timer.startTime = now;
             this.gameState.timer.isPaused = false;
             this.gameState.timer.pausedAt = null;
           } else {
             // 新規開始
+            this.gameState.timer.totalDuration = this.gameState.timer.remainingSeconds;
             this.gameState.timer.startTime = now;
           }
           this.gameState.timer.isRunning = true;
