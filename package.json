@@ -1,12 +1,12 @@
 {
   "name": "kabaddi-timer",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "カバディ用のタイマー・スコアボードアプリケーション",
   "main": "src/index.ts",
   "scripts": {
     "dev": "wrangler dev",
     "build": "node scripts/build-templates.js && tsc",
-    "deploy": "wrangler deploy",
+    "deploy": "wrangler deploy --env=\"\"",
     "typecheck": "tsc --noEmit",
     "build:frontend": "vite build",
     "dev:frontend": "vite dev --port 3000"

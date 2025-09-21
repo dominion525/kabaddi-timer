@@ -15,12 +15,12 @@ export class GameSession {
       teamA: { name: 'チームA', score: 0, doOrDieCount: 0 },
       teamB: { name: 'チームB', score: 0, doOrDieCount: 0 },
       timer: {
-        totalDuration: 3 * 60, // デフォルト3分
+        totalDuration: 15 * 60, // デフォルト15分
         startTime: null,
         isRunning: false,
         isPaused: false,
         pausedAt: null,
-        remainingSeconds: 3 * 60
+        remainingSeconds: 15 * 60
       },
       subTimer: {
         totalDuration: 30, // 固定30秒
