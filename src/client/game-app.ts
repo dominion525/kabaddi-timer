@@ -243,6 +243,13 @@ function gameApp(gameId) {
       this.sendAction(ACTIONS.DO_OR_DIE_RESET);
     },
 
+    resetTeamDoOrDie(team) {
+      const currentCount = this.gameState[team].doOrDieCount;
+      if (currentCount > 0) {
+        this.updateDoOrDie(team, -currentCount);
+      }
+    },
+
     get teamADoOrDieIndicators() {
       return Array(3).fill(0).map((_, i) => i < (this.gameState.teamA.doOrDieCount || 0));
     },

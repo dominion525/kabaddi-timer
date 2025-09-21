@@ -373,7 +373,7 @@ export const gameTemplate = `<!DOCTYPE html>
                             class="h-12 bg-gray-500 hover:bg-gray-600 text-white rounded-lg font-bold text-xs transition-colors active:scale-95">
                       スコア<br>リセット
                     </button>
-                    <button @click="updateDoOrDie('teamA', -gameState.teamA.doOrDieCount)"
+                    <button @click="resetTeamDoOrDie('teamA')"
                             class="h-12 bg-gray-400 hover:bg-gray-500 text-white rounded-lg font-bold text-xs transition-colors active:scale-95">
                       リセット
                     </button>
@@ -406,7 +406,7 @@ export const gameTemplate = `<!DOCTYPE html>
                   </div>
                   <!-- リセットボタン行 -->
                   <div class="grid grid-cols-2 gap-x-2">
-                    <button @click="updateDoOrDie('teamB', -gameState.teamB.doOrDieCount)"
+                    <button @click="resetTeamDoOrDie('teamB')"
                             class="h-12 bg-gray-400 hover:bg-gray-500 text-white rounded-lg font-bold text-xs transition-colors active:scale-95">
                       リセット
                     </button>
@@ -781,7 +781,7 @@ export const gameTemplate = `<!DOCTYPE html>
                             class="h-12 bg-gray-500 hover:bg-gray-600 text-white rounded-lg font-bold text-xs transition-colors active:scale-95">
                       スコア<br>リセット
                     </button>
-                    <button @click="updateDoOrDie('teamA', -gameState.teamA.doOrDieCount)"
+                    <button @click="resetTeamDoOrDie('teamA')"
                             class="h-12 bg-gray-400 hover:bg-gray-500 text-white rounded-lg font-bold text-xs transition-colors active:scale-95">
                       リセット
                     </button>
@@ -814,7 +814,7 @@ export const gameTemplate = `<!DOCTYPE html>
                   </div>
                   <!-- リセットボタン行 -->
                   <div class="grid grid-cols-2 gap-x-1">
-                    <button @click="updateDoOrDie('teamB', -gameState.teamB.doOrDieCount)"
+                    <button @click="resetTeamDoOrDie('teamB')"
                             class="h-12 bg-gray-400 hover:bg-gray-500 text-white rounded-lg font-bold text-xs transition-colors active:scale-95">
                       リセット
                     </button>
@@ -949,7 +949,7 @@ export const gameTemplate = `<!DOCTYPE html>
                             class="h-8 bg-gray-500 hover:bg-gray-600 text-white rounded text-xs font-bold transition-colors active:scale-95">
                       スコア<br>リセット
                     </button>
-                    <button @click="updateDoOrDie('teamA', -gameState.teamA.doOrDieCount)"
+                    <button @click="resetTeamDoOrDie('teamA')"
                             class="h-8 bg-gray-400 hover:bg-gray-500 text-white rounded text-xs font-bold transition-colors active:scale-95">
                       リセット
                     </button>
@@ -982,7 +982,7 @@ export const gameTemplate = `<!DOCTYPE html>
                   </div>
                   <!-- リセットボタン行 -->
                   <div class="grid grid-cols-2 gap-x-1">
-                    <button @click="updateDoOrDie('teamB', -gameState.teamB.doOrDieCount)"
+                    <button @click="resetTeamDoOrDie('teamB')"
                             class="h-8 bg-gray-400 hover:bg-gray-500 text-white rounded text-xs font-bold transition-colors active:scale-95">
                       リセット
                     </button>
