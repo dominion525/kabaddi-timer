@@ -7,7 +7,7 @@ window.gameApp = function(gameId) {
       teamB: 'チームB'
     },
     timer: {
-      defaultDuration: 180, // 3分
+      defaultDuration: 900, // 15分
       presetMinutes: {
         short: 3,
         medium: 15,

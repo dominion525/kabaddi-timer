@@ -10,6 +10,12 @@ const templates = [
     inputFile: 'src/templates/index.html',
     outputFile: 'src/generated/index-template.ts',
     exportName: 'indexTemplate'
+  },
+  {
+    name: 'game',
+    inputFile: 'src/templates/game.html',
+    outputFile: 'src/generated/game-template.ts',
+    exportName: 'gameTemplate'
   }
 ];
 
