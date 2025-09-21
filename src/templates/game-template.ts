@@ -517,7 +517,7 @@ export const gameTemplate = `<!DOCTYPE html>
            x-transition:leave-start="transform translate-y-0"
            x-transition:leave-end="transform translate-y-full"
            class="md:hidden fixed inset-x-0 bottom-0 bg-white shadow-2xl z-50"
-           style="height: 40vh;">
+           style="height: 50vh;">
 
         <!-- パネル内容 -->
         <div class="relative z-50 h-full flex flex-col">
