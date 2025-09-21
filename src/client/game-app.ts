@@ -49,6 +49,7 @@ function gameApp(gameId) {
     showControlPanel: false,
     showStatusBar: true,
     simpleMode: false,
+    scrollLockEnabled: true,
     timerSeconds: DEFAULT_VALUES.timer.defaultDuration,
     timerRunning: false,
     subTimerSeconds: 30,
@@ -69,6 +70,12 @@ function gameApp(gameId) {
       const savedSimpleMode = localStorage.getItem('kabaddi-timer-simple-mode');
       if (savedSimpleMode !== null) {
         this.simpleMode = JSON.parse(savedSimpleMode);
+      }
+
+      // localStorageからscrollLockEnabledを読み込み
+      const savedScrollLock = localStorage.getItem('kabaddi-timer-scroll-lock');
+      if (savedScrollLock !== null) {
+        this.scrollLockEnabled = JSON.parse(savedScrollLock);
       }
 
       // 既存のアニメーション・インターバルをクリアして重複を防止
@@ -263,6 +270,11 @@ function gameApp(gameId) {
     toggleSimpleMode() {
       this.simpleMode = !this.simpleMode;
       localStorage.setItem('kabaddi-timer-simple-mode', JSON.stringify(this.simpleMode));
+    },
+
+    toggleScrollLock() {
+      this.scrollLockEnabled = !this.scrollLockEnabled;
+      localStorage.setItem('kabaddi-timer-scroll-lock', JSON.stringify(this.scrollLockEnabled));
     },
 
     get formattedTimer() {

@@ -553,14 +553,26 @@ export const gameTemplate = `<!DOCTYPE html>
         <!-- パネル内容 -->
         <div class="relative z-50 h-full flex flex-col">
           <!-- ハンドル -->
-          <div class="bg-gray-200 p-3 flex items-center justify-between">
-            <div class="flex-1" @click="toggleControlPanel()">
-              <div class="w-12 h-1 bg-gray-400 rounded-full mx-auto cursor-pointer"></div>
+          <div class="bg-gray-200 p-3 relative">
+            <!-- 左側トグル -->
+            <div class="absolute left-3 top-1/2 transform -translate-y-1/2 flex items-center space-x-1" x-show="simpleMode">
+              <button @click="toggleScrollLock()"
+                      class="relative inline-flex h-4 w-7 items-center rounded-full transition-colors"
+                      :class="scrollLockEnabled ? 'bg-blue-500' : 'bg-gray-300'">
+                <span class="inline-block h-2.5 w-2.5 transform rounded-full bg-white transition-transform"
+                      :class="scrollLockEnabled ? 'translate-x-3' : 'translate-x-0.5'"></span>
+              </button>
+              <span class="text-xs text-gray-600" style="font-size: 10px;">スクロールロック</span>
             </div>
 
-            <!-- トグルスイッチ -->
-            <div class="flex items-center space-x-1">
-              <span class="text-xs text-gray-600">シンプル</span>
+            <!-- 中央ハンドル（完全中央固定） -->
+            <div class="flex justify-center items-center" @click="toggleControlPanel()">
+              <div class="w-12 h-1 bg-gray-400 rounded-full cursor-pointer"></div>
+            </div>
+
+            <!-- 右側トグル -->
+            <div class="absolute right-3 top-1/2 transform -translate-y-1/2 flex items-center space-x-1">
+              <span class="text-xs text-gray-600" style="font-size: 10px;">シンプル</span>
               <button @click="toggleSimpleMode()"
                       class="relative inline-flex h-4 w-7 items-center rounded-full transition-colors"
                       :class="simpleMode ? 'bg-blue-500' : 'bg-gray-300'">
@@ -834,7 +846,8 @@ export const gameTemplate = `<!DOCTYPE html>
           </div>
 
           <!-- シンプルモードのコンテンツエリア -->
-          <div x-show="simpleMode" class="flex-1 p-3 space-y-3">
+          <div x-show="simpleMode" class="flex-1 p-3 space-y-3"
+               :class="scrollLockEnabled ? '' : 'overflow-y-auto'">
 
             <!-- タイマー制御 -->
             <div class="bg-gray-50 p-2 rounded-lg">
