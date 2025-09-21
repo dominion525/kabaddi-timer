@@ -795,6 +795,7 @@ export const gameTemplate = `<!DOCTYPE html>
               </div>
             </div>
 
+
           </div>
 
           <!-- シンプルモードのコンテンツエリア -->
@@ -814,7 +815,7 @@ export const gameTemplate = `<!DOCTYPE html>
                     停止
                   </button>
                   <button @click="resetTimer()"
-                          class="bg-red-500 hover:bg-red-600 text-white py-2 px-2 rounded text-xs font-bold transition-colors flex-1">
+                          class="bg-red-500 hover:bg-red-600 text-white py-2 px-2 rounded text-xs font-bold transition-colors flex-1 whitespace-nowrap">
                     リセット
                   </button>
                 </div>
@@ -825,16 +826,16 @@ export const gameTemplate = `<!DOCTYPE html>
                 <!-- サブタイマー -->
                 <div class="flex gap-1 flex-1">
                   <button @click="startSubTimer()"
-                          class="bg-yellow-500 hover:bg-yellow-600 text-white py-2 px-1 rounded text-xs font-bold transition-colors flex-1">
+                          class="bg-green-500 hover:bg-green-600 text-white py-2 px-1 rounded text-xs font-bold transition-colors flex-1">
                     30秒<br>開始
                   </button>
                   <button @click="stopSubTimer()"
-                          class="bg-orange-500 hover:bg-orange-600 text-white py-2 px-1 rounded text-xs font-bold transition-colors flex-1">
+                          class="bg-yellow-500 hover:bg-yellow-600 text-white py-2 px-1 rounded text-xs font-bold transition-colors flex-1">
                     30秒<br>停止
                   </button>
                   <button @click="resetSubTimer()"
                           class="bg-red-500 hover:bg-red-600 text-white py-2 px-1 rounded text-xs font-bold transition-colors flex-1">
-                    リセット
+                    30秒<br>リセット
                   </button>
                 </div>
               </div>
@@ -942,6 +943,46 @@ export const gameTemplate = `<!DOCTYPE html>
                       スコア<br>リセット
                     </button>
                   </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- タイマープリセット -->
+            <div class="bg-blue-50 p-2 rounded-lg border border-blue-200">
+              <div class="flex gap-1">
+                <!-- 左側プリセット -->
+                <div class="flex gap-1 flex-1">
+                  <button @click="setTimer(20, 0)"
+                          class="bg-blue-500 hover:bg-blue-600 text-white py-2 px-1 rounded text-xs font-bold transition-colors flex-1">
+                    20分
+                  </button>
+                  <button @click="setTimer(15, 0)"
+                          class="bg-blue-500 hover:bg-blue-600 text-white py-2 px-1 rounded text-xs font-bold transition-colors flex-1">
+                    15分
+                  </button>
+                  <button @click="setTimer(3, 0)"
+                          class="bg-blue-500 hover:bg-blue-600 text-white py-2 px-1 rounded text-xs font-bold transition-colors flex-1">
+                    3分
+                  </button>
+                </div>
+
+                <!-- セパレーター -->
+                <div class="w-px bg-blue-300 mx-1"></div>
+
+                <!-- 右側操作ボタン -->
+                <div class="flex gap-1 flex-1">
+                  <button @click="adjustTimer(1)"
+                          class="bg-green-500 hover:bg-green-600 text-white py-2 px-1 rounded text-xs font-bold transition-colors flex-1">
+                    +1秒
+                  </button>
+                  <button @click="adjustTimer(-1)"
+                          class="bg-red-500 hover:bg-red-600 text-white py-2 px-1 rounded text-xs font-bold transition-colors flex-1">
+                    -1秒
+                  </button>
+                  <button @click="courtChange()"
+                          class="bg-gray-400 hover:bg-gray-500 text-white py-2 px-1 rounded text-xs font-bold transition-colors flex-1">
+                    コート<br>チェンジ
+                  </button>
                 </div>
               </div>
             </div>
