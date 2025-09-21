@@ -2,7 +2,7 @@ export const gameTemplate = `<!DOCTYPE html>
 <html lang="ja">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, minimum-scale=1.0">
   <title>スコアボード - {{gameId}}</title>
   <script src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
   <script src="https://cdn.tailwindcss.com"></script>
@@ -19,6 +19,37 @@ export const gameTemplate = `<!DOCTYPE html>
       overscroll-behavior: none;
       position: fixed;
       width: 100%;
+    }
+
+    /* モバイルデバイス専用のタッチ操作制御 */
+    @media (max-width: 768px) {
+      body {
+        touch-action: manipulation; /* ダブルタップズーム無効化、ピンチズーム維持 */
+        -webkit-touch-callout: none; /* 長押しメニュー無効化 */
+        -webkit-tap-highlight-color: transparent; /* タップ時のハイライト削除 */
+      }
+
+      button, .clickable {
+        touch-action: manipulation;
+        -webkit-user-select: none;
+        user-select: none;
+      }
+
+      input, textarea {
+        font-size: 16px !important; /* iOS自動ズーム防止 */
+      }
+
+      /* スコア表示エリアのタッチ制御 */
+      .score-area {
+        touch-action: manipulation;
+      }
+
+      /* タイマー表示エリアのタッチ制御 */
+      .timer-area {
+        touch-action: manipulation;
+        -webkit-user-select: none;
+        user-select: none;
+      }
     }
   </style>
 </head>
@@ -409,7 +440,7 @@ export const gameTemplate = `<!DOCTYPE html>
     </div>
 
     <!-- スマホ表示用 (md未満) -->
-    <div class="md:hidden min-h-screen flex flex-col bg-gray-900">
+    <div class="md:hidden min-h-screen flex flex-col bg-gray-900 touch-manipulation">
       <!-- ヘッダー -->
       <div class="text-white">
         <div class="grid w-full" style="grid-template-columns: 2fr 1fr 2fr;">
@@ -428,7 +459,7 @@ export const gameTemplate = `<!DOCTYPE html>
       <!-- メインスコア表示 -->
       <div class="flex-1 grid grid-cols-3 gap-0" :class="showStatusBar ? 'pb-16' : 'pb-0'" style="grid-template-rows: 0.7fr 0.6fr; max-height: 45vh;">
         <!-- 上段：チームA -->
-        <div class="bg-red-500 text-white flex flex-col">
+        <div class="bg-red-500 text-white flex flex-col score-area">
           <div class="flex-1 flex items-center justify-center py-0 px-1">
             <div class="font-bold font-mono" style="font-size: 4rem; line-height: 1;" x-text="gameState.teamA.score"></div>
           </div>
@@ -442,7 +473,7 @@ export const gameTemplate = `<!DOCTYPE html>
         </div>
 
         <!-- 上段：サブタイマー -->
-        <div class="bg-gray-800 text-white flex flex-col items-center justify-center py-0.5 px-1 cursor-pointer" @click="toggleStatusBar()">
+        <div class="bg-gray-800 text-white flex flex-col items-center justify-center py-0.5 px-1 cursor-pointer timer-area" @click="toggleStatusBar()">
           <div class="text-center">
             <div style="font-size: 4rem; line-height: 1;" class="font-bold font-mono text-yellow-400" x-text="formattedSubTimer"></div>
             <div class="text-xs opacity-75">
@@ -453,7 +484,7 @@ export const gameTemplate = `<!DOCTYPE html>
         </div>
 
         <!-- 上段：チームB -->
-        <div class="bg-blue-500 text-white flex flex-col">
+        <div class="bg-blue-500 text-white flex flex-col score-area">
           <div class="flex-1 flex items-center justify-center py-0 px-1">
             <div class="font-bold font-mono" style="font-size: 4rem; line-height: 1;" x-text="gameState.teamB.score"></div>
           </div>
@@ -467,7 +498,7 @@ export const gameTemplate = `<!DOCTYPE html>
         </div>
 
         <!-- 下段：メインタイマー（3列全体を使用） -->
-        <div class="col-span-3 bg-gray-800 text-white flex flex-col items-center justify-center px-1 pt-8 pb-2">
+        <div class="col-span-3 bg-gray-800 text-white flex flex-col items-center justify-center px-1 pt-8 pb-2 timer-area">
           <div style="font-size: 6rem; line-height: 0.6;" class="font-bold font-mono" x-text="formattedTimer"></div>
           <div class="text-sm opacity-75 mt-2">
             <span x-show="timerRunning" class="text-green-400">● 動作中</span>
@@ -549,12 +580,14 @@ export const gameTemplate = `<!DOCTYPE html>
                 <div>
                   <input type="text" x-model="teamANameInput"
                          @change="setTeamName('teamA', teamANameInput)"
-                         class="w-full p-3 border rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500">
+                         class="w-full p-3 border rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                         style="font-size: 16px;">
                 </div>
                 <div>
                   <input type="text" x-model="teamBNameInput"
                          @change="setTeamName('teamB', teamBNameInput)"
-                         class="w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                         class="w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                         style="font-size: 16px;">
                 </div>
               </div>
             </div>
@@ -568,10 +601,12 @@ export const gameTemplate = `<!DOCTYPE html>
                 <label class="block text-sm font-medium text-gray-700 mb-2">時間設定</label>
                 <div class="flex space-x-2 mb-3">
                   <input type="number" min="0" max="99" x-model.number="timerInputMinutes"
-                         class="w-18 p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 text-center">
+                         class="w-18 p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 text-center"
+                         style="font-size: 16px;">
                   <span class="flex items-center">分</span>
                   <input type="number" min="0" max="59" x-model.number="timerInputSeconds"
-                         class="w-18 p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 text-center">
+                         class="w-18 p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 text-center"
+                         style="font-size: 16px;">
                   <span class="flex items-center">秒</span>
                   <button @click="setTimer(timerInputMinutes, timerInputSeconds)"
                           class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-3 rounded-lg transition-colors">
