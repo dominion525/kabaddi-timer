@@ -855,15 +855,15 @@ export const gameTemplate = `<!DOCTYPE html>
                 <!-- メインタイマー -->
                 <div class="flex gap-1 flex-1">
                   <button @click="startTimer()"
-                          class="bg-green-500 hover:bg-green-600 text-white py-2 px-2 rounded text-xs font-bold transition-colors flex-1">
+                          class="bg-green-500 hover:bg-green-600 text-white py-2 px-1 rounded text-xs font-bold transition-colors flex-1">
                     開始
                   </button>
                   <button @click="stopTimer()"
-                          class="bg-yellow-500 hover:bg-yellow-600 text-white py-2 px-2 rounded text-xs font-bold transition-colors flex-1">
+                          class="bg-yellow-500 hover:bg-yellow-600 text-white py-2 px-1 rounded text-xs font-bold transition-colors flex-1">
                     停止
                   </button>
                   <button @click="resetTimer()"
-                          class="bg-red-500 hover:bg-red-600 text-white py-2 px-2 rounded text-xs font-bold transition-colors flex-1 whitespace-nowrap">
+                          class="bg-red-500 hover:bg-red-600 text-white py-2 px-1 rounded text-xs font-bold transition-colors flex-1 whitespace-nowrap">
                     リセット
                   </button>
                 </div>
