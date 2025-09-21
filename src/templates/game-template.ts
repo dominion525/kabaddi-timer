@@ -142,9 +142,8 @@ export const gameTemplate = `<!DOCTYPE html>
           </div>
         </div>
         <button @click="toggleControlPanel()"
-                class="bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded transition-colors">
-          <span x-show="!showControlPanel">▲ コントロール</span>
-          <span x-show="showControlPanel">▼ 閉じる</span>
+                class="bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded transition-colors"
+                x-text="controlPanelButtonText">
         </button>
       </div>
     </div>
@@ -522,9 +521,8 @@ export const gameTemplate = `<!DOCTYPE html>
           </div>
         </div>
         <button @click="toggleControlPanel()"
-                class="bg-blue-600 hover:bg-blue-700 px-6 py-2 rounded-lg transition-colors flex items-center space-x-2">
-          <span x-show="!showControlPanel">▲ コントロール</span>
-          <span x-show="showControlPanel">▼ 閉じる</span>
+                class="bg-blue-600 hover:bg-blue-700 px-6 py-2 rounded-lg transition-colors flex items-center space-x-2"
+                x-text="controlPanelButtonText">
         </button>
       </div>
 

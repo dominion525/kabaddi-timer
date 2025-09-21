@@ -258,6 +258,10 @@ function gameApp(gameId) {
       return Array(3).fill(0).map((_, i) => i < (this.gameState.teamB.doOrDieCount || 0));
     },
 
+    get controlPanelButtonText() {
+      return this.showControlPanel ? '▼ 閉じる' : '▲ コントロール';
+    },
+
     setTeamName(team, name) {
       this.sendAction({
         type: 'SET_TEAM_NAME',
