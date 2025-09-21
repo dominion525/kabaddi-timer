@@ -413,27 +413,27 @@ export const gameTemplate = `<!DOCTYPE html>
       <!-- ヘッダー -->
       <div class="text-white">
         <div class="grid w-full" style="grid-template-columns: 2fr 1fr 2fr;">
-          <div class="bg-red-500 p-3">
+          <div class="bg-red-500 p-2">
             <h1 class="text-lg font-bold text-center" x-text="gameState.teamA.name"></h1>
           </div>
-          <div class="bg-blue-600 p-3">
+          <div class="bg-blue-600 p-2">
             <div class="text-lg font-bold text-center">vs</div>
           </div>
-          <div class="bg-blue-500 p-3">
+          <div class="bg-blue-500 p-2">
             <h1 class="text-lg font-bold text-center" x-text="gameState.teamB.name"></h1>
           </div>
         </div>
       </div>
 
       <!-- メインスコア表示 -->
-      <div class="flex-1 grid grid-cols-3 gap-0" :class="showStatusBar ? 'pb-16' : 'pb-0'" style="grid-template-rows: 0.6fr 1fr; max-height: 50vh;">
+      <div class="flex-1 grid grid-cols-3 gap-0" :class="showStatusBar ? 'pb-16' : 'pb-0'" style="grid-template-rows: 0.7fr 0.6fr; max-height: 45vh;">
         <!-- 上段：チームA -->
         <div class="bg-red-500 text-white flex flex-col">
-          <div class="flex-1 flex items-center justify-center py-1 px-1">
+          <div class="flex-1 flex items-center justify-center py-0 px-1">
             <div class="font-bold font-mono" style="font-size: 4rem; line-height: 1;" x-text="gameState.teamA.score"></div>
           </div>
           <!-- Do or Dieインジケーター -->
-          <div class="h-3 flex space-x-1 px-2 pb-1">
+          <div class="h-6 flex space-x-1 px-2 pb-3">
             <template x-for="(isActive, index) in teamADoOrDieIndicators" :key="index">
               <div class="flex-1 transition-colors duration-200 rounded-sm"
                    :class="isActive ? 'bg-yellow-400' : 'bg-red-900'"></div>
@@ -442,7 +442,7 @@ export const gameTemplate = `<!DOCTYPE html>
         </div>
 
         <!-- 上段：サブタイマー -->
-        <div class="bg-gray-800 text-white flex flex-col items-center justify-center py-1 px-1 cursor-pointer" @click="toggleStatusBar()">
+        <div class="bg-gray-800 text-white flex flex-col items-center justify-center py-0.5 px-1 cursor-pointer" @click="toggleStatusBar()">
           <div class="text-center">
             <div style="font-size: 4rem; line-height: 1;" class="font-bold font-mono text-yellow-400" x-text="formattedSubTimer"></div>
             <div class="text-xs opacity-75">
@@ -454,11 +454,11 @@ export const gameTemplate = `<!DOCTYPE html>
 
         <!-- 上段：チームB -->
         <div class="bg-blue-500 text-white flex flex-col">
-          <div class="flex-1 flex items-center justify-center py-1 px-1">
+          <div class="flex-1 flex items-center justify-center py-0 px-1">
             <div class="font-bold font-mono" style="font-size: 4rem; line-height: 1;" x-text="gameState.teamB.score"></div>
           </div>
           <!-- Do or Dieインジケーター -->
-          <div class="h-3 flex space-x-1 px-2 pb-1">
+          <div class="h-6 flex space-x-1 px-2 pb-3">
             <template x-for="(isActive, index) in teamBDoOrDieIndicators" :key="index">
               <div class="flex-1 transition-colors duration-200 rounded-sm"
                    :class="isActive ? 'bg-yellow-400' : 'bg-blue-900'"></div>
@@ -467,9 +467,9 @@ export const gameTemplate = `<!DOCTYPE html>
         </div>
 
         <!-- 下段：メインタイマー（3列全体を使用） -->
-        <div class="col-span-3 bg-gray-800 text-white flex flex-col items-center justify-center px-2">
-          <div style="font-size: 6rem; line-height: 0.8;" class="font-bold font-mono" x-text="formattedTimer"></div>
-          <div class="text-sm opacity-75">
+        <div class="col-span-3 bg-gray-800 text-white flex flex-col items-center justify-center px-1 pt-8 pb-2">
+          <div style="font-size: 6rem; line-height: 0.6;" class="font-bold font-mono" x-text="formattedTimer"></div>
+          <div class="text-sm opacity-75 mt-2">
             <span x-show="timerRunning" class="text-green-400">● 動作中</span>
             <span x-show="!timerRunning" class="text-gray-400">● 停止</span>
           </div>
