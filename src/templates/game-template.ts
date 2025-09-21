@@ -1,0 +1,1007 @@
+export const gameTemplate = `<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>スコアボード - {{gameId}}</title>
+  <script src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+  <script src="https://unpkg.com/qrious@4.0.2/dist/qrious.min.js"></script>
+  <style>
+    [x-cloak] { display: none !important; }
+    html, body {
+      overflow-x: hidden;
+      max-width: 100vw;
+      overflow-y: hidden;
+      height: 100vh;
+      max-height: 100vh;
+      overscroll-behavior: none;
+      position: fixed;
+      width: 100%;
+    }
+  </style>
+</head>
+<body class="bg-gray-100 min-h-screen">
+  <div id="app" x-data="gameApp('{{gameId}}')" x-cloak class="min-h-screen">
+    <!-- タブレット表示用 (md以上) -->
+    <div class="hidden md:flex h-screen flex-col bg-gray-900">
+      <!-- ヘッダー -->
+      <div class="text-white">
+        <div class="grid w-full" style="grid-template-columns: 2fr 1fr 2fr;">
+          <div class="bg-red-500 p-4">
+            <h1 class="text-3xl font-bold text-center" x-text="gameState.teamA.name"></h1>
+          </div>
+          <div class="bg-blue-600 p-4">
+            <div class="text-3xl font-bold text-center">vs</div>
+          </div>
+          <div class="bg-blue-500 p-4">
+            <h1 class="text-3xl font-bold text-center" x-text="gameState.teamB.name"></h1>
+          </div>
+        </div>
+      </div>
+
+      <!-- メインスコア表示 -->
+      <div class="flex-1 grid grid-cols-3 gap-0" :class="showStatusBar ? 'pb-16' : 'pb-0'" style="grid-template-rows: 1fr 1.5fr;">
+        <!-- 上段：チームA -->
+        <div class="bg-red-500 text-white flex flex-col">
+          <div class="flex-1 flex items-center justify-center py-1 px-4">
+            <div class="font-bold font-mono" style="font-size: 12rem; line-height: 1;" x-text="gameState.teamA.score"></div>
+          </div>
+          <!-- Do or Dieインジケーター -->
+          <div class="h-8 flex space-x-2 px-4 mb-2">
+            <template x-for="(isActive, index) in teamADoOrDieIndicators" :key="index">
+              <div class="flex-1 transition-colors duration-200 rounded"
+                   :class="isActive ? 'bg-yellow-400' : 'bg-red-900'"></div>
+            </template>
+          </div>
+        </div>
+
+        <!-- 上段：サブタイマー -->
+        <div class="bg-gray-800 text-white flex flex-col items-center justify-center py-1 px-4 cursor-pointer" @click="toggleStatusBar()">
+          <div class="text-center">
+            <div style="font-size: 12rem; line-height: 1;" class="font-bold font-mono text-yellow-400" x-text="formattedSubTimer"></div>
+            <div class="text-xs opacity-75 mt-1">
+              <span x-show="gameState?.subTimer?.isRunning" class="text-green-400">● 動作中</span>
+              <span x-show="gameState?.subTimer && !gameState.subTimer.isRunning" class="text-gray-400">● 停止</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 上段：チームB -->
+        <div class="bg-blue-500 text-white flex flex-col">
+          <div class="flex-1 flex items-center justify-center py-1 px-4">
+            <div class="font-bold font-mono" style="font-size: 12rem; line-height: 1;" x-text="gameState.teamB.score"></div>
+          </div>
+          <!-- Do or Dieインジケーター -->
+          <div class="h-8 flex space-x-2 px-4 mb-2">
+            <template x-for="(isActive, index) in teamBDoOrDieIndicators" :key="index">
+              <div class="flex-1 transition-colors duration-200 rounded"
+                   :class="isActive ? 'bg-yellow-400' : 'bg-blue-900'"></div>
+            </template>
+          </div>
+        </div>
+
+        <!-- 下段：メインタイマー（3列全体を使用） -->
+        <div class="col-span-3 bg-gray-800 text-white flex flex-col items-center justify-center px-8">
+          <div style="font-size: 15rem; line-height: 0.8;" class="font-bold font-mono" x-text="formattedTimer"></div>
+          <div class="text-xl opacity-75">
+            <span x-show="timerRunning" class="text-green-400">● 動作中</span>
+            <span x-show="!timerRunning" class="text-gray-400">● 停止</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- 接続状態とコントロールボタン -->
+      <div x-show="showStatusBar" class="bg-gray-800 text-white p-2 flex justify-between items-center fixed bottom-0 left-0 right-0 z-50">
+        <div class="flex items-center space-x-4">
+          <div>
+            <span x-show="connected" class="text-green-400">● 接続中</span>
+            <span x-show="!connected" class="text-red-400">● 切断</span>
+          </div>
+          <button @click="openQRModal()" class="text-gray-300 text-sm hover:text-white transition-colors cursor-pointer flex items-center gap-1">
+            <i data-lucide="qr-code" class="w-4 h-4"></i>
+            Game ID: <span x-text="gameId" class="font-mono"></span>
+          </button>
+          <div class="text-gray-400 text-xs whitespace-nowrap">
+            <span>Powered by </span>
+            <a href="https://dominion525.com" target="_blank" class="text-blue-400 hover:text-blue-300 transition-colors">
+              Dominion525.com
+            </a>
+          </div>
+        </div>
+        <button @click="toggleControlPanel()"
+                class="bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded transition-colors">
+          <span x-show="!showControlPanel">▲ コントロール</span>
+          <span x-show="showControlPanel">▼ 閉じる</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- タブレット用コントロールパネル -->
+    <div x-show="showControlPanel"
+         x-transition:enter="transition ease-out duration-100"
+         x-transition:enter-start="transform translate-y-full"
+         x-transition:enter-end="transform translate-y-0"
+         x-transition:leave="transition ease-in duration-200"
+         x-transition:leave-start="transform translate-y-0"
+         x-transition:leave-end="transform translate-y-full"
+         class="hidden md:block fixed inset-x-0 bottom-0 bg-white shadow-2xl z-50"
+         style="height: 50vh;">
+
+      <!-- オーバーレイ背景 -->
+      <div x-show="showControlPanel"
+           @click="toggleControlPanel()"
+           x-transition:enter="transition ease-out duration-100"
+           x-transition:enter-start="opacity-0"
+           x-transition:enter-end="opacity-50"
+           x-transition:leave="transition ease-in duration-200"
+           x-transition:leave-start="opacity-50"
+           x-transition:leave-end="opacity-0"
+           class="fixed inset-0 bg-black opacity-50 z-40"></div>
+
+      <!-- パネル内容 -->
+      <div class="relative z-50 h-full flex flex-col">
+        <!-- ハンドル -->
+        <div class="bg-gray-200 p-2 text-center cursor-pointer" @click="toggleControlPanel()">
+          <div class="w-12 h-1 bg-gray-400 rounded-full mx-auto"></div>
+        </div>
+
+        <!-- コンテンツエリア -->
+        <div class="flex-1 p-6 overflow-y-auto">
+          <div class="max-w-4xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-6">
+
+            <!-- チーム名設定 -->
+            <div class="bg-gray-50 p-4 rounded-lg">
+              <h3 class="font-bold text-lg mb-4">チーム名設定</h3>
+              <div class="space-y-3">
+                <div>
+                  <input type="text" x-model="teamANameInput"
+                         @change="setTeamName('teamA', teamANameInput)"
+                         class="w-full p-3 border rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500">
+                </div>
+                <div>
+                  <input type="text" x-model="teamBNameInput"
+                         @change="setTeamName('teamB', teamBNameInput)"
+                         class="w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                </div>
+              </div>
+            </div>
+
+            <!-- タイマー操作 -->
+            <div class="bg-gray-50 p-4 rounded-lg">
+              <h3 class="font-bold text-lg mb-4">タイマー操作</h3>
+
+              <!-- 時間設定 -->
+              <div class="mb-4">
+                <label class="block text-sm font-medium text-gray-700 mb-2">時間設定</label>
+                <div class="flex space-x-2 mb-3">
+                  <input type="number" min="0" max="99" x-model.number="timerInputMinutes"
+                         class="w-16 p-2 border rounded focus:ring-2 focus:ring-blue-500 text-center">
+                  <span class="flex items-center text-sm">分</span>
+                  <input type="number" min="0" max="59" x-model.number="timerInputSeconds"
+                         class="w-16 p-2 border rounded focus:ring-2 focus:ring-blue-500 text-center">
+                  <span class="flex items-center text-sm">秒</span>
+                  <button @click="setTimer(timerInputMinutes, timerInputSeconds)"
+                          class="bg-blue-500 hover:bg-blue-600 text-white px-3 py-2 rounded transition-colors text-sm">
+                    設定
+                  </button>
+                </div>
+                <!-- プリセット -->
+                <div class="flex space-x-1">
+                  <button @click="setTimerPreset('long')"
+                          class="flex-1 bg-gray-600 hover:bg-gray-700 text-white p-2 rounded text-sm transition-colors">
+                    20分
+                  </button>
+                  <button @click="setTimerPreset('medium')"
+                          class="flex-1 bg-gray-600 hover:bg-gray-700 text-white p-2 rounded text-sm transition-colors">
+                    15分
+                  </button>
+                  <button @click="setTimerPreset('short')"
+                          class="flex-1 bg-gray-600 hover:bg-gray-700 text-white p-2 rounded text-sm transition-colors">
+                    3分
+                  </button>
+                </div>
+              </div>
+
+              <!-- スタート/ストップ/リセット -->
+              <div class="mb-4 flex space-x-2">
+                <button @click="startTimer()"
+                        class="flex-1 bg-green-500 hover:bg-green-600 text-white p-3 rounded-lg font-bold transition-colors">
+                  スタート
+                </button>
+                <button @click="stopTimer()"
+                        class="flex-1 bg-red-500 hover:bg-red-600 text-white p-3 rounded-lg font-bold transition-colors">
+                  ストップ
+                </button>
+                <button @click="resetTimer()"
+                        class="flex-1 bg-orange-500 hover:bg-orange-600 text-white p-3 rounded-lg font-bold transition-colors">
+                  リセット
+                </button>
+              </div>
+
+              <!-- 時間調整ボタン -->
+              <div class="space-y-2">
+                <div class="flex space-x-1">
+                  <button @click="adjustTimer(60)"
+                          class="flex-1 bg-blue-500 hover:bg-blue-600 text-white p-2 rounded text-sm transition-colors">
+                    +1分
+                  </button>
+                  <button @click="adjustTimer(10)"
+                          class="flex-1 bg-blue-500 hover:bg-blue-600 text-white p-2 rounded text-sm transition-colors">
+                    +10秒
+                  </button>
+                  <button @click="adjustTimer(1)"
+                          class="flex-1 bg-blue-500 hover:bg-blue-600 text-white p-2 rounded text-sm transition-colors">
+                    +1秒
+                  </button>
+                </div>
+                <div class="flex space-x-1">
+                  <button @click="adjustTimer(-60)"
+                          class="flex-1 bg-gray-500 hover:bg-gray-600 text-white p-2 rounded text-sm transition-colors">
+                    -1分
+                  </button>
+                  <button @click="adjustTimer(-10)"
+                          class="flex-1 bg-gray-500 hover:bg-gray-600 text-white p-2 rounded text-sm transition-colors">
+                    -10秒
+                  </button>
+                  <button @click="adjustTimer(-1)"
+                          class="flex-1 bg-gray-500 hover:bg-gray-600 text-white p-2 rounded text-sm transition-colors">
+                    -1秒
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- サブタイマー操作 -->
+            <div class="bg-yellow-50 p-4 rounded-lg border border-yellow-200">
+              <h3 class="font-bold text-lg mb-4 text-yellow-800">サブタイマー操作 (30秒レイドタイマー)</h3>
+
+              <!-- スタート/ストップ/リセット -->
+              <div class="flex space-x-2">
+                <button @click="startSubTimer()"
+                        class="flex-1 bg-yellow-500 hover:bg-yellow-600 text-white p-3 rounded-lg font-bold transition-colors">
+                  スタート
+                </button>
+                <button @click="stopSubTimer()"
+                        class="flex-1 bg-red-500 hover:bg-red-600 text-white p-3 rounded-lg font-bold transition-colors">
+                  ストップ
+                </button>
+                <button @click="resetSubTimer()"
+                        class="flex-1 bg-orange-500 hover:bg-orange-600 text-white p-3 rounded-lg font-bold transition-colors">
+                  リセット
+                </button>
+              </div>
+            </div>
+
+            <!-- チーム操作グリッド -->
+            <div class="bg-gradient-to-r from-red-50 via-gray-50 to-blue-50 p-4 rounded-lg border border-gray-200 relative">
+              <!-- 中央セパレーター -->
+              <div class="absolute inset-y-4 left-1/2 w-px bg-gray-300 transform -translate-x-px"></div>
+              <!-- ヘッダー行 -->
+              <div class="mb-4 relative z-10">
+                <!-- チーム名行 -->
+                <div class="flex justify-between gap-x-8 mb-2">
+                  <div class="text-center flex-1">
+                    <div class="text-lg font-bold text-red-700" x-text="gameState.teamA.name"></div>
+                  </div>
+                  <div class="text-center flex-1">
+                    <div class="text-lg font-bold text-blue-700" x-text="gameState.teamB.name"></div>
+                  </div>
+                </div>
+                <!-- カテゴリー行 -->
+                <div class="flex justify-between gap-x-8">
+                  <div class="flex-1 grid grid-cols-2 gap-x-2">
+                    <div class="text-center">
+                      <div class="text-xs text-red-600">得点</div>
+                    </div>
+                    <div class="text-center">
+                      <div class="text-xs text-orange-600">Do or Die</div>
+                    </div>
+                  </div>
+                  <div class="flex-1 grid grid-cols-2 gap-x-2">
+                    <div class="text-center">
+                      <div class="text-xs text-orange-600">Do or Die</div>
+                    </div>
+                    <div class="text-center">
+                      <div class="text-xs text-blue-600">得点</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- ボタングリッド -->
+              <div class="flex justify-between gap-x-8 relative z-10">
+                <!-- チームA側（左） -->
+                <div class="flex-1 space-y-3">
+                  <!-- +1ボタン行 -->
+                  <div class="grid grid-cols-2 gap-x-2">
+                    <button @click="updateScore('teamA', 1)"
+                            class="aspect-square bg-red-500 hover:bg-red-600 text-white rounded-lg font-bold transition-colors active:scale-95">
+                      +1
+                    </button>
+                    <button @click="updateDoOrDie('teamA', 1)"
+                            class="aspect-square bg-orange-400 hover:bg-orange-500 text-white rounded-lg font-bold transition-colors active:scale-95">
+                      +1
+                    </button>
+                  </div>
+                  <!-- -1ボタン行 -->
+                  <div class="grid grid-cols-2 gap-x-2">
+                    <button @click="updateScore('teamA', -1)"
+                            class="aspect-square bg-red-300 hover:bg-red-400 text-red-800 rounded-lg font-bold transition-colors active:scale-95">
+                      -1
+                    </button>
+                    <button @click="updateDoOrDie('teamA', -1)"
+                            class="aspect-square bg-orange-200 hover:bg-orange-300 text-orange-800 rounded-lg font-bold transition-colors active:scale-95">
+                      -1
+                    </button>
+                  </div>
+                  <!-- リセットボタン行 -->
+                  <div class="grid grid-cols-2 gap-x-2">
+                    <button @click="resetScores()"
+                            class="h-12 bg-gray-500 hover:bg-gray-600 text-white rounded-lg font-bold text-xs transition-colors active:scale-95">
+                      スコア<br>リセット
+                    </button>
+                    <button @click="updateDoOrDie('teamA', -gameState.teamA.doOrDieCount)"
+                            class="h-12 bg-gray-400 hover:bg-gray-500 text-white rounded-lg font-bold text-xs transition-colors active:scale-95">
+                      リセット
+                    </button>
+                  </div>
+                </div>
+
+                <!-- チームB側（右） -->
+                <div class="flex-1 space-y-3">
+                  <!-- +1ボタン行 -->
+                  <div class="grid grid-cols-2 gap-x-2">
+                    <button @click="updateDoOrDie('teamB', 1)"
+                            class="aspect-square bg-orange-400 hover:bg-orange-500 text-white rounded-lg font-bold transition-colors active:scale-95">
+                      +1
+                    </button>
+                    <button @click="updateScore('teamB', 1)"
+                            class="aspect-square bg-blue-500 hover:bg-blue-600 text-white rounded-lg font-bold transition-colors active:scale-95">
+                      +1
+                    </button>
+                  </div>
+                  <!-- -1ボタン行 -->
+                  <div class="grid grid-cols-2 gap-x-2">
+                    <button @click="updateDoOrDie('teamB', -1)"
+                            class="aspect-square bg-orange-200 hover:bg-orange-300 text-orange-800 rounded-lg font-bold transition-colors active:scale-95">
+                      -1
+                    </button>
+                    <button @click="updateScore('teamB', -1)"
+                            class="aspect-square bg-blue-300 hover:bg-blue-400 text-blue-800 rounded-lg font-bold transition-colors active:scale-95">
+                      -1
+                    </button>
+                  </div>
+                  <!-- リセットボタン行 -->
+                  <div class="grid grid-cols-2 gap-x-2">
+                    <button @click="updateDoOrDie('teamB', -gameState.teamB.doOrDieCount)"
+                            class="h-12 bg-gray-400 hover:bg-gray-500 text-white rounded-lg font-bold text-xs transition-colors active:scale-95">
+                      リセット
+                    </button>
+                    <button @click="resetScores()"
+                            class="h-12 bg-gray-500 hover:bg-gray-600 text-white rounded-lg font-bold text-xs transition-colors active:scale-95">
+                      スコア<br>リセット
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- 全体コントロール -->
+            <div class="bg-gray-50 p-4 rounded-lg lg:col-span-2">
+              <h3 class="font-bold text-lg mb-4">全体コントロール</h3>
+              <div class="flex space-x-4 justify-center">
+                <button @click="courtChange()"
+                        class="bg-orange-500 hover:bg-orange-600 text-white px-3 py-1 rounded-lg font-bold text-lg transition-colors">
+                  コートチェンジ
+                </button>
+                <button @click="resetAll()"
+                        class="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded-lg font-bold text-lg transition-colors">
+                  全リセット
+                </button>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- スマホ表示用 (md未満) -->
+    <div class="md:hidden min-h-screen flex flex-col bg-gray-900">
+      <!-- ヘッダー -->
+      <div class="text-white">
+        <div class="grid w-full" style="grid-template-columns: 2fr 1fr 2fr;">
+          <div class="bg-red-500 p-3">
+            <h1 class="text-lg font-bold text-center" x-text="gameState.teamA.name"></h1>
+          </div>
+          <div class="bg-blue-600 p-3">
+            <div class="text-lg font-bold text-center">vs</div>
+          </div>
+          <div class="bg-blue-500 p-3">
+            <h1 class="text-lg font-bold text-center" x-text="gameState.teamB.name"></h1>
+          </div>
+        </div>
+      </div>
+
+      <!-- メインスコア表示 -->
+      <div class="flex-1 grid grid-cols-3 gap-0" :class="showStatusBar ? 'pb-16' : 'pb-0'" style="grid-template-rows: 0.6fr 1fr; max-height: 50vh;">
+        <!-- 上段：チームA -->
+        <div class="bg-red-500 text-white flex flex-col">
+          <div class="flex-1 flex items-center justify-center py-1 px-1">
+            <div class="font-bold font-mono" style="font-size: 4rem; line-height: 1;" x-text="gameState.teamA.score"></div>
+          </div>
+          <!-- Do or Dieインジケーター -->
+          <div class="h-3 flex space-x-1 px-2 pb-1">
+            <template x-for="(isActive, index) in teamADoOrDieIndicators" :key="index">
+              <div class="flex-1 transition-colors duration-200 rounded-sm"
+                   :class="isActive ? 'bg-yellow-400' : 'bg-red-900'"></div>
+            </template>
+          </div>
+        </div>
+
+        <!-- 上段：サブタイマー -->
+        <div class="bg-gray-800 text-white flex flex-col items-center justify-center py-1 px-1 cursor-pointer" @click="toggleStatusBar()">
+          <div class="text-center">
+            <div style="font-size: 4rem; line-height: 1;" class="font-bold font-mono text-yellow-400" x-text="formattedSubTimer"></div>
+            <div class="text-xs opacity-75">
+              <span x-show="gameState?.subTimer?.isRunning" class="text-green-400">● 動作中</span>
+              <span x-show="gameState?.subTimer && !gameState.subTimer.isRunning" class="text-gray-400">● 停止</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 上段：チームB -->
+        <div class="bg-blue-500 text-white flex flex-col">
+          <div class="flex-1 flex items-center justify-center py-1 px-1">
+            <div class="font-bold font-mono" style="font-size: 4rem; line-height: 1;" x-text="gameState.teamB.score"></div>
+          </div>
+          <!-- Do or Dieインジケーター -->
+          <div class="h-3 flex space-x-1 px-2 pb-1">
+            <template x-for="(isActive, index) in teamBDoOrDieIndicators" :key="index">
+              <div class="flex-1 transition-colors duration-200 rounded-sm"
+                   :class="isActive ? 'bg-yellow-400' : 'bg-blue-900'"></div>
+            </template>
+          </div>
+        </div>
+
+        <!-- 下段：メインタイマー（3列全体を使用） -->
+        <div class="col-span-3 bg-gray-800 text-white flex flex-col items-center justify-center px-2">
+          <div style="font-size: 6rem; line-height: 0.8;" class="font-bold font-mono" x-text="formattedTimer"></div>
+          <div class="text-sm opacity-75">
+            <span x-show="timerRunning" class="text-green-400">● 動作中</span>
+            <span x-show="!timerRunning" class="text-gray-400">● 停止</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- 接続状態とコントロールボタン -->
+      <div x-show="showStatusBar" class="bg-gray-800 text-white p-3 flex justify-between items-center fixed bottom-0 left-0 right-0 z-50">
+        <div class="flex items-center space-x-3">
+          <div>
+            <span x-show="connected" class="text-green-400">● 接続中</span>
+            <span x-show="!connected" class="text-red-400">● 切断</span>
+          </div>
+          <button @click="openQRModal()" class="text-gray-300 text-xs hover:text-white transition-colors cursor-pointer flex items-center gap-1">
+            <i data-lucide="qr-code" class="w-3 h-3"></i>
+            ID: <span x-text="gameId" class="font-mono"></span>
+          </button>
+          <div class="text-gray-400 text-xs whitespace-nowrap">
+          </div>
+        </div>
+        <button @click="toggleControlPanel()"
+                class="bg-blue-600 hover:bg-blue-700 px-6 py-2 rounded-lg transition-colors flex items-center space-x-2">
+          <span x-show="!showControlPanel">▲ コントロール</span>
+          <span x-show="showControlPanel">▼ 閉じる</span>
+        </button>
+      </div>
+
+      <!-- スマホ用コントロールパネル -->
+      <!-- オーバーレイ背景 -->
+      <div x-show="showControlPanel"
+           @click="toggleControlPanel()"
+           x-transition:enter="transition ease-out duration-100"
+           x-transition:enter-start="opacity-0"
+           x-transition:enter-end="opacity-50"
+           x-transition:leave="transition ease-in duration-200"
+           x-transition:leave-start="opacity-50"
+           x-transition:leave-end="opacity-0"
+           class="md:hidden fixed inset-0 bg-black opacity-50 z-40"></div>
+
+      <div x-show="showControlPanel"
+           x-transition:enter="transition ease-out duration-100"
+           x-transition:enter-start="transform translate-y-full"
+           x-transition:enter-end="transform translate-y-0"
+           x-transition:leave="transition ease-in duration-200"
+           x-transition:leave-start="transform translate-y-0"
+           x-transition:leave-end="transform translate-y-full"
+           class="md:hidden fixed inset-x-0 bottom-0 bg-white shadow-2xl z-50"
+           style="height: 40vh;">
+
+        <!-- パネル内容 -->
+        <div class="relative z-50 h-full flex flex-col">
+          <!-- ハンドル -->
+          <div class="bg-gray-200 p-3 flex items-center justify-between">
+            <div class="flex-1" @click="toggleControlPanel()">
+              <div class="w-12 h-1 bg-gray-400 rounded-full mx-auto cursor-pointer"></div>
+            </div>
+
+            <!-- トグルスイッチ -->
+            <div class="flex items-center space-x-1">
+              <span class="text-xs text-gray-600">シンプル</span>
+              <button @click="toggleSimpleMode()"
+                      class="relative inline-flex h-4 w-7 items-center rounded-full transition-colors"
+                      :class="simpleMode ? 'bg-blue-500' : 'bg-gray-300'">
+                <span class="inline-block h-2.5 w-2.5 transform rounded-full bg-white transition-transform"
+                      :class="simpleMode ? 'translate-x-3' : 'translate-x-0.5'"></span>
+              </button>
+            </div>
+          </div>
+
+          <!-- 通常モードのコンテンツエリア -->
+          <div x-show="!simpleMode" class="flex-1 p-3 overflow-y-auto space-y-3">
+
+            <!-- チーム名設定 -->
+            <div class="bg-gray-50 p-3 rounded-lg">
+              <h3 class="font-bold text-base mb-3">チーム名設定</h3>
+              <div class="space-y-3">
+                <div>
+                  <input type="text" x-model="teamANameInput"
+                         @change="setTeamName('teamA', teamANameInput)"
+                         class="w-full p-3 border rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500">
+                </div>
+                <div>
+                  <input type="text" x-model="teamBNameInput"
+                         @change="setTeamName('teamB', teamBNameInput)"
+                         class="w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                </div>
+              </div>
+            </div>
+
+            <!-- タイマー操作 -->
+            <div class="bg-gray-50 p-3 rounded-lg">
+              <h3 class="font-bold text-base mb-3">タイマー操作</h3>
+
+              <!-- 時間設定 -->
+              <div class="mb-4">
+                <label class="block text-sm font-medium text-gray-700 mb-2">時間設定</label>
+                <div class="flex space-x-2 mb-3">
+                  <input type="number" min="0" max="99" x-model.number="timerInputMinutes"
+                         class="w-18 p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 text-center">
+                  <span class="flex items-center">分</span>
+                  <input type="number" min="0" max="59" x-model.number="timerInputSeconds"
+                         class="w-18 p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 text-center">
+                  <span class="flex items-center">秒</span>
+                  <button @click="setTimer(timerInputMinutes, timerInputSeconds)"
+                          class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-3 rounded-lg transition-colors">
+                    設定
+                  </button>
+                </div>
+                <!-- プリセット -->
+                <div class="flex space-x-2">
+                  <button @click="setTimerPreset('long')"
+                          class="flex-1 bg-gray-600 hover:bg-gray-700 text-white p-3 rounded-lg transition-colors">
+                    20分
+                  </button>
+                  <button @click="setTimerPreset('medium')"
+                          class="flex-1 bg-gray-600 hover:bg-gray-700 text-white p-3 rounded-lg transition-colors">
+                    15分
+                  </button>
+                  <button @click="setTimerPreset('short')"
+                          class="flex-1 bg-gray-600 hover:bg-gray-700 text-white p-3 rounded-lg transition-colors">
+                    3分
+                  </button>
+                </div>
+              </div>
+
+              <!-- スタート/ストップ/リセット -->
+              <div class="mb-4 flex space-x-2">
+                <button @click="startTimer()"
+                        class="flex-1 bg-green-500 hover:bg-green-600 text-white p-4 rounded-lg font-bold text-lg transition-colors">
+                  スタート
+                </button>
+                <button @click="stopTimer()"
+                        class="flex-1 bg-red-500 hover:bg-red-600 text-white p-4 rounded-lg font-bold text-lg transition-colors">
+                  ストップ
+                </button>
+                <button @click="resetTimer()"
+                        class="flex-1 bg-orange-500 hover:bg-orange-600 text-white p-4 rounded-lg font-bold text-lg transition-colors">
+                  リセット
+                </button>
+              </div>
+
+              <!-- 時間調整ボタン -->
+              <div class="space-y-3">
+                <div class="flex space-x-2">
+                  <button @click="adjustTimer(60)"
+                          class="flex-1 bg-blue-500 hover:bg-blue-600 text-white p-3 rounded-lg transition-colors">
+                    +1分
+                  </button>
+                  <button @click="adjustTimer(10)"
+                          class="flex-1 bg-blue-500 hover:bg-blue-600 text-white p-3 rounded-lg transition-colors">
+                    +10秒
+                  </button>
+                  <button @click="adjustTimer(1)"
+                          class="flex-1 bg-blue-500 hover:bg-blue-600 text-white p-3 rounded-lg transition-colors">
+                    +1秒
+                  </button>
+                </div>
+                <div class="flex space-x-2">
+                  <button @click="adjustTimer(-60)"
+                          class="flex-1 bg-gray-500 hover:bg-gray-600 text-white p-3 rounded-lg transition-colors">
+                    -1分
+                  </button>
+                  <button @click="adjustTimer(-10)"
+                          class="flex-1 bg-gray-500 hover:bg-gray-600 text-white p-3 rounded-lg transition-colors">
+                    -10秒
+                  </button>
+                  <button @click="adjustTimer(-1)"
+                          class="flex-1 bg-gray-500 hover:bg-gray-600 text-white p-3 rounded-lg transition-colors">
+                    -1秒
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- サブタイマー操作 -->
+            <div class="bg-yellow-50 p-4 rounded-lg border border-yellow-200">
+              <h3 class="font-bold text-lg mb-4 text-yellow-800">サブタイマー操作 (30秒レイドタイマー)</h3>
+
+              <!-- スタート/ストップ/リセット -->
+              <div class="flex space-x-2">
+                <button @click="startSubTimer()"
+                        class="flex-1 bg-yellow-500 hover:bg-yellow-600 text-white p-4 rounded-lg font-bold text-lg transition-colors">
+                  スタート
+                </button>
+                <button @click="stopSubTimer()"
+                        class="flex-1 bg-red-500 hover:bg-red-600 text-white p-4 rounded-lg font-bold text-lg transition-colors">
+                  ストップ
+                </button>
+                <button @click="resetSubTimer()"
+                        class="flex-1 bg-orange-500 hover:bg-orange-600 text-white p-4 rounded-lg font-bold text-lg transition-colors">
+                  リセット
+                </button>
+              </div>
+            </div>
+
+            <!-- チーム操作グリッド -->
+            <div class="bg-gradient-to-r from-red-50 via-gray-50 to-blue-50 p-4 rounded-lg border border-gray-200 relative">
+              <!-- 中央セパレーター -->
+              <div class="absolute inset-y-4 left-1/2 w-px bg-gray-300 transform -translate-x-px"></div>
+
+              <!-- ヘッダー行 -->
+              <div class="mb-4 relative z-10">
+                <!-- チーム名行 -->
+                <div class="flex justify-between gap-x-6 mb-2">
+                  <div class="text-center flex-1">
+                    <div class="text-base font-bold text-red-700" x-text="gameState.teamA.name"></div>
+                  </div>
+                  <div class="text-center flex-1">
+                    <div class="text-base font-bold text-blue-700" x-text="gameState.teamB.name"></div>
+                  </div>
+                </div>
+                <!-- カテゴリー行 -->
+                <div class="flex justify-between gap-x-6">
+                  <div class="flex-1 grid grid-cols-2 gap-x-1">
+                    <div class="text-center">
+                      <div class="text-xs text-red-600">得点</div>
+                    </div>
+                    <div class="text-center">
+                      <div class="text-xs text-orange-600">Do or Die</div>
+                    </div>
+                  </div>
+                  <div class="flex-1 grid grid-cols-2 gap-x-1">
+                    <div class="text-center">
+                      <div class="text-xs text-orange-600">Do or Die</div>
+                    </div>
+                    <div class="text-center">
+                      <div class="text-xs text-blue-600">得点</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- ボタングリッド -->
+              <div class="flex justify-between gap-x-6 relative z-10">
+                <!-- チームA側（左） -->
+                <div class="flex-1 space-y-2">
+                  <!-- +1ボタン行 -->
+                  <div class="grid grid-cols-2 gap-x-1">
+                    <button @click="updateScore('teamA', 1)"
+                            class="h-12 bg-red-500 hover:bg-red-600 text-white rounded-lg font-bold text-base transition-colors active:scale-95">
+                      +1
+                    </button>
+                    <button @click="updateDoOrDie('teamA', 1)"
+                            class="h-12 bg-orange-400 hover:bg-orange-500 text-white rounded-lg font-bold text-base transition-colors active:scale-95">
+                      +1
+                    </button>
+                  </div>
+                  <!-- -1ボタン行 -->
+                  <div class="grid grid-cols-2 gap-x-1">
+                    <button @click="updateScore('teamA', -1)"
+                            class="h-12 bg-red-300 hover:bg-red-400 text-red-800 rounded-lg font-bold text-base transition-colors active:scale-95">
+                      -1
+                    </button>
+                    <button @click="updateDoOrDie('teamA', -1)"
+                            class="h-12 bg-orange-200 hover:bg-orange-300 text-orange-800 rounded-lg font-bold text-base transition-colors active:scale-95">
+                      -1
+                    </button>
+                  </div>
+                  <!-- リセットボタン行 -->
+                  <div class="grid grid-cols-2 gap-x-1">
+                    <button @click="resetScores()"
+                            class="h-12 bg-gray-500 hover:bg-gray-600 text-white rounded-lg font-bold text-xs transition-colors active:scale-95">
+                      スコア<br>リセット
+                    </button>
+                    <button @click="updateDoOrDie('teamA', -gameState.teamA.doOrDieCount)"
+                            class="h-12 bg-gray-400 hover:bg-gray-500 text-white rounded-lg font-bold text-xs transition-colors active:scale-95">
+                      リセット
+                    </button>
+                  </div>
+                </div>
+
+                <!-- チームB側（右） -->
+                <div class="flex-1 space-y-2">
+                  <!-- +1ボタン行 -->
+                  <div class="grid grid-cols-2 gap-x-1">
+                    <button @click="updateDoOrDie('teamB', 1)"
+                            class="h-12 bg-orange-400 hover:bg-orange-500 text-white rounded-lg font-bold text-base transition-colors active:scale-95">
+                      +1
+                    </button>
+                    <button @click="updateScore('teamB', 1)"
+                            class="h-12 bg-blue-500 hover:bg-blue-600 text-white rounded-lg font-bold text-base transition-colors active:scale-95">
+                      +1
+                    </button>
+                  </div>
+                  <!-- -1ボタン行 -->
+                  <div class="grid grid-cols-2 gap-x-1">
+                    <button @click="updateDoOrDie('teamB', -1)"
+                            class="h-12 bg-orange-200 hover:bg-orange-300 text-orange-800 rounded-lg font-bold text-base transition-colors active:scale-95">
+                      -1
+                    </button>
+                    <button @click="updateScore('teamB', -1)"
+                            class="h-12 bg-blue-300 hover:bg-blue-400 text-blue-800 rounded-lg font-bold text-base transition-colors active:scale-95">
+                      -1
+                    </button>
+                  </div>
+                  <!-- リセットボタン行 -->
+                  <div class="grid grid-cols-2 gap-x-1">
+                    <button @click="updateDoOrDie('teamB', -gameState.teamB.doOrDieCount)"
+                            class="h-12 bg-gray-400 hover:bg-gray-500 text-white rounded-lg font-bold text-xs transition-colors active:scale-95">
+                      リセット
+                    </button>
+                    <button @click="resetScores()"
+                            class="h-12 bg-gray-500 hover:bg-gray-600 text-white rounded-lg font-bold text-xs transition-colors active:scale-95">
+                      スコア<br>リセット
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- 全体コントロール -->
+            <div class="bg-gray-50 p-3 rounded-lg">
+              <h3 class="font-bold text-base mb-3">全体コントロール</h3>
+              <div class="grid grid-cols-2 gap-3">
+                <button @click="courtChange()"
+                        class="bg-orange-500 hover:bg-orange-600 text-white px-4 py-1 rounded-lg font-bold text-base transition-colors">
+                  コートチェンジ
+                </button>
+                <button @click="resetAll()"
+                        class="bg-red-600 hover:bg-red-700 text-white px-4 py-1 rounded-lg font-bold text-base transition-colors">
+                  全リセット
+                </button>
+              </div>
+            </div>
+
+          </div>
+
+          <!-- シンプルモードのコンテンツエリア -->
+          <div x-show="simpleMode" class="flex-1 p-3 space-y-3">
+
+            <!-- タイマー制御 -->
+            <div class="bg-gray-50 p-2 rounded-lg">
+              <div class="flex gap-1">
+                <!-- メインタイマー -->
+                <div class="flex gap-1 flex-1">
+                  <button @click="startTimer()"
+                          class="bg-green-500 hover:bg-green-600 text-white py-2 px-2 rounded text-xs font-bold transition-colors flex-1">
+                    開始
+                  </button>
+                  <button @click="stopTimer()"
+                          class="bg-yellow-500 hover:bg-yellow-600 text-white py-2 px-2 rounded text-xs font-bold transition-colors flex-1">
+                    停止
+                  </button>
+                  <button @click="resetTimer()"
+                          class="bg-red-500 hover:bg-red-600 text-white py-2 px-2 rounded text-xs font-bold transition-colors flex-1">
+                    リセット
+                  </button>
+                </div>
+
+                <!-- セパレーター -->
+                <div class="w-px bg-gray-300 mx-1"></div>
+
+                <!-- サブタイマー -->
+                <div class="flex gap-1 flex-1">
+                  <button @click="startSubTimer()"
+                          class="bg-yellow-500 hover:bg-yellow-600 text-white py-2 px-1 rounded text-xs font-bold transition-colors flex-1">
+                    30秒<br>開始
+                  </button>
+                  <button @click="stopSubTimer()"
+                          class="bg-orange-500 hover:bg-orange-600 text-white py-2 px-1 rounded text-xs font-bold transition-colors flex-1">
+                    30秒<br>停止
+                  </button>
+                  <button @click="resetSubTimer()"
+                          class="bg-red-500 hover:bg-red-600 text-white py-2 px-1 rounded text-xs font-bold transition-colors flex-1">
+                    リセット
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- チーム操作グリッド -->
+            <div class="bg-gradient-to-r from-red-50 via-gray-50 to-blue-50 p-2 rounded-lg border border-gray-200 relative">
+              <!-- 中央セパレーター -->
+              <div class="absolute inset-y-2 left-1/2 w-px bg-gray-300 transform -translate-x-px"></div>
+
+              <!-- ヘッダー行 -->
+              <div class="mb-2 relative z-10">
+                <!-- カテゴリー行 -->
+                <div class="flex justify-between gap-x-3">
+                  <div class="flex-1 grid grid-cols-2 gap-x-1">
+                    <div class="text-center">
+                      <div class="text-xs text-red-600">得点</div>
+                    </div>
+                    <div class="text-center">
+                      <div class="text-xs text-orange-600">Do or Die</div>
+                    </div>
+                  </div>
+                  <div class="flex-1 grid grid-cols-2 gap-x-1">
+                    <div class="text-center">
+                      <div class="text-xs text-orange-600">Do or Die</div>
+                    </div>
+                    <div class="text-center">
+                      <div class="text-xs text-blue-600">得点</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- ボタングリッド -->
+              <div class="flex justify-between gap-x-3 relative z-10">
+                <!-- 左側 -->
+                <div class="flex-1 space-y-1">
+                  <!-- +1ボタン行 -->
+                  <div class="grid grid-cols-2 gap-x-1">
+                    <button @click="updateScore('teamA', 1)"
+                            class="h-8 bg-red-500 hover:bg-red-600 text-white rounded text-xs font-bold transition-colors active:scale-95">
+                      +1
+                    </button>
+                    <button @click="updateDoOrDie('teamA', 1)"
+                            class="h-8 bg-orange-400 hover:bg-orange-500 text-white rounded text-xs font-bold transition-colors active:scale-95">
+                      +1
+                    </button>
+                  </div>
+                  <!-- -1ボタン行 -->
+                  <div class="grid grid-cols-2 gap-x-1">
+                    <button @click="updateScore('teamA', -1)"
+                            class="h-8 bg-red-300 hover:bg-red-400 text-red-800 rounded text-xs font-bold transition-colors active:scale-95">
+                      -1
+                    </button>
+                    <button @click="updateDoOrDie('teamA', -1)"
+                            class="h-8 bg-orange-200 hover:bg-orange-300 text-orange-800 rounded text-xs font-bold transition-colors active:scale-95">
+                      -1
+                    </button>
+                  </div>
+                  <!-- リセットボタン行 -->
+                  <div class="grid grid-cols-2 gap-x-1">
+                    <button @click="resetScores()"
+                            class="h-8 bg-gray-500 hover:bg-gray-600 text-white rounded text-xs font-bold transition-colors active:scale-95">
+                      スコア<br>リセット
+                    </button>
+                    <button @click="updateDoOrDie('teamA', -gameState.teamA.doOrDieCount)"
+                            class="h-8 bg-gray-400 hover:bg-gray-500 text-white rounded text-xs font-bold transition-colors active:scale-95">
+                      リセット
+                    </button>
+                  </div>
+                </div>
+
+                <!-- 右側 -->
+                <div class="flex-1 space-y-1">
+                  <!-- +1ボタン行 -->
+                  <div class="grid grid-cols-2 gap-x-1">
+                    <button @click="updateDoOrDie('teamB', 1)"
+                            class="h-8 bg-orange-400 hover:bg-orange-500 text-white rounded text-xs font-bold transition-colors active:scale-95">
+                      +1
+                    </button>
+                    <button @click="updateScore('teamB', 1)"
+                            class="h-8 bg-blue-500 hover:bg-blue-600 text-white rounded text-xs font-bold transition-colors active:scale-95">
+                      +1
+                    </button>
+                  </div>
+                  <!-- -1ボタン行 -->
+                  <div class="grid grid-cols-2 gap-x-1">
+                    <button @click="updateDoOrDie('teamB', -1)"
+                            class="h-8 bg-orange-200 hover:bg-orange-300 text-orange-800 rounded text-xs font-bold transition-colors active:scale-95">
+                      -1
+                    </button>
+                    <button @click="updateScore('teamB', -1)"
+                            class="h-8 bg-blue-300 hover:bg-blue-400 text-blue-800 rounded text-xs font-bold transition-colors active:scale-95">
+                      -1
+                    </button>
+                  </div>
+                  <!-- リセットボタン行 -->
+                  <div class="grid grid-cols-2 gap-x-1">
+                    <button @click="updateDoOrDie('teamB', -gameState.teamB.doOrDieCount)"
+                            class="h-8 bg-gray-400 hover:bg-gray-500 text-white rounded text-xs font-bold transition-colors active:scale-95">
+                      リセット
+                    </button>
+                    <button @click="resetScores()"
+                            class="h-8 bg-gray-500 hover:bg-gray-600 text-white rounded text-xs font-bold transition-colors active:scale-95">
+                      スコア<br>リセット
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+{{gameAppScript}}
+
+{{qrModalScript}}
+  </script>
+
+  <!-- ゲーム共有モーダル -->
+  <div id="qrModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+    <div class="bg-white rounded-lg p-6 m-4 max-w-md w-full">
+      <div class="flex items-center justify-between mb-4">
+        <h3 class="text-lg font-bold text-gray-800 flex items-center gap-2">
+          <i data-lucide="share-2" class="w-5 h-5"></i>
+          ゲーム共有
+        </h3>
+        <button onclick="closeQRModal()" class="text-gray-500 hover:text-gray-700">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <div class="space-y-4">
+        <!-- QRコード表示 -->
+        <div class="text-center">
+          <canvas id="qrCanvas" class="mx-auto border border-gray-200 rounded"></canvas>
+        </div>
+
+        <!-- ゲームID -->
+        <div class="text-sm text-gray-600">
+          <p class="font-medium mb-2">ゲームID:</p>
+          <div class="flex items-center gap-2">
+            <p id="modalGameId" class="font-mono text-lg text-gray-800 bg-gray-50 p-2 rounded flex-1"></p>
+            <button onclick="copyGameId()" class="text-gray-500 hover:text-gray-700 p-2 hover:bg-gray-100 rounded transition-colors" title="ゲームIDをコピー">
+              <i data-lucide="copy" class="w-4 h-4"></i>
+            </button>
+          </div>
+        </div>
+
+        <!-- URL -->
+        <div class="text-sm text-gray-600">
+          <p class="font-medium mb-2">URL:</p>
+          <div class="flex items-center gap-2">
+            <p id="urlDisplay" class="font-mono text-sm text-gray-800 bg-gray-50 p-2 rounded break-all flex-1"></p>
+            <button onclick="copyGameURL()" class="text-gray-500 hover:text-gray-700 p-2 hover:bg-gray-100 rounded transition-colors" title="URLをコピー">
+              <i data-lucide="copy" class="w-4 h-4"></i>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</body>
+</html>`;

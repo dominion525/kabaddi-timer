@@ -1,0 +1,51 @@
+/* ゲームページ専用スタイル */
+
+/* Alpine.js クローク用 */
+[x-cloak] {
+  display: none !important;
+}
+
+/* スクロール制御とオーバーフロー対策 */
+html, body {
+  overflow-x: hidden;
+  max-width: 100vw;
+  overflow-y: hidden;
+  height: 100vh;
+  max-height: 100vh;
+  overscroll-behavior: none;
+  position: fixed;
+  width: 100%;
+}
+
+/* カスタムアニメーション */
+.transition-colors {
+  transition-property: background-color, border-color, color, fill, stroke;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  transition-duration: 150ms;
+}
+
+/* Do or Die インジケーター用 */
+.do-or-die-indicator {
+  transition: background-color 0.2s ease-in-out;
+}
+
+/* タイマー表示フォント */
+.timer-font {
+  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+  font-feature-settings: 'tnum';
+  font-variant-numeric: tabular-nums;
+}
+
+/* モバイル最適化 */
+@media (max-width: 768px) {
+  /* タッチ操作の改善 */
+  button {
+    touch-action: manipulation;
+  }
+
+  /* スクロール無効化 */
+  body {
+    touch-action: none;
+    -webkit-overflow-scrolling: none;
+  }
+}

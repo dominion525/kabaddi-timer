@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>カバディタイマー - スコアボードアプリケーション</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+  <link rel="stylesheet" href="/styles/home.css">
+</head>
+<body class="bg-gray-100 min-h-screen">
+  <div class="container mx-auto px-4 py-8 max-w-4xl">
+    <!-- ヘッダー -->
+    <div class="text-center mb-12">
+      <h1 class="text-4xl md:text-6xl font-bold text-gray-800 mb-4 flex items-center justify-center gap-4">
+        <i data-lucide="activity" class="w-12 h-12 md:w-16 md:h-16"></i>
+        カバディタイマー
+      </h1>
+      <p class="text-xl text-gray-600 mb-2">
+        カバディ用のタイマー・スコアボードアプリケーション
+      </p>
+      <p class="text-sm text-gray-500">
+        Version 0.0.1
+      </p>
+    </div>
+
+    <!-- タイマーアクセス -->
+    <div class="bg-white rounded-lg shadow-lg p-6 mb-8">
+      <div class="grid md:grid-cols-2 gap-6">
+        <!-- 新しいタイマー作成 -->
+        <div class="bg-blue-50 p-6 rounded-lg">
+          <h3 class="text-lg font-semibold text-blue-800 mb-4">新しいタイマー</h3>
+          <button onclick="createNewTimer()"
+                  class="w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 px-6 rounded-lg transition-colors flex items-center justify-center gap-2">
+            <i data-lucide="plus-circle" class="w-5 h-5"></i>
+            新しいタイマーを作成
+          </button>
+        </div>
+
+        <!-- 既存タイマーまたは任意のID -->
+        <div class="bg-green-50 p-6 rounded-lg">
+          <h3 class="text-lg font-semibold text-green-800 mb-4">既存のタイマーまたは任意のID</h3>
+          <div class="flex gap-2">
+            <input type="text"
+                   id="timerIdInput"
+                   placeholder="任意のタイマーID"
+                   class="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-green-500">
+            <button onclick="goToTimer()"
+                    class="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded-lg transition-colors whitespace-nowrap flex items-center gap-2">
+              <i data-lucide="arrow-right" class="w-4 h-4"></i>
+              アクセス
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 機能一覧 -->
+    <div class="bg-white rounded-lg shadow-lg p-6 mb-8">
+      <h2 class="text-2xl font-bold text-gray-800 mb-6 flex items-center gap-2">
+        <i data-lucide="list" class="w-6 h-6"></i>
+        主な機能
+      </h2>
+      <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div class="flex items-start space-x-3">
+          <div class="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center text-white">
+            <i data-lucide="clock" class="w-4 h-4"></i>
+          </div>
+          <div>
+            <h3 class="font-semibold text-gray-800">高精度タイマー</h3>
+            <p class="text-sm text-gray-600">サーバー同期による正確な時間管理</p>
+          </div>
+        </div>
+
+        <div class="flex items-start space-x-3">
+          <div class="w-8 h-8 bg-red-500 rounded-full flex items-center justify-center text-white">
+            <i data-lucide="target" class="w-4 h-4"></i>
+          </div>
+          <div>
+            <h3 class="font-semibold text-gray-800">スコア管理</h3>
+            <p class="text-sm text-gray-600">リアルタイムスコア更新</p>
+          </div>
+        </div>
+
+        <div class="flex items-start space-x-3">
+          <div class="w-8 h-8 bg-yellow-500 rounded-full flex items-center justify-center text-white">
+            <i data-lucide="timer" class="w-4 h-4"></i>
+          </div>
+          <div>
+            <h3 class="font-semibold text-gray-800">30秒サブタイマー</h3>
+            <p class="text-sm text-gray-600">レイドタイマー（30秒固定）</p>
+          </div>
+        </div>
+
+        <div class="flex items-start space-x-3">
+          <div class="w-8 h-8 bg-orange-500 rounded-full flex items-center justify-center text-white">
+            <i data-lucide="flag" class="w-4 h-4"></i>
+          </div>
+          <div>
+            <h3 class="font-semibold text-gray-800">Do or Die表示</h3>
+            <p class="text-sm text-gray-600">各チームのDo or Dieカウント（0-3）</p>
+          </div>
+        </div>
+
+        <div class="flex items-start space-x-3">
+          <div class="w-8 h-8 bg-purple-500 rounded-full flex items-center justify-center text-white">
+            <i data-lucide="refresh-cw" class="w-4 h-4"></i>
+          </div>
+          <div>
+            <h3 class="font-semibold text-gray-800">コートチェンジ</h3>
+            <p class="text-sm text-gray-600">チーム表示位置の入れ替え</p>
+          </div>
+        </div>
+
+        <div class="flex items-start space-x-3">
+          <div class="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center text-white">
+            <i data-lucide="smartphone" class="w-4 h-4"></i>
+          </div>
+          <div>
+            <h3 class="font-semibold text-gray-800">モバイル対応</h3>
+            <p class="text-sm text-gray-600">スマートフォン・タブレット最適化</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 技術情報 -->
+    <div class="bg-white rounded-lg shadow-lg p-6 mb-8">
+      <div class="flex justify-between items-center mb-6">
+        <h2 class="text-2xl font-bold text-gray-800 flex items-center gap-2">
+          <i data-lucide="code" class="w-6 h-6"></i>
+          技術情報
+        </h2>
+        <button onclick="openTechModal()" class="text-blue-500 hover:text-blue-600 transition-colors">
+          <i data-lucide="external-link" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <div class="grid md:grid-cols-2 gap-6">
+        <div>
+          <h3 class="font-semibold text-gray-800 mb-2">フロントエンド</h3>
+          <ul class="text-sm text-gray-600 space-y-1">
+            <li>• Alpine.js (リアクティブUI)</li>
+            <li>• Tailwind CSS (スタイリング)</li>
+            <li>• WebSocket (リアルタイム通信)</li>
+            <li>• Lucide Icons (アイコン)</li>
+          </ul>
+        </div>
+        <div>
+          <h3 class="font-semibold text-gray-800 mb-2">バックエンド</h3>
+          <ul class="text-sm text-gray-600 space-y-1">
+            <li>• Cloudflare Workers (サーバーレス)</li>
+            <li>• Hono.js (Webフレームワーク)</li>
+            <li>• Durable Objects (状態管理)</li>
+            <li>• TypeScript (型安全性)</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- フッター -->
+    <div class="text-center text-gray-500">
+      <p class="mb-2">Powered by <a href="https://dominion525.com" target="_blank" class="text-blue-500 hover:text-blue-600 transition-colors">Dominion525.com</a></p>
+      <p class="text-sm">© 2024 Kabaddi Timer App</p>
+    </div>
+  </div>
+
+  <!-- 技術詳細モーダル -->
+  <div id="techModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+    <div class="bg-white rounded-lg p-6 m-4 max-w-2xl w-full max-h-[80vh] overflow-y-auto">
+      <div class="flex justify-between items-center mb-4">
+        <h3 class="text-xl font-bold text-gray-800">技術詳細</h3>
+        <button onclick="closeTechModal()" class="text-gray-500 hover:text-gray-700">
+          <i data-lucide="x" class="w-6 h-6"></i>
+        </button>
+      </div>
+      <!-- 技術詳細の内容（元のHTMLから詳細を追加可能） -->
+      <div class="space-y-4">
+        <p class="text-gray-600">このアプリケーションは最新のWeb技術を使用して構築されています。</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- JavaScriptファイルを読み込み -->
+  <script src="/client/home-app.js"></script>
+
+  <script>
+    // 技術モーダル関数
+    function openTechModal() {
+      document.getElementById('techModal').classList.remove('hidden');
+      if (typeof lucide !== 'undefined') {
+        lucide.createIcons();
+      }
+    }
+
+    function closeTechModal() {
+      document.getElementById('techModal').classList.add('hidden');
+    }
+
+    // ESCキーでモーダルを閉じる
+    document.addEventListener('keydown', function(e) {
+      if (e.key === 'Escape') {
+        closeTechModal();
+      }
+    });
+
+    // モーダル背景クリックで閉じる
+    document.getElementById('techModal').addEventListener('click', function(e) {
+      if (e.target === this) {
+        closeTechModal();
+      }
+    });
+  </script>
+
+</body>
+</html>
