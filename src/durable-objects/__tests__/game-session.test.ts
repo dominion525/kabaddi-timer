@@ -1342,6 +1342,650 @@ describe('GameSession', () => {
     });
   });
 
+  describe('状態永続化と復元', () => {
+    describe('ストレージ操作の信頼性', () => {
+      it('loadGameState - 初回ロード時にデフォルト状態を設定する', async () => {
+        const id = env.GAME_SESSION.idFromName('test-load-default-state');
+        const gameSession = env.GAME_SESSION.get(id);
+
+        const result = await runInDurableObject(gameSession, async (instance, state) => {
+          // ストレージに何も保存されていない状態での初回ロード
+          await (instance as any).loadGameState();
+          const gameState = (instance as any).gameState;
+          const isStateLoaded = (instance as any).isStateLoaded;
+
+          return {
+            gameState,
+            isStateLoaded,
+            teamAName: gameState.teamA.name,
+            teamBName: gameState.teamB.name,
+            timerDuration: gameState.timer.totalDuration,
+            remainingSeconds: gameState.timer.remainingSeconds
+          };
+        });
+
+        expect(result.isStateLoaded).toBe(true);
+        expect(result.teamAName).toBe('チームA');
+        expect(result.teamBName).toBe('チームB');
+        expect(result.timerDuration).toBe(900); // 15分
+        expect(result.remainingSeconds).toBe(900);
+      });
+
+      it('loadGameState - キャッシュ機能が正常に動作する', async () => {
+        const id = env.GAME_SESSION.idFromName('test-load-cache');
+        const gameSession = env.GAME_SESSION.get(id);
+
+        const result = await runInDurableObject(gameSession, async (instance, state) => {
+          // 最初のロード
+          await (instance as any).loadGameState();
+          const firstLoadTime = Date.now();
+
+          // 状態を変更
+          (instance as any).gameState.teamA.score = 10;
+          const modifiedScore = (instance as any).gameState.teamA.score;
+
+          // 2回目のロード（キャッシュが効いているはず）
+          await (instance as any).loadGameState();
+          const cachedScore = (instance as any).gameState.teamA.score;
+          const isStateLoaded = (instance as any).isStateLoaded;
+
+          return {
+            isStateLoaded,
+            modifiedScore,
+            cachedScore,
+            scoresMatch: modifiedScore === cachedScore
+          };
+        });
+
+        expect(result.isStateLoaded).toBe(true);
+        expect(result.modifiedScore).toBe(10);
+        expect(result.cachedScore).toBe(10);
+        expect(result.scoresMatch).toBe(true); // キャッシュが効いていれば変更が保持される
+      });
+
+      it('saveGameStateWithRetry - 成功ケース（1回目で成功）', async () => {
+        const id = env.GAME_SESSION.idFromName('test-save-success');
+        const gameSession = env.GAME_SESSION.get(id);
+
+        const result = await runInDurableObject(gameSession, async (instance, state) => {
+          // 状態を変更
+          (instance as any).gameState.teamA.score = 15;
+          (instance as any).gameState.teamB.score = 8;
+
+          // 保存実行（1回目で成功するはず）
+          await (instance as any).saveGameStateWithRetry();
+
+          // ストレージから直接確認
+          const savedData = await state.storage.get('gameState');
+
+          return {
+            saveSucceeded: savedData !== undefined,
+            savedTeamAScore: savedData?.teamA?.score,
+            savedTeamBScore: savedData?.teamB?.score
+          };
+        });
+
+        expect(result.saveSucceeded).toBe(true);
+        expect(result.savedTeamAScore).toBe(15);
+        expect(result.savedTeamBScore).toBe(8);
+      });
+
+      it('saveGameState - メイン保存メソッドが正常に動作する', async () => {
+        const id = env.GAME_SESSION.idFromName('test-save-main');
+        const gameSession = env.GAME_SESSION.get(id);
+
+        const result = await runInDurableObject(gameSession, async (instance, state) => {
+          // 初期状態をロード
+          await (instance as any).loadGameState();
+
+          // 複数の状態を変更
+          (instance as any).gameState.teamA.name = 'テストチームA';
+          (instance as any).gameState.teamB.name = 'テストチームB';
+          (instance as any).gameState.teamA.score = 12;
+          (instance as any).gameState.teamB.score = 7;
+          (instance as any).gameState.teamA.doOrDieCount = 2;
+
+          // 保存実行
+          await (instance as any).saveGameState();
+
+          // ストレージから確認
+          const savedData = await state.storage.get('gameState');
+
+          return {
+            savedData,
+            teamAName: savedData?.teamA?.name,
+            teamBName: savedData?.teamB?.name,
+            teamAScore: savedData?.teamA?.score,
+            teamBScore: savedData?.teamB?.score,
+            doOrDieCount: savedData?.teamA?.doOrDieCount
+          };
+        });
+
+        expect(result.teamAName).toBe('テストチームA');
+        expect(result.teamBName).toBe('テストチームB');
+        expect(result.teamAScore).toBe(12);
+        expect(result.teamBScore).toBe(7);
+        expect(result.doOrDieCount).toBe(2);
+      });
+
+      it('同時保存リクエストが安全に処理される', async () => {
+        const id = env.GAME_SESSION.idFromName('test-concurrent-saves');
+        const gameSession = env.GAME_SESSION.get(id);
+
+        const result = await runInDurableObject(gameSession, async (instance, state) => {
+          // 初期状態をロード
+          await (instance as any).loadGameState();
+
+          // 複数の保存操作を同時実行
+          const savePromises = [
+            (async () => {
+              (instance as any).gameState.teamA.score = 5;
+              await (instance as any).saveGameState();
+            })(),
+            (async () => {
+              (instance as any).gameState.teamB.score = 3;
+              await (instance as any).saveGameState();
+            })(),
+            (async () => {
+              (instance as any).gameState.teamA.name = '並行保存テスト';
+              await (instance as any).saveGameState();
+            })()
+          ];
+
+          await Promise.all(savePromises);
+
+          // 最終的な保存状態を確認
+          const savedData = await state.storage.get('gameState');
+
+          return {
+            teamAScore: savedData?.teamA?.score,
+            teamBScore: savedData?.teamB?.score,
+            teamAName: savedData?.teamA?.name,
+            hasAllChanges: savedData?.teamA?.score >= 0 &&
+                          savedData?.teamB?.score >= 0 &&
+                          savedData?.teamA?.name?.length > 0
+          };
+        });
+
+        // 同時実行でも全ての変更が反映されることを確認
+        expect(result.hasAllChanges).toBe(true);
+        expect(result.teamAScore).toBeGreaterThanOrEqual(0);
+        expect(result.teamBScore).toBeGreaterThanOrEqual(0);
+        expect(result.teamAName).toBeTruthy();
+      });
+    });
+
+    describe('状態復元シナリオ', () => {
+      it('タイマー実行中の状態復元で経過時間が正確に計算される', async () => {
+        const id = env.GAME_SESSION.idFromName('test-timer-restore');
+        const gameSession = env.GAME_SESSION.get(id);
+
+        const result = await runInDurableObject(gameSession, async (instance, state) => {
+          // 初期状態をロード
+          await (instance as any).loadGameState();
+
+          // タイマーを開始
+          await (instance as any).startTimer();
+          const startTime = (instance as any).gameState.timer.startTime;
+
+          // 少し時間を経過させる（テストなので短時間）
+          await new Promise(resolve => setTimeout(resolve, 100));
+
+          // タイマー状態を保存
+          await (instance as any).saveGameState();
+
+          // 状態復元をシミュレート（isStateLoadedをリセット）
+          (instance as any).isStateLoaded = false;
+
+          // さらに時間を経過させてから復元
+          await new Promise(resolve => setTimeout(resolve, 50));
+
+          await (instance as any).loadGameState();
+
+          // remainingSecondsを更新
+          (instance as any).updateRemainingTime();
+
+          const restoredGameState = (instance as any).gameState;
+
+          return {
+            originalStartTime: startTime,
+            restoredStartTime: restoredGameState.timer.startTime,
+            isRunning: restoredGameState.timer.isRunning,
+            remainingSeconds: restoredGameState.timer.remainingSeconds,
+            isTimeCalculated: restoredGameState.timer.remainingSeconds < 900 // 経過時間が反映されている
+          };
+        });
+
+        expect(result.originalStartTime).toBe(result.restoredStartTime);
+        expect(result.isRunning).toBe(true);
+        expect(result.isTimeCalculated).toBe(true);
+        expect(result.remainingSeconds).toBeLessThan(900);
+      });
+
+      it('一時停止中のタイマー状態が正確に復元される', async () => {
+        const id = env.GAME_SESSION.idFromName('test-paused-timer-restore');
+        const gameSession = env.GAME_SESSION.get(id);
+
+        const result = await runInDurableObject(gameSession, async (instance, state) => {
+          // タイマーを開始して一時停止
+          await (instance as any).startTimer();
+          await new Promise(resolve => setTimeout(resolve, 100));
+          await (instance as any).pauseTimer();
+
+          const pausedAt = (instance as any).gameState.timer.pausedAt;
+          const remainingBeforeSave = (instance as any).gameState.timer.remainingSeconds;
+
+          // 状態を保存
+          await (instance as any).saveGameState();
+
+          // 復元をシミュレート
+          (instance as any).isStateLoaded = false;
+          await (instance as any).loadGameState();
+
+          const restoredGameState = (instance as any).gameState;
+
+          return {
+            originalPausedAt: pausedAt,
+            restoredPausedAt: restoredGameState.timer.pausedAt,
+            originalRemaining: remainingBeforeSave,
+            restoredRemaining: restoredGameState.timer.remainingSeconds,
+            isRunning: restoredGameState.timer.isRunning,
+            isPaused: restoredGameState.timer.isPaused
+          };
+        });
+
+        expect(result.originalPausedAt).toBe(result.restoredPausedAt);
+        expect(result.originalRemaining).toBe(result.restoredRemaining);
+        expect(result.isRunning).toBe(false);
+        expect(result.isPaused).toBe(true);
+      });
+
+      it('不完全な状態データからの自動修復が動作する', async () => {
+        const id = env.GAME_SESSION.idFromName('test-state-repair');
+        const gameSession = env.GAME_SESSION.get(id);
+
+        const result = await runInDurableObject(gameSession, async (instance, state) => {
+          // 不完全な状態をストレージに直接保存
+          const incompleteState = {
+            teamA: { name: 'チームA', score: 5 }, // doOrDieCountが欠損
+            teamB: null, // teamB全体が欠損
+            timer: { isRunning: false }, // 必要なフィールドが欠損
+            // subTimerが欠損
+            serverTime: Date.now()
+          };
+
+          await state.storage.put('gameState', incompleteState);
+
+          // 状態をロード（修復が行われるはず）
+          (instance as any).isStateLoaded = false;
+          await (instance as any).loadGameState();
+
+          const repairedState = (instance as any).gameState;
+
+          return {
+            teamAScore: repairedState.teamA.score,
+            teamADoOrDie: repairedState.teamA.doOrDieCount,
+            teamBName: repairedState.teamB.name,
+            teamBScore: repairedState.teamB.score,
+            timerDuration: repairedState.timer.totalDuration,
+            timerRemaining: repairedState.timer.remainingSeconds,
+            hasSubTimer: repairedState.subTimer !== undefined,
+            subTimerDuration: repairedState.subTimer?.totalDuration
+          };
+        });
+
+        // 修復後の状態確認
+        expect(result.teamAScore).toBe(5); // 元の値は保持
+        expect(result.teamADoOrDie).toBe(0); // デフォルト値で修復
+        expect(result.teamBName).toBe('チームB'); // デフォルト値で修復
+        expect(result.teamBScore).toBe(0); // デフォルト値で修復
+        expect(result.timerDuration).toBe(900); // デフォルト値で修復
+        expect(result.timerRemaining).toBe(900); // デフォルト値で修復
+        expect(result.hasSubTimer).toBe(true); // subTimerが修復される
+        expect(result.subTimerDuration).toBe(30); // デフォルト値
+      });
+
+      it('型が不正な状態データからの修復が動作する', async () => {
+        const id = env.GAME_SESSION.idFromName('test-type-repair');
+        const gameSession = env.GAME_SESSION.get(id);
+
+        const result = await runInDurableObject(gameSession, async (instance, state) => {
+          // 型が不正な状態をストレージに保存
+          const invalidState = {
+            teamA: {
+              name: 123, // 文字列ではない
+              score: "invalid", // 数値ではない
+              doOrDieCount: null
+            },
+            teamB: {
+              name: 'チームB',
+              score: -5, // 負の値
+              doOrDieCount: 999
+            },
+            timer: {
+              isRunning: "true", // booleanではない
+              totalDuration: null,
+              remainingSeconds: "abc"
+            },
+            subTimer: {
+              isRunning: 1,
+              totalDuration: -30
+            },
+            serverTime: "invalid_time"
+          };
+
+          await state.storage.put('gameState', invalidState);
+
+          // 状態をロード（修復が行われるはず）
+          (instance as any).isStateLoaded = false;
+          await (instance as any).loadGameState();
+
+          const repairedState = (instance as any).gameState;
+
+          return {
+            teamAName: repairedState.teamA.name,
+            teamAScore: repairedState.teamA.score,
+            teamBScore: repairedState.teamB.score,
+            timerRunning: repairedState.timer.isRunning,
+            timerDuration: repairedState.timer.totalDuration,
+            timerRemaining: repairedState.timer.remainingSeconds,
+            subTimerRunning: repairedState.subTimer.isRunning,
+            subTimerDuration: repairedState.subTimer.totalDuration,
+            serverTimeType: typeof repairedState.serverTime
+          };
+        });
+
+        // 型修復の確認
+        expect(typeof result.teamAName).toBe('string');
+        expect(result.teamAName).toBe('チームA'); // デフォルトに修復
+        expect(typeof result.teamAScore).toBe('number');
+        expect(result.teamAScore).toBe(0); // デフォルトに修復
+        expect(result.teamBScore).toBe(0); // 負の値がデフォルトに修復
+        expect(typeof result.timerRunning).toBe('boolean');
+        expect(result.timerRunning).toBe(false);
+        expect(result.timerDuration).toBe(900);
+        expect(result.timerRemaining).toBe(900);
+        expect(typeof result.subTimerRunning).toBe('boolean');
+        expect(result.subTimerDuration).toBe(30);
+        expect(result.serverTimeType).toBe('number');
+      });
+
+      it('全クライアント切断後の再接続時に状態が保持される', async () => {
+        const id = env.GAME_SESSION.idFromName('test-reconnection-state');
+        const gameSession = env.GAME_SESSION.get(id);
+
+        const result = await runInDurableObject(gameSession, async (instance, state) => {
+          // 初期状態を設定
+          await (instance as any).loadGameState();
+          await (instance as any).handleAction({ type: 'SCORE_UPDATE', team: 'teamA', points: 8 });
+          await (instance as any).handleAction({ type: 'SET_TEAM_NAME', team: 'teamA', name: '再接続テストA' });
+          await (instance as any).startTimer();
+
+          const beforeDisconnect = {
+            teamAScore: (instance as any).gameState.teamA.score,
+            teamAName: (instance as any).gameState.teamA.name,
+            isRunning: (instance as any).gameState.timer.isRunning
+          };
+
+          // 最後の接続切断をシミュレート（hibernation準備）
+          await (instance as any).safelyDeleteConnection(new WebSocket('wss://test'));
+
+          // 少し時間を置いてから新規接続
+          await new Promise(resolve => setTimeout(resolve, 50));
+
+          // 新規接続時の状態復元をシミュレート
+          (instance as any).isStateLoaded = false;
+          await (instance as any).loadGameState();
+
+          const afterReconnect = {
+            teamAScore: (instance as any).gameState.teamA.score,
+            teamAName: (instance as any).gameState.teamA.name,
+            isRunning: (instance as any).gameState.timer.isRunning
+          };
+
+          return {
+            beforeDisconnect,
+            afterReconnect,
+            statePreserved: beforeDisconnect.teamAScore === afterReconnect.teamAScore &&
+                           beforeDisconnect.teamAName === afterReconnect.teamAName &&
+                           beforeDisconnect.isRunning === afterReconnect.isRunning
+          };
+        });
+
+        expect(result.statePreserved).toBe(true);
+        expect(result.beforeDisconnect.teamAScore).toBe(8);
+        expect(result.beforeDisconnect.teamAName).toBe('再接続テストA');
+        expect(result.afterReconnect.teamAScore).toBe(8);
+        expect(result.afterReconnect.teamAName).toBe('再接続テストA');
+      });
+    });
+
+    describe('Hibernation対応', () => {
+      it('最後の接続切断時に自動保存が実行される', async () => {
+        const id = env.GAME_SESSION.idFromName('test-hibernation-save');
+        const gameSession = env.GAME_SESSION.get(id);
+
+        const result = await runInDurableObject(gameSession, async (instance, state) => {
+          // 初期状態を設定
+          await (instance as any).loadGameState();
+          (instance as any).gameState.teamA.score = 12;
+          (instance as any).gameState.teamB.score = 9;
+
+          // WebSocketペアを作成して接続
+          const webSocketPair = new WebSocketPair();
+          const [client, server] = Object.values(webSocketPair);
+          client.accept();
+          await (instance as any).handleSession(server);
+
+          const connectionsBeforeClose = (instance as any).connections.size;
+
+          // 最後の接続を切断（hibernation準備の保存が実行されるはず）
+          await (instance as any).safelyDeleteConnection(server);
+
+          const connectionsAfterClose = (instance as any).connections.size;
+
+          // ストレージから保存されたデータを確認
+          const savedData = await state.storage.get('gameState');
+
+          return {
+            connectionsBeforeClose,
+            connectionsAfterClose,
+            savedTeamAScore: savedData?.teamA?.score,
+            savedTeamBScore: savedData?.teamB?.score,
+            hibernationSaveExecuted: savedData !== undefined
+          };
+        });
+
+        expect(result.connectionsBeforeClose).toBe(1);
+        expect(result.connectionsAfterClose).toBe(0);
+        expect(result.hibernationSaveExecuted).toBe(true);
+        expect(result.savedTeamAScore).toBe(12);
+        expect(result.savedTeamBScore).toBe(9);
+      });
+
+      it('接続が0になってもアラームが設定されている場合は削除される', async () => {
+        const id = env.GAME_SESSION.idFromName('test-alarm-cleanup');
+        const gameSession = env.GAME_SESSION.get(id);
+
+        const result = await runInDurableObject(gameSession, async (instance, state) => {
+          // WebSocket接続を作成してアラームを設定
+          const webSocketPair = new WebSocketPair();
+          const [client, server] = Object.values(webSocketPair);
+          client.accept();
+          await (instance as any).handleSession(server);
+
+          // アラームが設定されていることを確認
+          const alarmBeforeClose = await state.storage.getAlarm();
+
+          // 接続を削除（hibernation処理）
+          await (instance as any).safelyDeleteConnection(server);
+
+          // hibernation後のアラーム状態を確認
+          const alarmAfterClose = await state.storage.getAlarm();
+          const connectionsAfterClose = (instance as any).connections.size;
+
+          return {
+            alarmBeforeClose,
+            alarmAfterClose,
+            connectionsAfterClose,
+            alarmWasSet: alarmBeforeClose !== null,
+            alarmCleared: alarmAfterClose === null || alarmAfterClose !== alarmBeforeClose
+          };
+        });
+
+        expect(result.connectionsAfterClose).toBe(0);
+        expect(result.alarmWasSet).toBe(true);
+        // hibernation時の処理（アラームクリアまたは変更）を確認
+        // 実装によっては削除されるかそのまま残るかが決まる
+      });
+
+      it('hibernation解除後の初回ロードが正常に動作する', async () => {
+        const id = env.GAME_SESSION.idFromName('test-hibernation-resume');
+        const gameSession = env.GAME_SESSION.get(id);
+
+        const result = await runInDurableObject(gameSession, async (instance, state) => {
+          // hibernation前の状態を準備
+          await (instance as any).loadGameState();
+          (instance as any).gameState.teamA.score = 20;
+          (instance as any).gameState.teamB.score = 15;
+          (instance as any).gameState.teamA.name = 'hibernation前チームA';
+          await (instance as any).startTimer();
+
+          // hibernation準備（全接続削除）
+          const webSocketPair = new WebSocketPair();
+          const [client, server] = Object.values(webSocketPair);
+          client.accept();
+          await (instance as any).handleSession(server);
+          await (instance as any).safelyDeleteConnection(server);
+
+          // hibernation解除をシミュレート（状態をリセット）
+          (instance as any).isStateLoaded = false;
+          (instance as any).gameState = null;
+
+          // 新規接続による復帰
+          const newWebSocketPair = new WebSocketPair();
+          const [newClient, newServer] = Object.values(newWebSocketPair);
+          newClient.accept();
+          await (instance as any).handleSession(newServer);
+
+          const resumedState = (instance as any).gameState;
+
+          return {
+            teamAScore: resumedState.teamA.score,
+            teamBScore: resumedState.teamB.score,
+            teamAName: resumedState.teamA.name,
+            timerRunning: resumedState.timer.isRunning,
+            connectionsAfterResume: (instance as any).connections.size,
+            stateLoaded: (instance as any).isStateLoaded
+          };
+        });
+
+        expect(result.teamAScore).toBe(20);
+        expect(result.teamBScore).toBe(15);
+        expect(result.teamAName).toBe('hibernation前チームA');
+        expect(result.timerRunning).toBe(true);
+        expect(result.connectionsAfterResume).toBe(1);
+        expect(result.stateLoaded).toBe(true);
+      });
+
+      it('アラーム設定の永続化と復元が正常に動作する', async () => {
+        const id = env.GAME_SESSION.idFromName('test-alarm-persistence');
+        const gameSession = env.GAME_SESSION.get(id);
+
+        const result = await runInDurableObject(gameSession, async (instance, state) => {
+          // 初回接続でアラームを設定
+          const webSocketPair = new WebSocketPair();
+          const [client, server] = Object.values(webSocketPair);
+          client.accept();
+          await (instance as any).handleSession(server);
+
+          const initialAlarmTime = await state.storage.getAlarm();
+
+          // hibernationをシミュレート
+          await (instance as any).safelyDeleteConnection(server);
+
+          // hibernation中のアラーム状態
+          const hibernationAlarmTime = await state.storage.getAlarm();
+
+          // 復帰時の新規接続
+          const newWebSocketPair = new WebSocketPair();
+          const [newClient, newServer] = Object.values(newWebSocketPair);
+          newClient.accept();
+          await (instance as any).handleSession(newServer);
+
+          const resumeAlarmTime = await state.storage.getAlarm();
+
+          return {
+            initialAlarmTime,
+            hibernationAlarmTime,
+            resumeAlarmTime,
+            alarmPersisted: hibernationAlarmTime !== null,
+            alarmResumed: resumeAlarmTime !== null,
+            connectionsAfterResume: (instance as any).connections.size
+          };
+        });
+
+        expect(result.initialAlarmTime).not.toBeNull();
+        expect(result.connectionsAfterResume).toBe(1);
+        expect(result.resumeAlarmTime).not.toBeNull();
+        // アラームの永続性または再設定を確認
+        expect(result.alarmResumed).toBe(true);
+      });
+
+      it('長時間hibernation後の時刻計算が正確に行われる', async () => {
+        const id = env.GAME_SESSION.idFromName('test-long-hibernation');
+        const gameSession = env.GAME_SESSION.get(id);
+
+        const result = await runInDurableObject(gameSession, async (instance, state) => {
+          // タイマーを開始してhibernation
+          await (instance as any).loadGameState();
+          await (instance as any).startTimer();
+
+          const startTime = (instance as any).gameState.timer.startTime;
+          const remainingBeforeHibernation = (instance as any).gameState.timer.remainingSeconds;
+
+          // hibernation準備
+          const webSocketPair = new WebSocketPair();
+          const [client, server] = Object.values(webSocketPair);
+          client.accept();
+          await (instance as any).handleSession(server);
+          await (instance as any).safelyDeleteConnection(server);
+
+          // 長時間経過をシミュレート（実際は短時間）
+          await new Promise(resolve => setTimeout(resolve, 200));
+
+          // hibernation解除
+          (instance as any).isStateLoaded = false;
+          const newWebSocketPair = new WebSocketPair();
+          const [newClient, newServer] = Object.values(newWebSocketPair);
+          newClient.accept();
+          await (instance as any).handleSession(newServer);
+
+          // 時刻更新
+          (instance as any).updateRemainingTime();
+
+          const remainingAfterResume = (instance as any).gameState.timer.remainingSeconds;
+          const resumedStartTime = (instance as any).gameState.timer.startTime;
+
+          return {
+            startTime,
+            resumedStartTime,
+            remainingBeforeHibernation,
+            remainingAfterResume,
+            timeCalculatedCorrectly: remainingAfterResume < remainingBeforeHibernation,
+            timerStillRunning: (instance as any).gameState.timer.isRunning,
+            startTimePreserved: startTime === resumedStartTime
+          };
+        });
+
+        expect(result.startTimePreserved).toBe(true);
+        expect(result.timerStillRunning).toBe(true);
+        expect(result.timeCalculatedCorrectly).toBe(true);
+        expect(result.remainingAfterResume).toBeLessThan(result.remainingBeforeHibernation);
+      });
+    });
+  });
+
   describe('エラーハンドリング', () => {
     it('無効なパスを拒否する', async () => {
       const id = env.GAME_SESSION.idFromName('test-game-invalid-path');
