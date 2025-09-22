@@ -10,13 +10,11 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ### 必須コマンド
 - **開発サーバー起動**: `npm run dev` - Cloudflare Workersローカル開発環境
-- **ビルド**: `npm run build` - TypeScriptコンパイル
+- **ビルド**: `npm run build` - TypeScriptコンパイル（クライアント+ワーカー）
+  - `npm run build:client` - クライアントサイドJavaScriptのビルド
+  - `npm run build:worker` - ワーカーサイドTypeScriptのビルド
 - **型チェック**: `npm run typecheck` - 型エラーのチェック
 - **デプロイ**: `wrangler deploy` - Cloudflare Workersへのデプロイ
-
-### フロントエンド開発用
-- **フロントエンド開発サーバー**: `npm run dev:frontend` - Vite開発サーバー（ポート3000）
-- **フロントエンド ビルド**: `npm run build:frontend` - 静的アセットのビルド
 
 ## アーキテクチャ構成
 
@@ -33,6 +31,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ### フロントエンド
 - **単一ファイルSPA**: `/game/{gameId}`エンドポイントでHTML+JavaScript配信
 - **フレームワーク**: Alpine.js（CDN）、Tailwind CSS（CDN）
+- **静的アセット**: `public/js/` からJavaScriptファイルを配信
+- **TypeScript**: IIFE形式でコンパイル（`src/client/components/` → `public/js/`）
 - **レスポンシブデザイン**: タブレット表示（md以上）とスマホ表示に対応
 - **WebSocket通信**: リアルタイムゲーム状態同期
 
@@ -52,6 +52,13 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - `wrangler.toml`でGameSessionクラスをバインディング
 - `compatibility_date: 2024-11-01`
 - マイグレーション設定済み（v1）
+
+### TypeScriptビルド設定
+- **`tsconfig.json`**: ワーカー（サーバーサイド）用設定
+- **`tsconfig.client.json`**: クライアントサイド用設定
+  - `module: "None"`: CommonJS出力を無効化
+  - `moduleDetection: "legacy"`: IIFE形式での出力
+  - `target: "ES2020"`: ブラウザ互換性確保
 
 ### 開発時の注意点
 - WebSocket接続は`/ws/{gameId}`経由でDurable Objectに転送
