@@ -10,6 +10,7 @@ yarn-error.log*
 # Build outputs
 dist/
 public/js/
+!public/js/README.md
 
 # Generated files
 src/generated/
