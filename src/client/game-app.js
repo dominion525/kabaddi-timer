@@ -199,12 +199,12 @@ window.gameApp = function(gameId, apis = BrowserAPIs) {
 
     get teamADoOrDieIndicators() {
       // 純粋関数を使用してインジケーター生成
-      return TimerLogic.generateDoOrDieIndicators(this.gameState.teamA.doOrDieCount);
+      return ScoreLogic.generateDoOrDieIndicators(this.gameState.teamA.doOrDieCount);
     },
 
     get teamBDoOrDieIndicators() {
       // 純粋関数を使用してインジケーター生成
-      return TimerLogic.generateDoOrDieIndicators(this.gameState.teamB.doOrDieCount);
+      return ScoreLogic.generateDoOrDieIndicators(this.gameState.teamB.doOrDieCount);
     },
 
     setTeamName(team, name) {

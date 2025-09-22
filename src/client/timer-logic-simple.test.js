@@ -94,7 +94,7 @@ function runSimpleTests() {
     {
       name: 'Do or Dieインジケーター（2個）',
       test: () => {
-        const result = TimerLogic.generateDoOrDieIndicators(2);
+        const result = ScoreLogic.generateDoOrDieIndicators(2);
         return JSON.stringify(result) === JSON.stringify([true, true, false]);
       }
     },
@@ -102,7 +102,7 @@ function runSimpleTests() {
     {
       name: 'Do or Dieインジケーター（0個）',
       test: () => {
-        const result = TimerLogic.generateDoOrDieIndicators(0);
+        const result = ScoreLogic.generateDoOrDieIndicators(0);
         return JSON.stringify(result) === JSON.stringify([false, false, false]);
       }
     }

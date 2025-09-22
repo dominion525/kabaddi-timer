@@ -76,23 +76,13 @@
     return seconds.toString().padStart(2, '0');
   }
 
-  /**
-   * Do or Die インジケーター配列を生成
-   * @param {number} count - 現在のカウント
-   * @param {number} max - 最大値（デフォルト3）
-   * @returns {boolean[]} インジケーター状態の配列
-   */
-  function generateDoOrDieIndicators(count, max = 3) {
-    return Array(max).fill(0).map((_, i) => i < (count || 0));
-  }
 
   // グローバル名前空間に公開
   global.TimerLogic = {
     calculateRemainingSeconds: calculateRemainingSeconds,
     calculateSubTimerRemainingSeconds: calculateSubTimerRemainingSeconds,
     formatTimer: formatTimer,
-    formatSubTimer: formatSubTimer,
-    generateDoOrDieIndicators: generateDoOrDieIndicators
+    formatSubTimer: formatSubTimer
   };
 
 })(window);

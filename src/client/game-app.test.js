@@ -215,11 +215,11 @@ class GameAppTestSuite {
     this.assert('サブタイマーフォーマット(5秒)', TimerLogic.formatSubTimer(5) === '05');
 
     // Do or Dieインジケーター生成テスト
-    const indicators2 = TimerLogic.generateDoOrDieIndicators(2);
+    const indicators2 = ScoreLogic.generateDoOrDieIndicators(2);
     this.assert('Do or Dieインジケーター(2個)',
       JSON.stringify(indicators2) === JSON.stringify([true, true, false]));
 
-    const indicators0 = TimerLogic.generateDoOrDieIndicators(0);
+    const indicators0 = ScoreLogic.generateDoOrDieIndicators(0);
     this.assert('Do or Dieインジケーター(0個)',
       JSON.stringify(indicators0) === JSON.stringify([false, false, false]));
 
