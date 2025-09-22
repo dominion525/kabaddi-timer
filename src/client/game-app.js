@@ -27,6 +27,9 @@ window.gameApp = function(gameId, apis = BrowserAPIs) {
     DO_OR_DIE_RESET: { type: 'DO_OR_DIE_RESET' }
   };
 
+  // UI状態管理の初期化
+  const uiState = createUIState(apis);
+
   return {
     gameState: {
       teamA: { name: DEFAULT_VALUES.teamNames.teamA, score: DEFAULT_VALUES.score, doOrDieCount: DEFAULT_VALUES.doOrDieCount },
@@ -45,9 +48,6 @@ window.gameApp = function(gameId, apis = BrowserAPIs) {
     connected: false,
     ws: null,
     gameId: gameId,
-    showControlPanel: false,
-    showStatusBar: true,
-    simpleMode: false,
     timerSeconds: DEFAULT_VALUES.timer.defaultDuration,
     timerRunning: false,
     subTimerSeconds: 30,
@@ -61,14 +61,10 @@ window.gameApp = function(gameId, apis = BrowserAPIs) {
     timerInputSeconds: 0,
     teamANameInput: DEFAULT_VALUES.teamNames.teamA,
     teamBNameInput: DEFAULT_VALUES.teamNames.teamB,
-    isDesktop: false, // 初期化後にinit()で設定
 
     init() {
-      // localStorageからsimpleModeを読み込み
-      const savedSimpleMode = apis.storage.get('kabaddi-timer-simple-mode');
-      if (savedSimpleMode !== null) {
-        this.simpleMode = JSON.parse(savedSimpleMode);
-      }
+      // UI状態管理の初期化
+      uiState.initialize();
 
       // 既存のアニメーション・インターバルをクリアして重複を防止
       if (this.timerAnimationId) {
@@ -83,14 +79,6 @@ window.gameApp = function(gameId, apis = BrowserAPIs) {
       this.connectWebSocket();
       // タイマー更新の初期化
       this.updateTimerDisplay();
-
-      // 画面サイズ変更監視
-      const mediaQuery = apis.window.matchMedia('(min-width: 768px)');
-      this.isDesktop = mediaQuery.matches; // 初期値を設定
-      const handleMediaChange = (e) => {
-        this.isDesktop = e.matches;
-      };
-      mediaQuery.addListener(handleMediaChange);
 
       // 定期的な時刻同期リクエスト（60秒ごと）
       this.timeSyncIntervalId = apis.timer.setInterval(() => {
@@ -254,17 +242,34 @@ window.gameApp = function(gameId, apis = BrowserAPIs) {
       });
     },
 
+    // UI状態管理（ui-stateモジュールに委譲）
     toggleControlPanel() {
-      this.showControlPanel = !this.showControlPanel;
+      return uiState.toggleControlPanel();
     },
 
     toggleStatusBar() {
-      this.showStatusBar = !this.showStatusBar;
+      return uiState.toggleStatusBar();
     },
 
     toggleSimpleMode() {
-      this.simpleMode = !this.simpleMode;
-      apis.storage.set('kabaddi-timer-simple-mode', JSON.stringify(this.simpleMode));
+      return uiState.toggleSimpleMode();
+    },
+
+    // UI状態のgetters
+    get showControlPanel() {
+      return uiState.get('showControlPanel');
+    },
+
+    get showStatusBar() {
+      return uiState.get('showStatusBar');
+    },
+
+    get simpleMode() {
+      return uiState.get('simpleMode');
+    },
+
+    get isDesktop() {
+      return uiState.get('isDesktop');
     },
 
     get formattedTimer() {
@@ -378,6 +383,11 @@ window.gameApp = function(gameId, apis = BrowserAPIs) {
     },
 
     cleanup() {
+      // UI状態管理のクリーンアップ
+      if (uiState) {
+        uiState.cleanup();
+      }
+
       // 全てのアニメーション・インターバルをクリア
       if (this.timerAnimationId) {
         apis.timer.cancelAnimationFrame(this.timerAnimationId);
