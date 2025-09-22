@@ -27,6 +27,12 @@ function gameApp(gameId: string) {
     DO_OR_DIE_RESET: { type: 'DO_OR_DIE_RESET' }
   };
 
+  // 依存モジュールの取得
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const timerLogic = (window as any).TimerLogic;
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const scoreLogic = (window as any).ScoreLogic;
+
   return {
     gameState: {
       teamA: { name: DEFAULT_VALUES.teamNames.teamA, score: DEFAULT_VALUES.score, doOrDieCount: DEFAULT_VALUES.doOrDieCount },
@@ -271,12 +277,12 @@ function gameApp(gameId: string) {
 
     get teamADoOrDieIndicators() {
       // 純粋関数を使用してインジケーター生成
-      return (window as any).ScoreLogic.generateDoOrDieIndicators(this.gameState.teamA.doOrDieCount);
+      return scoreLogic.generateDoOrDieIndicators(this.gameState.teamA.doOrDieCount);
     },
 
     get teamBDoOrDieIndicators() {
       // 純粋関数を使用してインジケーター生成
-      return (window as any).ScoreLogic.generateDoOrDieIndicators(this.gameState.teamB.doOrDieCount);
+      return scoreLogic.generateDoOrDieIndicators(this.gameState.teamB.doOrDieCount);
     },
 
     get controlPanelButtonText() {
@@ -311,12 +317,12 @@ function gameApp(gameId: string) {
 
     get formattedTimer() {
       // 純粋関数を使用してフォーマット
-      return (window as any).TimerLogic.formatTimer(this.timerSeconds);
+      return timerLogic.formatTimer(this.timerSeconds);
     },
 
     get formattedSubTimer() {
       // 純粋関数を使用してフォーマット
-      return (window as any).TimerLogic.formatSubTimer(this.subTimerSeconds);
+      return timerLogic.formatSubTimer(this.subTimerSeconds);
     },
 
     startTimer() {
@@ -397,7 +403,7 @@ function gameApp(gameId: string) {
       if (!timer) return;
 
       // 純粋関数を使用してタイマー計算
-      const result = (window as any).TimerLogic.calculateRemainingSeconds(timer, this.serverTimeOffset);
+      const result = timerLogic.calculateRemainingSeconds(timer, this.serverTimeOffset);
       this.timerSeconds = result.seconds;
       this.timerRunning = result.isRunning;
     },
@@ -407,7 +413,7 @@ function gameApp(gameId: string) {
       if (!subTimer) return;
 
       // 純粋関数を使用してサブタイマー計算
-      const result = (window as any).TimerLogic.calculateSubTimerRemainingSeconds(subTimer, this.serverTimeOffset);
+      const result = timerLogic.calculateSubTimerRemainingSeconds(subTimer, this.serverTimeOffset);
       this.subTimerSeconds = result.seconds;
       this.subTimerRunning = result.isRunning;
     },
