@@ -271,11 +271,13 @@ function gameApp(gameId) {
     },
 
     get teamADoOrDieIndicators() {
-      return Array(3).fill(0).map((_, i) => i < (this.gameState.teamA.doOrDieCount || 0));
+      // 純粋関数を使用してインジケーター生成
+      return TimerLogic.generateDoOrDieIndicators(this.gameState.teamA.doOrDieCount);
     },
 
     get teamBDoOrDieIndicators() {
-      return Array(3).fill(0).map((_, i) => i < (this.gameState.teamB.doOrDieCount || 0));
+      // 純粋関数を使用してインジケーター生成
+      return TimerLogic.generateDoOrDieIndicators(this.gameState.teamB.doOrDieCount);
     },
 
     get controlPanelButtonText() {
@@ -309,13 +311,13 @@ function gameApp(gameId) {
     },
 
     get formattedTimer() {
-      const minutes = Math.floor(this.timerSeconds / 60);
-      const remainingSeconds = this.timerSeconds % 60;
-      return minutes.toString().padStart(2, '0') + ':' + remainingSeconds.toString().padStart(2, '0');
+      // 純粋関数を使用してフォーマット
+      return TimerLogic.formatTimer(this.timerSeconds);
     },
 
     get formattedSubTimer() {
-      return this.subTimerSeconds.toString().padStart(2, '0');
+      // 純粋関数を使用してフォーマット
+      return TimerLogic.formatSubTimer(this.subTimerSeconds);
     },
 
     startTimer() {
@@ -395,32 +397,20 @@ function gameApp(gameId) {
       const timer = this.gameState?.timer;
       if (!timer) return;
 
-      if (timer.isRunning && timer.startTime) {
-        const serverNow = Date.now() - this.serverTimeOffset;
-        const elapsed = (serverNow - timer.startTime) / 1000;
-        this.timerSeconds = Math.max(0, Math.floor(timer.totalDuration - elapsed));
-        // タイマーが0になったら停止状態として表示
-        this.timerRunning = this.timerSeconds > 0;
-      } else {
-        this.timerSeconds = Math.floor(timer.remainingSeconds);
-        this.timerRunning = timer.isRunning;
-      }
+      // 純粋関数を使用してタイマー計算
+      const result = TimerLogic.calculateRemainingSeconds(timer, this.serverTimeOffset);
+      this.timerSeconds = result.seconds;
+      this.timerRunning = result.isRunning;
     },
 
     calculateSubTimerSeconds() {
       const subTimer = this.gameState?.subTimer;
       if (!subTimer) return;
 
-      if (subTimer.isRunning && subTimer.startTime) {
-        const serverNow = Date.now() - this.serverTimeOffset;
-        const elapsed = (serverNow - subTimer.startTime) / 1000;
-        this.subTimerSeconds = Math.max(0, Math.floor(subTimer.totalDuration - elapsed));
-        // サブタイマーが0になったら停止状態として表示
-        this.subTimerRunning = this.subTimerSeconds > 0;
-      } else {
-        this.subTimerSeconds = Math.floor(subTimer.remainingSeconds);
-        this.subTimerRunning = subTimer.isRunning;
-      }
+      // 純粋関数を使用してサブタイマー計算
+      const result = TimerLogic.calculateSubTimerRemainingSeconds(subTimer, this.serverTimeOffset);
+      this.subTimerSeconds = result.seconds;
+      this.subTimerRunning = result.isRunning;
     },
 
     stopTimerUpdate() {

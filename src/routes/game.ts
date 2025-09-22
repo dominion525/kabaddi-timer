@@ -1,6 +1,7 @@
 import { Hono } from 'hono';
 import { Env } from '../types/game';
 import { gameAppScript } from '../client/game-app';
+import { timerLogicScript } from '../client/timer-logic';
 import { gameTemplate } from '../templates/game-template';
 
 const gameRouter = new Hono<{ Bindings: Env }>();
@@ -28,7 +29,7 @@ gameRouter.get('/game/:gameId', async (c) => {
   // 完全なゲームテンプレートを使用
   const html = gameTemplate
     .replace(/\{\{gameId\}\}/g, gameId)
-    .replace('{{gameAppScript}}', gameAppScript);
+    .replace('{{gameAppScript}}', timerLogicScript + '\n' + gameAppScript);
 
   return c.html(html);
 });
