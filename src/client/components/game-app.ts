@@ -70,6 +70,8 @@ function gameApp(gameId: string) {
     teamBNameInput: DEFAULT_VALUES.teamNames.teamB,
     isDesktop: (window as any).matchMedia('(min-width: 768px)').matches,
     showQRModal: false,
+    showCreditsModal: false,
+    modalType: '', // 'qr' または 'credits'
     gameUrl: '',
     gameIdText: '',
 
@@ -451,12 +453,15 @@ function gameApp(gameId: string) {
       this.connected = false;
     },
 
-    // QRモーダル表示
-    openQRModal() {
+    // 共通モーダル表示
+    openModal(type: string) {
+      this.modalType = type;
       this.showQRModal = true;
-      // QRコードを生成
+
       (this as any).$nextTick(() => {
-        this.generateQRCode();
+        if (type === 'qr') {
+          this.generateQRCode();
+        }
         // Lucide iconsを再初期化
         if (typeof (window as any).lucide !== 'undefined') {
           (window as any).lucide.createIcons();
@@ -464,9 +469,15 @@ function gameApp(gameId: string) {
       });
     },
 
+    // QRモーダル表示（後方互換性のため）
+    openQRModal() {
+      this.openModal('qr');
+    },
+
     // QRモーダル閉じる
     closeQRModal() {
       this.showQRModal = false;
+      this.modalType = '';
     },
 
     // QRコード生成
@@ -541,6 +552,15 @@ function gameApp(gameId: string) {
         document.body.removeChild(textArea);
         alert('URLをクリップボードにコピーしました');
       });
+    },
+
+    // クレジットモーダル関連（後方互換性のため）
+    openCreditsModal() {
+      this.openModal('credits');
+    },
+
+    closeCreditsModal() {
+      this.closeQRModal(); // 共通のclose関数を使用
     }
   };
 }
