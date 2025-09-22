@@ -1,37 +1,16 @@
 // ゲームアプリケーションのメイン関数
 window.gameApp = function(gameId, apis = BrowserAPIs) {
-  // デフォルト値の一元管理（Single Source of Truth）
-  const DEFAULT_VALUES = {
-    teamNames: {
-      teamA: 'チームA',
-      teamB: 'チームB'
-    },
-    timer: {
-      defaultDuration: 900, // 15分
-      presetMinutes: {
-        short: 3,
-        medium: 15,
-        long: 20
-      }
-    },
-    score: 0,
-    doOrDieCount: 0
-  };
-
-  // アクションタイプの一元管理
-  const ACTIONS = {
-    TIMER_START: { type: 'TIMER_START' },
-    TIMER_PAUSE: { type: 'TIMER_PAUSE' },
-    TIMER_RESET: { type: 'TIMER_RESET' },
-    RESET_SCORES: { type: 'RESET_SCORES' },
-    DO_OR_DIE_RESET: { type: 'DO_OR_DIE_RESET' }
-  };
+  // 定数管理モジュールの使用
+  const { DEFAULT_VALUES, ACTIONS } = Constants;
 
   // UI状態管理の初期化
   const uiState = createUIState(apis);
 
   // 入力フィールド管理の初期化
   const inputFields = createInputFields(apis, DEFAULT_VALUES);
+
+  // アクション作成ヘルパーの初期化
+  const actionCreators = createActionCreators(Constants);
 
   return {
     gameState: {
@@ -195,7 +174,7 @@ window.gameApp = function(gameId, apis = BrowserAPIs) {
     },
 
     resetScores() {
-      this.sendAction(ACTIONS.RESET_SCORES);
+      this.sendAction(actionCreators.score.reset());
     },
 
     courtChange() {
@@ -215,7 +194,7 @@ window.gameApp = function(gameId, apis = BrowserAPIs) {
     },
 
     resetDoOrDie() {
-      this.sendAction(ACTIONS.DO_OR_DIE_RESET);
+      this.sendAction(actionCreators.doOrDie.reset());
     },
 
     get teamADoOrDieIndicators() {
@@ -294,11 +273,11 @@ window.gameApp = function(gameId, apis = BrowserAPIs) {
     },
 
     startTimer() {
-      this.sendAction(ACTIONS.TIMER_START);
+      this.sendAction(actionCreators.timer.start());
     },
 
     stopTimer() {
-      this.sendAction(ACTIONS.TIMER_PAUSE);
+      this.sendAction(actionCreators.timer.pause());
     },
 
     adjustTimer(seconds) {
@@ -326,7 +305,7 @@ window.gameApp = function(gameId, apis = BrowserAPIs) {
     },
 
     resetTimer() {
-      this.sendAction(ACTIONS.TIMER_RESET);
+      this.sendAction(actionCreators.timer.reset());
     },
 
     startSubTimer() {

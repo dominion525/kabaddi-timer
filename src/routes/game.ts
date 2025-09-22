@@ -5,6 +5,12 @@ import { timerLogicScript } from '../client/timer-logic';
 import { browserAPIsScript } from '../client/browser-apis';
 import { uiStateScript } from '../client/ui-state';
 import { inputFieldsScript } from '../client/input-fields';
+/* eslint-disable-next-line */
+// @ts-ignore - Used in allScripts array
+import { constantsScript } from '../client/constants';
+/* eslint-disable-next-line */
+// @ts-ignore - Used in allScripts array
+import { actionCreatorsScript } from '../client/action-creators';
 import { gameTemplate } from '../templates/game-template';
 
 const gameRouter = new Hono<{ Bindings: Env }>();
@@ -30,9 +36,11 @@ gameRouter.get('/game/:gameId', async (c) => {
   }
 
   // 完全なゲームテンプレートを使用
-  // スクリプト読み込み順序: browser-apis → ui-state → input-fields → timer-logic → game-app
+  // スクリプト読み込み順序: browser-apis → constants → action-creators → ui-state → input-fields → timer-logic → game-app
   const allScripts = [
     browserAPIsScript,
+    constantsScript,
+    actionCreatorsScript,
     uiStateScript,
     inputFieldsScript,
     timerLogicScript,
