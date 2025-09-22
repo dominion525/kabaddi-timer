@@ -11,10 +11,11 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ### 必須コマンド
 - **開発サーバー起動**: `npm run dev` - Cloudflare Workersローカル開発環境
 - **ビルド**: `npm run build` - TypeScriptコンパイル（クライアント+ワーカー）
-  - `npm run build:client` - クライアントサイドJavaScriptのビルド
+  - `npm run build:client:dev` - 開発用個別ファイル出力
+  - `npm run build:client:prod` - 本番用バンドル+ミニファイ（esbuild）
   - `npm run build:worker` - ワーカーサイドTypeScriptのビルド
 - **型チェック**: `npm run typecheck` - 型エラーのチェック
-- **デプロイ**: `wrangler deploy` - Cloudflare Workersへのデプロイ
+- **デプロイ**: `npm run deploy` - 本番ビルド + Cloudflare Workersへのデプロイ
 
 ## アーキテクチャ構成
 
@@ -33,6 +34,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **フレームワーク**: Alpine.js（CDN）、Tailwind CSS（CDN）
 - **静的アセット**: `public/js/` からJavaScriptファイルを配信
 - **TypeScript**: IIFE形式でコンパイル（`src/client/components/` → `public/js/`）
+- **ビルド最適化**:
+  - 開発: 11個の個別JSファイル（デバッグ可能）
+  - 本番: 1つのバンドル+ミニファイ（esbuild、82KB→21KB）
 - **レスポンシブデザイン**: タブレット表示（md以上）とスマホ表示に対応
 - **WebSocket通信**: リアルタイムゲーム状態同期
 

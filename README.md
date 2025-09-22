@@ -20,14 +20,17 @@ npm run build:client
 
 ### 開発コマンド
 ```bash
-# 開発サーバー起動
+# 開発サーバー起動（開発モード: 個別JSファイル）
 npm run dev
 
-# ビルド
+# ビルド - 開発モード（デバッグ可能）
 npm run build
 
-# デプロイ
-wrangler deploy
+# ビルド - 本番モード（バンドル+ミニファイ）
+npm run build:prod
+
+# デプロイ（本番ビルド自動実行）
+npm run deploy
 ```
 
 ## アクセス

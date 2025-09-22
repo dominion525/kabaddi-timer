@@ -24,8 +24,8 @@ gameRouter.get('/game/:gameId', async (c) => {
     return c.text('Invalid game ID', 400);
   }
 
-  // シンプルなHTMLレンダリング（外部スクリプトを使用）
-  const html = gameTemplate.replace(/\{\{gameId\}\}/g, gameId);
+  // 環境変数を考慮したHTMLレンダリング
+  const html = gameTemplate(gameId, c.env);
 
   return c.html(html);
 });
