@@ -33,5 +33,9 @@ npm run build:prod
 npm run deploy
 ```
 
+## HTMLテンプレート
+- ビルド時インポートパターン採用（`import html from './file.html'`）
+- Cloudflare Workers対応（Node.js API不使用）
+
 ## アクセス
 - スコアボード: `http://localhost:8787/game/{gameId}`

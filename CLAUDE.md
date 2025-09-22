@@ -64,6 +64,11 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
   - `moduleDetection: "legacy"`: IIFE形式での出力
   - `target: "ES2020"`: ブラウザ互換性確保
 
+### HTMLテンプレート管理方針
+- HTMLは必ず別ファイルでimport文を使ってインポートする標準的なビルド時インポートパターンを使用
+- `import htmlContent from './template.html'` 形式で読み込み
+- 文字列埋め込みやfs.readFileSync()は使用禁止
+
 ### 開発時の注意点
 - WebSocket接続は`/ws/{gameId}`経由でDurable Objectに転送
 - ゲーム状態は自動的に永続化され、接続断後も復元される
