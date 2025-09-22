@@ -2,28 +2,98 @@
 // WebSocket通信の確立、管理、メッセージハンドリングを担当
 // 責務の分離により接続管理を独立化
 
-(function(global) {
+// 型定義
+interface BrowserAPIs {
+  websocket: {
+    create(url: string): WebSocket;
+    send(ws: WebSocket, data: string): void;
+    close(ws: WebSocket): void;
+    getReadyState(ws: WebSocket): number;
+  };
+  timer: {
+    setTimeout(callback: () => void, delay: number): number;
+    clearTimeout(id: number): void;
+    setInterval(callback: () => void, interval: number): number;
+    clearInterval(id: number): void;
+    now(): number;
+  };
+  console: {
+    log(...args: any[]): void;
+    error(...args: any[]): void;
+    warn(...args: any[]): void;
+  };
+  window: {
+    location: {
+      getProtocol(): string;
+      getHost(): string;
+    };
+  };
+}
+
+interface Constants {
+  MESSAGE_TYPES: {
+    GAME_STATE: string;
+    TIME_SYNC_RESPONSE: string;
+    ERROR: string;
+  };
+  WEBSOCKET_STATES: {
+    OPEN: number;
+  };
+}
+
+interface CallbackHandlers {
+  onConnected?: () => void;
+  onDisconnected?: () => void;
+  onGameStateReceived?: (data: any) => void;
+  onTimeSyncReceived?: (data: TimeSyncData) => void;
+  onError?: (type: string, error: any) => void;
+  onActionSent?: (action: any) => void;
+}
+
+interface TimeSyncData {
+  offset: number;
+  rtt: number;
+  serverTime: number;
+  clientTime: number;
+}
+
+interface WebSocketMessage {
+  type: string;
+  data: any;
+}
+
+interface WebSocketManager {
+  connect(id: string, callbackHandlers?: CallbackHandlers): void;
+  sendAction(action: any): boolean;
+  reconnect(): void;
+  cleanup(): void;
+  isConnected(): boolean;
+  getServerTimeOffset(): number;
+  getDebugInfo(): any;
+}
+
+(function(global: any) {
   'use strict';
 
   /**
    * WebSocket接続管理ファクトリー
    * 依存性注入でBrowserAPIsとConstants を受け取る
-   * @param {Object} apis - ブラウザAPI抽象化オブジェクト
-   * @param {Object} constants - 定数管理オブジェクト
-   * @returns {Object} WebSocket管理オブジェクト
+   * @param apis - ブラウザAPI抽象化オブジェクト
+   * @param constants - 定数管理オブジェクト
+   * @returns WebSocket管理オブジェクト
    */
-  function createWebSocketManager(apis, constants) {
+  function createWebSocketManager(apis: BrowserAPIs, constants: Constants): WebSocketManager {
     const { MESSAGE_TYPES, WEBSOCKET_STATES } = constants;
 
-    let ws = null;
+    let ws: WebSocket | null = null;
     let connected = false;
     let serverTimeOffset = 0;
-    let timeSyncIntervalId = null;
-    let reconnectTimeoutId = null;
-    let gameId = null;
+    let timeSyncIntervalId: number | null = null;
+    let reconnectTimeoutId: number | null = null;
+    let gameId: string | null = null;
 
     // コールバック関数群
-    let callbacks = {
+    let callbacks: CallbackHandlers = {
       onConnected: () => {},
       onDisconnected: () => {},
       onGameStateReceived: () => {},
@@ -34,10 +104,10 @@
 
     /**
      * WebSocket接続を確立
-     * @param {string} id - ゲームID
-     * @param {Object} callbackHandlers - イベントハンドラー
+     * @param id - ゲームID
+     * @param callbackHandlers - イベントハンドラー
      */
-    function connect(id, callbackHandlers = {}) {
+    function connect(id: string, callbackHandlers: CallbackHandlers = {}): void {
       gameId = id;
       callbacks = { ...callbacks, ...callbackHandlers };
 
@@ -55,26 +125,26 @@
       ws.onopen = () => {
         connected = true;
         apis.console.log('WebSocket connected');
-        callbacks.onConnected();
+        callbacks.onConnected?.();
 
         // 接続成功時に初期時刻同期を要求
         sendTimeSync();
       };
 
-      ws.onmessage = (event) => {
+      ws.onmessage = (event: MessageEvent) => {
         try {
-          const message = JSON.parse(event.data);
+          const message: WebSocketMessage = JSON.parse(event.data);
           handleMessage(message);
         } catch (error) {
           apis.console.error('WebSocket message parse error:', error);
-          callbacks.onError('Message parse error', error);
+          callbacks.onError?.('Message parse error', error);
         }
       };
 
       ws.onclose = () => {
         connected = false;
         apis.console.log('WebSocket disconnected');
-        callbacks.onDisconnected();
+        callbacks.onDisconnected?.();
 
         // 既存の再接続タイマーをクリア
         if (reconnectTimeoutId) {
@@ -90,10 +160,10 @@
         }, 3000);
       };
 
-      ws.onerror = (error) => {
+      ws.onerror = (error: Event) => {
         apis.console.error('WebSocket error:', error);
         connected = false;
-        callbacks.onError('WebSocket error', error);
+        callbacks.onError?.('WebSocket error', error);
       };
 
       // 定期的な時刻同期を開始（60秒ごと）
@@ -102,27 +172,27 @@
 
     /**
      * メッセージハンドリング
-     * @param {Object} message - 受信メッセージ
+     * @param message - 受信メッセージ
      */
-    function handleMessage(message) {
+    function handleMessage(message: WebSocketMessage): void {
       if (message.type === MESSAGE_TYPES.GAME_STATE) {
         apis.console.log('Received game state:', message.data);
-        callbacks.onGameStateReceived(message.data);
+        callbacks.onGameStateReceived?.(message.data);
       }
       else if (message.type === MESSAGE_TYPES.TIME_SYNC_RESPONSE) {
         handleTimeSync(message.data);
       }
       else if (message.type === MESSAGE_TYPES.ERROR) {
         apis.console.error('Server error:', message.data);
-        callbacks.onError('Server error', message.data);
+        callbacks.onError?.('Server error', message.data);
       }
     }
 
     /**
      * 時刻同期処理
-     * @param {Object} data - 時刻同期データ
+     * @param data - 時刻同期データ
      */
-    function handleTimeSync(data) {
+    function handleTimeSync(data: any): void {
       const clientTime = apis.timer.now();
       const serverTime = data.serverTime;
       const rtt = data.clientRequestTime ?
@@ -130,7 +200,7 @@
       serverTimeOffset = serverTime - clientTime + (rtt / 2);
 
       apis.console.log('Time sync: offset =', serverTimeOffset, 'ms, RTT =', rtt, 'ms');
-      callbacks.onTimeSyncReceived({
+      callbacks.onTimeSyncReceived?.({
         offset: serverTimeOffset,
         rtt: rtt,
         serverTime: serverTime,
@@ -140,19 +210,19 @@
 
     /**
      * アクションを送信
-     * @param {Object} action - 送信するアクション
-     * @returns {boolean} 送信成功可否
+     * @param action - 送信するアクション
+     * @returns 送信成功可否
      */
-    function sendAction(action) {
+    function sendAction(action: any): boolean {
       if (ws && apis.websocket.getReadyState(ws) === WEBSOCKET_STATES.OPEN) {
         try {
           apis.websocket.send(ws, JSON.stringify({ action }));
           apis.console.log('Sent action:', action);
-          callbacks.onActionSent(action);
+          callbacks.onActionSent?.(action);
           return true;
         } catch (error) {
           apis.console.error('Failed to send action:', error);
-          callbacks.onError('Action send failed', error);
+          callbacks.onError?.('Action send failed', error);
           return false;
         }
       } else {
@@ -164,7 +234,7 @@
     /**
      * 時刻同期リクエストを送信
      */
-    function sendTimeSync() {
+    function sendTimeSync(): void {
       sendAction({
         type: 'TIME_SYNC_REQUEST',
         clientRequestTime: apis.timer.now()
@@ -174,7 +244,7 @@
     /**
      * 定期的な時刻同期を開始
      */
-    function startTimeSyncInterval() {
+    function startTimeSyncInterval(): void {
       if (timeSyncIntervalId) {
         apis.timer.clearInterval(timeSyncIntervalId);
       }
@@ -188,24 +258,24 @@
 
     /**
      * 接続状態を取得
-     * @returns {boolean} 接続中の場合true
+     * @returns 接続中の場合true
      */
-    function isConnected() {
-      return connected && ws && apis.websocket.getReadyState(ws) === WEBSOCKET_STATES.OPEN;
+    function isConnected(): boolean {
+      return connected && ws !== null && apis.websocket.getReadyState(ws) === WEBSOCKET_STATES.OPEN;
     }
 
     /**
      * サーバー時刻オフセットを取得
-     * @returns {number} オフセット（ミリ秒）
+     * @returns オフセット（ミリ秒）
      */
-    function getServerTimeOffset() {
+    function getServerTimeOffset(): number {
       return serverTimeOffset;
     }
 
     /**
      * 手動で再接続を実行
      */
-    function reconnect() {
+    function reconnect(): void {
       if (gameId) {
         connect(gameId, callbacks);
       }
@@ -214,7 +284,7 @@
     /**
      * リソースのクリーンアップ
      */
-    function cleanup() {
+    function cleanup(): void {
       // 時刻同期インターバルをクリア
       if (timeSyncIntervalId) {
         apis.timer.clearInterval(timeSyncIntervalId);
@@ -240,9 +310,9 @@
 
     /**
      * デバッグ情報を取得
-     * @returns {Object} 接続状態の詳細情報
+     * @returns 接続状態の詳細情報
      */
-    function getDebugInfo() {
+    function getDebugInfo(): any {
       return {
         connected: connected,
         gameId: gameId,
