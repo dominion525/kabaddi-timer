@@ -17,6 +17,7 @@ new_sqlite_classes = [ "GameSession" ]
 
 [build]
 command = "npm run build:prod"
+watch_dir = ["src", "!src/revision.json"]
 
 [env.development]
 compatibility_date = "2024-11-01"

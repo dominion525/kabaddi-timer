@@ -1061,7 +1061,7 @@
             <template x-if="modalType === 'credits'">
               <div class="flex items-center gap-2">
                 <i data-lucide="user" class="w-5 h-5"></i>
-                <span>クレジット</span>
+                <span>Kabaddi Timer</span>
               </div>
             </template>
           </h3>
@@ -1101,34 +1101,81 @@
         </div>
 
         <!-- クレジットモーダルの内容 -->
-        <div x-show="modalType === 'credits'" class="space-y-4 text-gray-700">
-          <div>
-            <h3 class="font-semibold text-lg mb-2">Kabaddi Timer</h3>
-            <p class="text-sm">カバディ用リアルタイムタイマー・スコアボードアプリケーション</p>
+        <div x-show="modalType === 'credits'" class="space-y-6 text-gray-700 font-mono">
+          <!-- アプリケーション情報 -->
+          <div class="text-center">
+            <p class="text-sm text-gray-600">カバディ用リアルタイムタイマー・スコアボード</p>
           </div>
 
-          <div>
-            <h4 class="font-medium mb-1">開発者</h4>
-            <p class="text-sm">Satoshi</p>
+          <!-- Development by & 開発者カード -->
+          <div class="mb-6">
+            <h4 class="font-medium mb-0 text-gray-800">Development by</h4>
+            <div class="bg-gray-50 rounded-lg p-4 mt-2">
+            <div class="flex items-start space-x-4">
+              <!-- 左側：PNG画像（丸抜き） -->
+              <div class="w-16 h-16 rounded-full overflow-hidden border-2 border-gray-200 bg-white flex-shrink-0">
+                <img src="/images/depra6.png" alt="Developer Avatar" class="w-full h-full object-cover">
+              </div>
+
+              <!-- 右側：名前・リンク・キャプション -->
+              <div class="flex-1 min-w-0">
+                <!-- 名前とSNSリンク -->
+                <div class="flex items-center justify-between mb-3">
+                  <h5 class="font-semibold text-gray-800 text-xl">Dominion525</h5>
+                  <div class="flex gap-2">
+                    <a href="https://twitter.com/dominion525" target="_blank" rel="noopener noreferrer"
+                       class="text-gray-500 hover:text-blue-500 transition-colors" title="Twitter">
+                      <i data-lucide="twitter" class="w-5 h-5"></i>
+                    </a>
+                    <a href="https://www.facebook.com/dominion525" target="_blank" rel="noopener noreferrer"
+                       class="text-gray-500 hover:text-blue-600 transition-colors" title="Facebook">
+                      <i data-lucide="facebook" class="w-5 h-5"></i>
+                    </a>
+                    <a href="https://www.instagram.com/dominion525" target="_blank" rel="noopener noreferrer"
+                       class="text-gray-500 hover:text-pink-500 transition-colors" title="Instagram">
+                      <i data-lucide="instagram" class="w-5 h-5"></i>
+                    </a>
+                  </div>
+                </div>
+
+                <!-- キャプション -->
+                <p class="text-sm text-gray-600">趣味は耳かきです。</p>
+              </div>
+            </div>
           </div>
 
-          <div>
-            <h4 class="font-medium mb-1">技術スタック</h4>
-            <ul class="text-sm space-y-1">
-              <li>• Cloudflare Workers + Durable Objects</li>
-              <li>• Alpine.js + Tailwind CSS</li>
-              <li>• TypeScript</li>
-              <li>• WebSocket通信</li>
-            </ul>
+          <!-- Built with -->
+          <div class="mb-4">
+            <h4 class="font-medium mb-2 text-gray-800">Built with Cloudflare Workers</h4>
+            <p class="text-sm text-gray-600 ml-4">TypeScript / Alpine.js / Tailwind CSS</p>
           </div>
 
-          <div>
-            <h4 class="font-medium mb-1">ライセンス</h4>
-            <p class="text-sm">MIT License</p>
+          <!-- Special Thanks -->
+          <div class="mb-4">
+            <h4 class="font-medium mb-2 text-gray-800">Special Thanks to</h4>
+            <p class="text-sm text-gray-600 mb-1 ml-4">東京レイズ and other teams</p>
+            <p class="text-sm text-gray-600 ml-4">All beta testers and contributors</p>
           </div>
 
-          <div class="pt-2 border-t border-gray-200">
-            <p class="text-xs text-gray-500">Version 0.0.2</p>
+          <!-- Made with love -->
+          <div class="mb-4">
+            <p class="text-sm text-gray-600">Made with ❤️ for Kabaddi Community</p>
+          </div>
+
+          <!-- GitHub link -->
+          <div class="mb-4">
+            <div class="flex items-center gap-2">
+              <i data-lucide="github" class="w-4 h-4 text-gray-600"></i>
+              <a href="https://github.com/dominion525/kabaddi-timer" target="_blank" rel="noopener noreferrer"
+                 class="text-sm text-blue-600 hover:text-blue-800 transition-colors">
+                dominion525/kabaddi-timer
+              </a>
+            </div>
+          </div>
+
+          <!-- フッター情報 -->
+          <div class="pt-4 border-t border-gray-200 text-right text-xs text-gray-500">
+            <span>Version 0.0.2 (rev: <a href="https://github.com/dominion525/kabaddi-timer/commit/{{REVISION}}" target="_blank" rel="noopener noreferrer" class="text-blue-600 hover:text-blue-800 transition-colors">{{REVISION}}</a>)</span>
           </div>
         </div>
       </div>

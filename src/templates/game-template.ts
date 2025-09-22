@@ -1,5 +1,16 @@
 import gameHTML from './game.html';
 
+// リビジョン情報を取得する関数
+function getRevision(): string {
+  try {
+    const revisionData = require('../revision.json');
+    return revisionData.revision || 'unknown';
+  } catch (error) {
+    // ファイルが存在しない場合はunknownを返す
+    return 'unknown';
+  }
+}
+
 export function gameTemplate(gameId: string, env?: any): string {
   // 環境変数によるJavaScript読み込み切り替え
   const isProd = env?.NODE_ENV === 'production' || env?.ENVIRONMENT === 'production';
@@ -22,7 +33,11 @@ export function gameTemplate(gameId: string, env?: any): string {
   <script src="/js/game-app.js"></script>`;
   }
 
+  // リビジョン情報を取得
+  const revision = getRevision();
+
   return gameHTML
     .replace(/{{gameId}}/g, gameId)
-    .replace('{{JS_INCLUDES}}', jsIncludes);
+    .replace('{{JS_INCLUDES}}', jsIncludes)
+    .replace(/{{REVISION}}/g, revision);
 }

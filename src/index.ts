@@ -21,6 +21,11 @@ app.get('/css/*', async (c) => {
   return c.env.ASSETS.fetch(c.req.raw);
 });
 
+// 画像配信
+app.get('/images/*', async (c) => {
+  return c.env.ASSETS.fetch(c.req.raw);
+});
+
 // 汎用的な静的アセット配信（必要に応じて）
 app.get('/assets/*', async (c) => {
   return c.env.ASSETS.fetch(c.req.raw);
