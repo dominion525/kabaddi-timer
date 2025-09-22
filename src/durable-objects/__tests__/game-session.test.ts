@@ -1986,6 +1986,952 @@ describe('GameSession', () => {
     });
   });
 
+  describe('サブタイマー機能', () => {
+    describe('基本機能', () => {
+      it('サブタイマー開始（SUB_TIMER_START）が正常に動作する', async () => {
+        const id = env.GAME_SESSION.idFromName('test-subtimer-start');
+        const gameSession = env.GAME_SESSION.get(id);
+
+        const result = await runInDurableObject(gameSession, async (instance, state) => {
+          await (instance as any).loadGameState();
+
+          const beforeStart = (instance as any).gameState.subTimer;
+
+          // サブタイマー開始アクションを実行
+          await (instance as any).handleAction({ type: 'SUB_TIMER_START' });
+
+          const afterStart = (instance as any).gameState.subTimer;
+
+          return {
+            beforeIsRunning: beforeStart.isRunning,
+            afterIsRunning: afterStart.isRunning,
+            beforeStartTime: beforeStart.startTime,
+            afterStartTime: afterStart.startTime,
+            beforeIsPaused: beforeStart.isPaused,
+            afterIsPaused: afterStart.isPaused,
+            totalDuration: afterStart.totalDuration,
+            remainingSeconds: afterStart.remainingSeconds,
+            startTimeSet: afterStart.startTime !== null
+          };
+        });
+
+        // 修復ロジックによりデフォルト状態でもisRunning=trueになることがある
+        expect(result.afterIsRunning).toBe(true);
+        expect(result.startTimeSet).toBe(true);
+        expect(result.afterIsPaused).toBe(false);
+        expect(result.totalDuration).toBe(30); // 30秒固定
+        expect(result.remainingSeconds).toBe(30);
+      });
+
+      it('サブタイマー一時停止（SUB_TIMER_PAUSE）が正常に動作する', async () => {
+        const id = env.GAME_SESSION.idFromName('test-subtimer-pause');
+        const gameSession = env.GAME_SESSION.get(id);
+
+        const result = await runInDurableObject(gameSession, async (instance, state) => {
+          await (instance as any).loadGameState();
+
+          // サブタイマーをリセットしてから開始
+          await (instance as any).handleAction({ type: 'SUB_TIMER_RESET' });
+          await (instance as any).handleAction({ type: 'SUB_TIMER_START' });
+          await new Promise(resolve => setTimeout(resolve, 100)); // 少し時間を経過
+
+          const beforePause = (instance as any).gameState.subTimer;
+
+          // サブタイマー一時停止
+          await (instance as any).handleAction({ type: 'SUB_TIMER_PAUSE' });
+
+          const afterPause = (instance as any).gameState.subTimer;
+
+          return {
+            beforeIsRunning: beforePause.isRunning,
+            afterIsRunning: afterPause.isRunning,
+            beforeIsPaused: beforePause.isPaused,
+            afterIsPaused: afterPause.isPaused,
+            pausedAtSet: afterPause.pausedAt !== null,
+            remainingSeconds: afterPause.remainingSeconds,
+            timePassed: afterPause.remainingSeconds < 30
+          };
+        });
+
+        expect(result.beforeIsRunning).toBe(true);
+        expect(result.afterIsRunning).toBe(false);
+        expect(result.beforeIsPaused).toBe(false);
+        expect(result.afterIsPaused).toBe(true);
+        expect(result.pausedAtSet).toBe(true);
+        expect(result.timePassed).toBe(true); // 時間が経過している
+        expect(result.remainingSeconds).toBeLessThan(30);
+      });
+
+      it('サブタイマーリセット（SUB_TIMER_RESET）が正常に動作する', async () => {
+        const id = env.GAME_SESSION.idFromName('test-subtimer-reset');
+        const gameSession = env.GAME_SESSION.get(id);
+
+        const result = await runInDurableObject(gameSession, async (instance, state) => {
+          await (instance as any).loadGameState();
+
+          // サブタイマーをリセットしてから開始
+          await (instance as any).handleAction({ type: 'SUB_TIMER_RESET' });
+          await (instance as any).handleAction({ type: 'SUB_TIMER_START' });
+          await new Promise(resolve => setTimeout(resolve, 100));
+
+          const beforeReset = (instance as any).gameState.subTimer;
+
+          // サブタイマーリセット
+          await (instance as any).handleAction({ type: 'SUB_TIMER_RESET' });
+
+          const afterReset = (instance as any).gameState.subTimer;
+
+          return {
+            beforeIsRunning: beforeReset.isRunning,
+            afterIsRunning: afterReset.isRunning,
+            beforeIsPaused: beforeReset.isPaused,
+            afterIsPaused: afterReset.isPaused,
+            beforeStartTime: beforeReset.startTime,
+            afterStartTime: afterReset.startTime,
+            beforePausedAt: beforeReset.pausedAt,
+            afterPausedAt: afterReset.pausedAt,
+            remainingSeconds: afterReset.remainingSeconds,
+            totalDuration: afterReset.totalDuration
+          };
+        });
+
+        expect(result.beforeIsRunning).toBe(true);
+        expect(result.afterIsRunning).toBe(false);
+        expect(result.afterIsPaused).toBe(false);
+        expect(result.beforeStartTime).not.toBeNull();
+        expect(result.afterStartTime).toBeNull();
+        expect(result.afterPausedAt).toBeNull();
+        expect(result.remainingSeconds).toBe(30); // リセット後は30秒
+        expect(result.totalDuration).toBe(30);
+      });
+
+      it('サブタイマーが30秒固定時間で動作する', async () => {
+        const id = env.GAME_SESSION.idFromName('test-subtimer-duration');
+        const gameSession = env.GAME_SESSION.get(id);
+
+        const result = await runInDurableObject(gameSession, async (instance, state) => {
+          await (instance as any).loadGameState();
+
+          const initialSubTimer = (instance as any).gameState.subTimer;
+
+          // サブタイマーを開始
+          await (instance as any).handleAction({ type: 'SUB_TIMER_START' });
+
+          // 時間更新を実行
+          (instance as any).updateSubTimerRemainingTime();
+
+          const runningSubTimer = (instance as any).gameState.subTimer;
+
+          // リセット
+          await (instance as any).handleAction({ type: 'SUB_TIMER_RESET' });
+
+          const resetSubTimer = (instance as any).gameState.subTimer;
+
+          return {
+            initialDuration: initialSubTimer.totalDuration,
+            initialRemaining: initialSubTimer.remainingSeconds,
+            runningDuration: runningSubTimer.totalDuration,
+            resetDuration: resetSubTimer.totalDuration,
+            resetRemaining: resetSubTimer.remainingSeconds,
+            durationConsistent: initialSubTimer.totalDuration === runningSubTimer.totalDuration &&
+                               runningSubTimer.totalDuration === resetSubTimer.totalDuration
+          };
+        });
+
+        expect(result.initialDuration).toBe(30);
+        expect(result.initialRemaining).toBe(30);
+        expect(result.runningDuration).toBe(30);
+        expect(result.resetDuration).toBe(30);
+        expect(result.resetRemaining).toBe(30);
+        expect(result.durationConsistent).toBe(true);
+      });
+
+      it('メインタイマーとサブタイマーが独立して動作する', async () => {
+        const id = env.GAME_SESSION.idFromName('test-timer-independence');
+        const gameSession = env.GAME_SESSION.get(id);
+
+        const result = await runInDurableObject(gameSession, async (instance, state) => {
+          await (instance as any).loadGameState();
+
+          // メインタイマーのみ開始
+          await (instance as any).handleAction({ type: 'START_TIMER' });
+          await new Promise(resolve => setTimeout(resolve, 50));
+
+          const mainRunning = {
+            mainTimerRunning: (instance as any).gameState.timer.isRunning,
+            subTimerRunning: (instance as any).gameState.subTimer.isRunning
+          };
+
+          // サブタイマーのみ開始
+          await (instance as any).handleAction({ type: 'SUB_TIMER_START' });
+          await new Promise(resolve => setTimeout(resolve, 50));
+
+          const bothRunning = {
+            mainTimerRunning: (instance as any).gameState.timer.isRunning,
+            subTimerRunning: (instance as any).gameState.subTimer.isRunning
+          };
+
+          // メインタイマーのみ停止
+          await (instance as any).handleAction({ type: 'PAUSE_TIMER' });
+
+          const mainPaused = {
+            mainTimerRunning: (instance as any).gameState.timer.isRunning,
+            mainTimerPaused: (instance as any).gameState.timer.isPaused,
+            subTimerRunning: (instance as any).gameState.subTimer.isRunning,
+            subTimerPaused: (instance as any).gameState.subTimer.isPaused
+          };
+
+          // サブタイマーのみ停止
+          await (instance as any).handleAction({ type: 'SUB_TIMER_PAUSE' });
+
+          const bothPaused = {
+            mainTimerRunning: (instance as any).gameState.timer.isRunning,
+            mainTimerPaused: (instance as any).gameState.timer.isPaused,
+            subTimerRunning: (instance as any).gameState.subTimer.isRunning,
+            subTimerPaused: (instance as any).gameState.subTimer.isPaused
+          };
+
+          return {
+            mainRunning,
+            bothRunning,
+            mainPaused,
+            bothPaused
+          };
+        });
+
+        // メインタイマーのみ実行時
+        expect(result.mainRunning.mainTimerRunning).toBe(true);
+        expect(result.mainRunning.subTimerRunning).toBe(false);
+
+        // 両方実行時
+        expect(result.bothRunning.mainTimerRunning).toBe(true);
+        expect(result.bothRunning.subTimerRunning).toBe(true);
+
+        // メインタイマーのみ停止時
+        expect(result.mainPaused.mainTimerRunning).toBe(false);
+        expect(result.mainPaused.mainTimerPaused).toBe(true);
+        expect(result.mainPaused.subTimerRunning).toBe(true);
+        expect(result.mainPaused.subTimerPaused).toBe(false);
+
+        // 両方停止時
+        expect(result.bothPaused.mainTimerRunning).toBe(false);
+        expect(result.bothPaused.mainTimerPaused).toBe(true);
+        expect(result.bothPaused.subTimerRunning).toBe(false);
+        expect(result.bothPaused.subTimerPaused).toBe(true);
+      });
+    });
+
+    describe('状態遷移', () => {
+      it('未開始→開始→一時停止→再開のフローが正常に動作する', async () => {
+        const id = env.GAME_SESSION.idFromName('test-subtimer-flow-pause-resume');
+        const gameSession = env.GAME_SESSION.get(id);
+
+        const result = await runInDurableObject(gameSession, async (instance, state) => {
+          await (instance as any).loadGameState();
+
+          // 1. 未開始状態
+          const initial = {
+            isRunning: (instance as any).gameState.subTimer.isRunning,
+            isPaused: (instance as any).gameState.subTimer.isPaused,
+            startTime: (instance as any).gameState.subTimer.startTime,
+            remainingSeconds: (instance as any).gameState.subTimer.remainingSeconds
+          };
+
+          // 2. 開始
+          await (instance as any).handleAction({ type: 'SUB_TIMER_START' });
+          await new Promise(resolve => setTimeout(resolve, 100));
+
+          const started = {
+            isRunning: (instance as any).gameState.subTimer.isRunning,
+            isPaused: (instance as any).gameState.subTimer.isPaused,
+            startTime: (instance as any).gameState.subTimer.startTime,
+            remainingSeconds: (instance as any).gameState.subTimer.remainingSeconds
+          };
+
+          // 3. 一時停止
+          await (instance as any).handleAction({ type: 'SUB_TIMER_PAUSE' });
+
+          const paused = {
+            isRunning: (instance as any).gameState.subTimer.isRunning,
+            isPaused: (instance as any).gameState.subTimer.isPaused,
+            pausedAt: (instance as any).gameState.subTimer.pausedAt,
+            remainingSeconds: (instance as any).gameState.subTimer.remainingSeconds
+          };
+
+          // 少し時間を空けてから再開
+          await new Promise(resolve => setTimeout(resolve, 100));
+
+          // 4. 再開
+          await (instance as any).handleAction({ type: 'SUB_TIMER_START' });
+          await new Promise(resolve => setTimeout(resolve, 50));
+
+          const resumed = {
+            isRunning: (instance as any).gameState.subTimer.isRunning,
+            isPaused: (instance as any).gameState.subTimer.isPaused,
+            pausedAt: (instance as any).gameState.subTimer.pausedAt,
+            remainingSeconds: (instance as any).gameState.subTimer.remainingSeconds
+          };
+
+          return {
+            initial,
+            started,
+            paused,
+            resumed,
+            timeContinuedAfterResume: resumed.remainingSeconds < paused.remainingSeconds
+          };
+        });
+
+        // 1. 未開始状態の確認
+        expect(result.initial.isRunning).toBe(false);
+        expect(result.initial.isPaused).toBe(false);
+        expect(result.initial.startTime).toBeNull();
+        expect(result.initial.remainingSeconds).toBe(30);
+
+        // 2. 開始状態の確認
+        expect(result.started.isRunning).toBe(true);
+        expect(result.started.isPaused).toBe(false);
+        expect(result.started.startTime).not.toBeNull();
+        expect(result.started.remainingSeconds).toBeLessThan(30);
+
+        // 3. 一時停止状態の確認
+        expect(result.paused.isRunning).toBe(false);
+        expect(result.paused.isPaused).toBe(true);
+        expect(result.paused.pausedAt).not.toBeNull();
+        expect(result.paused.remainingSeconds).toBeLessThan(result.started.remainingSeconds);
+
+        // 4. 再開状態の確認
+        expect(result.resumed.isRunning).toBe(true);
+        expect(result.resumed.isPaused).toBe(false);
+        expect(result.resumed.pausedAt).toBeNull();
+        expect(result.timeContinuedAfterResume).toBe(true);
+      });
+
+      it('開始→リセット→再開始のフローが正常に動作する', async () => {
+        const id = env.GAME_SESSION.idFromName('test-subtimer-flow-reset-restart');
+        const gameSession = env.GAME_SESSION.get(id);
+
+        const result = await runInDurableObject(gameSession, async (instance, state) => {
+          await (instance as any).loadGameState();
+
+          // 1. 開始
+          await (instance as any).handleAction({ type: 'SUB_TIMER_START' });
+          await new Promise(resolve => setTimeout(resolve, 100));
+
+          const started = {
+            isRunning: (instance as any).gameState.subTimer.isRunning,
+            remainingSeconds: (instance as any).gameState.subTimer.remainingSeconds,
+            startTime: (instance as any).gameState.subTimer.startTime
+          };
+
+          // 2. リセット
+          await (instance as any).handleAction({ type: 'SUB_TIMER_RESET' });
+
+          const reset = {
+            isRunning: (instance as any).gameState.subTimer.isRunning,
+            isPaused: (instance as any).gameState.subTimer.isPaused,
+            remainingSeconds: (instance as any).gameState.subTimer.remainingSeconds,
+            startTime: (instance as any).gameState.subTimer.startTime,
+            pausedAt: (instance as any).gameState.subTimer.pausedAt
+          };
+
+          // 3. 再開始
+          await (instance as any).handleAction({ type: 'SUB_TIMER_START' });
+          await new Promise(resolve => setTimeout(resolve, 50));
+
+          const restarted = {
+            isRunning: (instance as any).gameState.subTimer.isRunning,
+            isPaused: (instance as any).gameState.subTimer.isPaused,
+            remainingSeconds: (instance as any).gameState.subTimer.remainingSeconds,
+            startTime: (instance as any).gameState.subTimer.startTime
+          };
+
+          return {
+            started,
+            reset,
+            restarted,
+            timeResetProperly: reset.remainingSeconds === 30,
+            timeRunningAfterRestart: restarted.remainingSeconds < 30
+          };
+        });
+
+        // 1. 開始状態
+        expect(result.started.isRunning).toBe(true);
+        expect(result.started.remainingSeconds).toBeLessThan(30);
+        expect(result.started.startTime).not.toBeNull();
+
+        // 2. リセット状態
+        expect(result.reset.isRunning).toBe(false);
+        expect(result.reset.isPaused).toBe(false);
+        expect(result.reset.remainingSeconds).toBe(30);
+        expect(result.reset.startTime).toBeNull();
+        expect(result.reset.pausedAt).toBeNull();
+        expect(result.timeResetProperly).toBe(true);
+
+        // 3. 再開始状態
+        expect(result.restarted.isRunning).toBe(true);
+        expect(result.restarted.isPaused).toBe(false);
+        expect(result.restarted.startTime).not.toBeNull();
+        expect(result.timeRunningAfterRestart).toBe(true);
+      });
+
+      it('一時停止中のリセット処理が正常に動作する', async () => {
+        const id = env.GAME_SESSION.idFromName('test-subtimer-reset-while-paused');
+        const gameSession = env.GAME_SESSION.get(id);
+
+        const result = await runInDurableObject(gameSession, async (instance, state) => {
+          await (instance as any).loadGameState();
+
+          // 1. 開始→一時停止
+          await (instance as any).handleAction({ type: 'SUB_TIMER_START' });
+          await new Promise(resolve => setTimeout(resolve, 100));
+          await (instance as any).handleAction({ type: 'SUB_TIMER_PAUSE' });
+
+          const pausedState = {
+            isRunning: (instance as any).gameState.subTimer.isRunning,
+            isPaused: (instance as any).gameState.subTimer.isPaused,
+            remainingSeconds: (instance as any).gameState.subTimer.remainingSeconds,
+            pausedAt: (instance as any).gameState.subTimer.pausedAt
+          };
+
+          // 2. 一時停止中にリセット
+          await (instance as any).handleAction({ type: 'SUB_TIMER_RESET' });
+
+          const resetFromPaused = {
+            isRunning: (instance as any).gameState.subTimer.isRunning,
+            isPaused: (instance as any).gameState.subTimer.isPaused,
+            remainingSeconds: (instance as any).gameState.subTimer.remainingSeconds,
+            startTime: (instance as any).gameState.subTimer.startTime,
+            pausedAt: (instance as any).gameState.subTimer.pausedAt
+          };
+
+          // 3. リセット後に開始
+          await (instance as any).handleAction({ type: 'SUB_TIMER_START' });
+          await new Promise(resolve => setTimeout(resolve, 50));
+
+          const afterReset = {
+            isRunning: (instance as any).gameState.subTimer.isRunning,
+            remainingSeconds: (instance as any).gameState.subTimer.remainingSeconds
+          };
+
+          return {
+            pausedState,
+            resetFromPaused,
+            afterReset,
+            wasProperlyPaused: pausedState.isPaused && !pausedState.isRunning,
+            resetClearedPausedState: !resetFromPaused.isPaused && resetFromPaused.pausedAt === null,
+            timeResetCorrectly: resetFromPaused.remainingSeconds === 30
+          };
+        });
+
+        // 一時停止状態の確認
+        expect(result.wasProperlyPaused).toBe(true);
+        expect(result.pausedState.remainingSeconds).toBeLessThan(30);
+        expect(result.pausedState.pausedAt).not.toBeNull();
+
+        // リセット状態の確認
+        expect(result.resetFromPaused.isRunning).toBe(false);
+        expect(result.resetFromPaused.isPaused).toBe(false);
+        expect(result.resetFromPaused.remainingSeconds).toBe(30);
+        expect(result.resetFromPaused.startTime).toBeNull();
+        expect(result.resetFromPaused.pausedAt).toBeNull();
+        expect(result.resetClearedPausedState).toBe(true);
+        expect(result.timeResetCorrectly).toBe(true);
+
+        // リセット後の開始確認
+        expect(result.afterReset.isRunning).toBe(true);
+        expect(result.afterReset.remainingSeconds).toBeLessThan(30);
+      });
+
+      it('カウントダウン完了（0秒到達）時の動作を検証する', async () => {
+        const id = env.GAME_SESSION.idFromName('test-subtimer-countdown-complete');
+        const gameSession = env.GAME_SESSION.get(id);
+
+        const result = await runInDurableObject(gameSession, async (instance, state) => {
+          await (instance as any).loadGameState();
+
+          // サブタイマーを開始
+          await (instance as any).handleAction({ type: 'SUB_TIMER_START' });
+
+          // 時刻を手動で操作して0秒到達をシミュレート
+          const startTime = (instance as any).gameState.subTimer.startTime;
+          (instance as any).gameState.subTimer.startTime = startTime - 31000; // 31秒前に開始したことにする
+
+          // 残り時間を更新
+          (instance as any).updateSubTimerRemainingTime();
+
+          const afterTimeUpdate = {
+            isRunning: (instance as any).gameState.subTimer.isRunning,
+            remainingSeconds: (instance as any).gameState.subTimer.remainingSeconds,
+            totalDuration: (instance as any).gameState.subTimer.totalDuration
+          };
+
+          // 0秒到達後にリセットを試行
+          await (instance as any).handleAction({ type: 'SUB_TIMER_RESET' });
+
+          const afterReset = {
+            isRunning: (instance as any).gameState.subTimer.isRunning,
+            remainingSeconds: (instance as any).gameState.subTimer.remainingSeconds
+          };
+
+          // 0秒到達後に再開始を試行
+          await (instance as any).handleAction({ type: 'SUB_TIMER_START' });
+
+          const afterRestart = {
+            isRunning: (instance as any).gameState.subTimer.isRunning,
+            remainingSeconds: (instance as any).gameState.subTimer.remainingSeconds
+          };
+
+          return {
+            afterTimeUpdate,
+            afterReset,
+            afterRestart,
+            countdownCompleted: afterTimeUpdate.remainingSeconds <= 0,
+            resetWorksAfterCompletion: afterReset.remainingSeconds === 30,
+            restartWorksAfterReset: afterRestart.isRunning === true
+          };
+        });
+
+        // 0秒到達の確認
+        expect(result.countdownCompleted).toBe(true);
+        expect(result.afterTimeUpdate.remainingSeconds).toBe(0);
+        expect(result.afterTimeUpdate.totalDuration).toBe(30); // 総時間は変わらない
+
+        // 0秒到達後のリセット動作
+        expect(result.afterReset.isRunning).toBe(false);
+        expect(result.afterReset.remainingSeconds).toBe(30);
+        expect(result.resetWorksAfterCompletion).toBe(true);
+
+        // リセット後の再開始動作
+        expect(result.afterRestart.isRunning).toBe(true);
+        expect(result.restartWorksAfterReset).toBe(true);
+      });
+    });
+
+    describe('時刻計算', () => {
+      it('残り時間の正確な計算（updateSubTimerRemainingTime）が動作する', async () => {
+        const id = env.GAME_SESSION.idFromName('test-subtimer-time-calculation');
+        const gameSession = env.GAME_SESSION.get(id);
+
+        const result = await runInDurableObject(gameSession, async (instance, state) => {
+          await (instance as any).loadGameState();
+
+          // サブタイマーを開始
+          await (instance as any).handleAction({ type: 'SUB_TIMER_START' });
+          const startTime = (instance as any).gameState.subTimer.startTime;
+
+          // 複数回の時刻更新で正確性を検証
+          const timeChecks = [];
+
+          for (let i = 0; i < 3; i++) {
+            await new Promise(resolve => setTimeout(resolve, 50));
+
+            const beforeUpdate = (instance as any).gameState.subTimer.remainingSeconds;
+            (instance as any).updateSubTimerRemainingTime();
+            const afterUpdate = (instance as any).gameState.subTimer.remainingSeconds;
+
+            const currentTime = Date.now();
+            const expectedElapsed = (currentTime - startTime) / 1000;
+            const expectedRemaining = Math.max(0, 30 - expectedElapsed);
+
+            timeChecks.push({
+              beforeUpdate,
+              afterUpdate,
+              expectedRemaining,
+              actualElapsed: 30 - afterUpdate,
+              expectedElapsed,
+              timeDifference: Math.abs(afterUpdate - expectedRemaining),
+              isAccurate: Math.abs(afterUpdate - expectedRemaining) < 0.1 // 100ms以内の誤差
+            });
+          }
+
+          return {
+            startTime,
+            timeChecks,
+            allAccurate: timeChecks.every(check => check.isAccurate),
+            timeProgression: timeChecks.map(check => check.afterUpdate)
+          };
+        });
+
+        expect(result.startTime).not.toBeNull();
+        expect(result.allAccurate).toBe(true);
+
+        // 時間が順次減少していることを確認
+        const timeProgression = result.timeProgression;
+        for (let i = 1; i < timeProgression.length; i++) {
+          expect(timeProgression[i]).toBeLessThanOrEqual(timeProgression[i - 1]);
+        }
+
+        // 各時刻計算の精度を個別確認
+        result.timeChecks.forEach((check, index) => {
+          expect(check.timeDifference).toBeLessThan(0.1); // 100ms以内の誤差
+          expect(check.afterUpdate).toBeLessThanOrEqual(30);
+          expect(check.afterUpdate).toBeGreaterThanOrEqual(0);
+        });
+      });
+
+      it('一時停止・再開時の経過時間保持が正確に動作する', async () => {
+        const id = env.GAME_SESSION.idFromName('test-subtimer-pause-resume-time');
+        const gameSession = env.GAME_SESSION.get(id);
+
+        const result = await runInDurableObject(gameSession, async (instance, state) => {
+          await (instance as any).loadGameState();
+
+          // 1. 開始
+          await (instance as any).handleAction({ type: 'SUB_TIMER_START' });
+          const originalStartTime = (instance as any).gameState.subTimer.startTime;
+
+          await new Promise(resolve => setTimeout(resolve, 100));
+
+          // 2. 一時停止前の時間を記録
+          (instance as any).updateSubTimerRemainingTime();
+          const beforePause = {
+            remainingSeconds: (instance as any).gameState.subTimer.remainingSeconds,
+            elapsedTime: 30 - (instance as any).gameState.subTimer.remainingSeconds
+          };
+
+          await (instance as any).handleAction({ type: 'SUB_TIMER_PAUSE' });
+          const pausedAt = (instance as any).gameState.subTimer.pausedAt;
+
+          // 3. 一時停止中に時間を経過
+          await new Promise(resolve => setTimeout(resolve, 200));
+
+          const duringPause = {
+            remainingSeconds: (instance as any).gameState.subTimer.remainingSeconds,
+            pausedAt: (instance as any).gameState.subTimer.pausedAt
+          };
+
+          // 4. 再開
+          await (instance as any).handleAction({ type: 'SUB_TIMER_START' });
+          const resumedStartTime = (instance as any).gameState.subTimer.startTime;
+
+          await new Promise(resolve => setTimeout(resolve, 100));
+
+          // 5. 再開後の時間を確認
+          (instance as any).updateSubTimerRemainingTime();
+          const afterResume = {
+            remainingSeconds: (instance as any).gameState.subTimer.remainingSeconds,
+            newElapsedTime: 30 - (instance as any).gameState.subTimer.remainingSeconds
+          };
+
+          return {
+            originalStartTime,
+            beforePause,
+            duringPause,
+            afterResume,
+            resumedStartTime,
+            pausedAt,
+            timePreservedDuringPause: duringPause.remainingSeconds === beforePause.remainingSeconds,
+            timeAdvancedAfterResume: afterResume.remainingSeconds < beforePause.remainingSeconds,
+            startTimeAdjusted: resumedStartTime !== originalStartTime,
+            totalElapsedConsistent: afterResume.newElapsedTime > beforePause.elapsedTime
+          };
+        });
+
+        // 一時停止中は時間が進まない
+        expect(result.timePreservedDuringPause).toBe(true);
+
+        // 再開後は時間が進む
+        expect(result.timeAdvancedAfterResume).toBe(true);
+
+        // 開始時刻が調整される（一時停止時間を補正）
+        expect(result.startTimeAdjusted).toBe(true);
+
+        // 総経過時間の一貫性
+        expect(result.totalElapsedConsistent).toBe(true);
+        expect(result.afterResume.remainingSeconds).toBeLessThanOrEqual(result.beforePause.remainingSeconds);
+      });
+
+      it('長時間一時停止後の再開で時刻計算が正確に動作する', async () => {
+        const id = env.GAME_SESSION.idFromName('test-subtimer-long-pause');
+        const gameSession = env.GAME_SESSION.get(id);
+
+        const result = await runInDurableObject(gameSession, async (instance, state) => {
+          await (instance as any).loadGameState();
+
+          // 1. サブタイマー開始
+          await (instance as any).handleAction({ type: 'SUB_TIMER_START' });
+          await new Promise(resolve => setTimeout(resolve, 150));
+
+          // 2. 一時停止前の状態を記録
+          (instance as any).updateSubTimerRemainingTime();
+          const beforeLongPause = {
+            remainingSeconds: (instance as any).gameState.subTimer.remainingSeconds,
+            startTime: (instance as any).gameState.subTimer.startTime,
+            elapsedTime: 30 - (instance as any).gameState.subTimer.remainingSeconds
+          };
+
+          // 3. 一時停止
+          await (instance as any).handleAction({ type: 'SUB_TIMER_PAUSE' });
+          const pauseTime = Date.now();
+
+          // 4. 長時間停止をシミュレート（実際は短時間）
+          await new Promise(resolve => setTimeout(resolve, 300));
+
+          const duringLongPause = {
+            remainingSeconds: (instance as any).gameState.subTimer.remainingSeconds,
+            isRunning: (instance as any).gameState.subTimer.isRunning,
+            isPaused: (instance as any).gameState.subTimer.isPaused
+          };
+
+          // 5. 再開
+          const resumeTime = Date.now();
+          await (instance as any).handleAction({ type: 'SUB_TIMER_START' });
+
+          // 6. 再開後少し時間を経過
+          await new Promise(resolve => setTimeout(resolve, 100));
+          (instance as any).updateSubTimerRemainingTime();
+
+          const afterLongPause = {
+            remainingSeconds: (instance as any).gameState.subTimer.remainingSeconds,
+            startTime: (instance as any).gameState.subTimer.startTime,
+            isRunning: (instance as any).gameState.subTimer.isRunning,
+            elapsedTime: 30 - (instance as any).gameState.subTimer.remainingSeconds
+          };
+
+          // 7. 開始時刻の調整量を計算
+          const pauseDuration = resumeTime - pauseTime;
+          const startTimeAdjustment = afterLongPause.startTime - beforeLongPause.startTime;
+
+          return {
+            beforeLongPause,
+            duringLongPause,
+            afterLongPause,
+            pauseDuration,
+            startTimeAdjustment,
+            timePreservedDuringPause: duringLongPause.remainingSeconds === beforeLongPause.remainingSeconds,
+            properlyResumed: afterLongPause.isRunning && !afterLongPause.isPaused,
+            timeAdvancedAfterResume: afterLongPause.remainingSeconds < beforeLongPause.remainingSeconds,
+            startTimeAdjustedProperly: Math.abs(startTimeAdjustment - pauseDuration) < 100 // 100ms以内の誤差
+          };
+        });
+
+        // 長時間停止中も時間が保持される
+        expect(result.timePreservedDuringPause).toBe(true);
+        expect(result.duringLongPause.isRunning).toBe(false);
+        expect(result.duringLongPause.isPaused).toBe(true);
+
+        // 再開後の状態確認
+        expect(result.properlyResumed).toBe(true);
+        expect(result.timeAdvancedAfterResume).toBe(true);
+
+        // 開始時刻の調整（一時停止時間分だけ遅らせる）
+        expect(result.startTimeAdjustedProperly).toBe(true);
+        expect(result.pauseDuration).toBeGreaterThan(200); // 最低300ms停止
+        expect(result.startTimeAdjustment).toBeGreaterThan(200);
+
+        // 時間の一貫性
+        expect(result.afterLongPause.remainingSeconds).toBeLessThanOrEqual(result.beforeLongPause.remainingSeconds);
+        expect(result.afterLongPause.elapsedTime).toBeGreaterThan(result.beforeLongPause.elapsedTime);
+      });
+    });
+
+    describe('永続化・復元', () => {
+      it('サブタイマー実行中の状態永続化が正常に動作する', async () => {
+        const id = env.GAME_SESSION.idFromName('test-subtimer-persistence-running');
+        const gameSession = env.GAME_SESSION.get(id);
+
+        const result = await runInDurableObject(gameSession, async (instance, state) => {
+          await (instance as any).loadGameState();
+
+          // サブタイマーを開始
+          await (instance as any).handleAction({ type: 'SUB_TIMER_START' });
+          await new Promise(resolve => setTimeout(resolve, 100));
+
+          const beforeSave = {
+            isRunning: (instance as any).gameState.subTimer.isRunning,
+            startTime: (instance as any).gameState.subTimer.startTime,
+            remainingSeconds: (instance as any).gameState.subTimer.remainingSeconds,
+            totalDuration: (instance as any).gameState.subTimer.totalDuration
+          };
+
+          // 状態を保存
+          await (instance as any).saveGameState();
+
+          // ストレージから直接確認
+          const savedData = await state.storage.get('gameState');
+          const savedSubTimer = savedData?.subTimer;
+
+          return {
+            beforeSave,
+            savedSubTimer,
+            saveSucceeded: savedSubTimer !== undefined,
+            isRunningPreserved: savedSubTimer?.isRunning === beforeSave.isRunning,
+            startTimePreserved: savedSubTimer?.startTime === beforeSave.startTime,
+            remainingSecondsPreserved: savedSubTimer?.remainingSeconds === beforeSave.remainingSeconds,
+            totalDurationPreserved: savedSubTimer?.totalDuration === beforeSave.totalDuration
+          };
+        });
+
+        expect(result.saveSucceeded).toBe(true);
+        expect(result.isRunningPreserved).toBe(true);
+        expect(result.startTimePreserved).toBe(true);
+        expect(result.remainingSecondsPreserved).toBe(true);
+        expect(result.totalDurationPreserved).toBe(true);
+        expect(result.beforeSave.isRunning).toBe(true);
+        expect(result.beforeSave.startTime).not.toBeNull();
+        expect(result.beforeSave.remainingSeconds).toBeLessThan(30);
+      });
+
+      it('一時停止中のサブタイマー状態復元が正常に動作する', async () => {
+        const id = env.GAME_SESSION.idFromName('test-subtimer-restore-paused');
+        const gameSession = env.GAME_SESSION.get(id);
+
+        const result = await runInDurableObject(gameSession, async (instance, state) => {
+          // 最初のセッション：一時停止状態まで実行
+          await (instance as any).loadGameState();
+          await (instance as any).handleAction({ type: 'SUB_TIMER_START' });
+          await new Promise(resolve => setTimeout(resolve, 150));
+          await (instance as any).handleAction({ type: 'SUB_TIMER_PAUSE' });
+
+          const beforeSave = {
+            isRunning: (instance as any).gameState.subTimer.isRunning,
+            isPaused: (instance as any).gameState.subTimer.isPaused,
+            pausedAt: (instance as any).gameState.subTimer.pausedAt,
+            remainingSeconds: (instance as any).gameState.subTimer.remainingSeconds,
+            startTime: (instance as any).gameState.subTimer.startTime
+          };
+
+          // 状態を保存
+          await (instance as any).saveGameState();
+
+          // 復元をシミュレート（状態をクリア）
+          (instance as any).isStateLoaded = false;
+          (instance as any).gameState = null;
+
+          // 状態を再ロード
+          await (instance as any).loadGameState();
+
+          const afterRestore = {
+            isRunning: (instance as any).gameState.subTimer.isRunning,
+            isPaused: (instance as any).gameState.subTimer.isPaused,
+            pausedAt: (instance as any).gameState.subTimer.pausedAt,
+            remainingSeconds: (instance as any).gameState.subTimer.remainingSeconds,
+            startTime: (instance as any).gameState.subTimer.startTime
+          };
+
+          // 復元後の再開動作確認
+          await (instance as any).handleAction({ type: 'SUB_TIMER_START' });
+          await new Promise(resolve => setTimeout(resolve, 50));
+
+          const afterResume = {
+            isRunning: (instance as any).gameState.subTimer.isRunning,
+            isPaused: (instance as any).gameState.subTimer.isPaused,
+            remainingSeconds: (instance as any).gameState.subTimer.remainingSeconds
+          };
+
+          return {
+            beforeSave,
+            afterRestore,
+            afterResume,
+            isRunningRestored: beforeSave.isRunning === afterRestore.isRunning,
+            isPausedRestored: beforeSave.isPaused === afterRestore.isPaused,
+            pausedAtRestored: beforeSave.pausedAt === afterRestore.pausedAt,
+            remainingSecondsRestored: beforeSave.remainingSeconds === afterRestore.remainingSeconds,
+            startTimeRestored: beforeSave.startTime === afterRestore.startTime,
+            resumeWorksAfterRestore: afterResume.isRunning && !afterResume.isPaused
+          };
+        });
+
+        // 一時停止状態の復元確認
+        expect(result.isRunningRestored).toBe(true);
+        expect(result.isPausedRestored).toBe(true);
+        expect(result.pausedAtRestored).toBe(true);
+        expect(result.remainingSecondsRestored).toBe(true);
+        expect(result.startTimeRestored).toBe(true);
+
+        // 復元された状態の値確認
+        expect(result.afterRestore.isRunning).toBe(false);
+        expect(result.afterRestore.isPaused).toBe(true);
+        expect(result.afterRestore.pausedAt).not.toBeNull();
+        expect(result.afterRestore.remainingSeconds).toBeLessThan(30);
+        expect(result.afterRestore.startTime).not.toBeNull();
+
+        // 復元後の再開確認
+        expect(result.resumeWorksAfterRestore).toBe(true);
+        expect(result.afterResume.remainingSeconds).toBeLessThan(result.afterRestore.remainingSeconds);
+      });
+
+      it('hibernation後のサブタイマー状態復元が正常に動作する', async () => {
+        const id = env.GAME_SESSION.idFromName('test-subtimer-hibernation-restore');
+        const gameSession = env.GAME_SESSION.get(id);
+
+        const result = await runInDurableObject(gameSession, async (instance, state) => {
+          // hibernation前：サブタイマーを開始
+          await (instance as any).loadGameState();
+          await (instance as any).handleAction({ type: 'SUB_TIMER_START' });
+          await new Promise(resolve => setTimeout(resolve, 120));
+
+          const beforeHibernation = {
+            isRunning: (instance as any).gameState.subTimer.isRunning,
+            startTime: (instance as any).gameState.subTimer.startTime,
+            remainingSeconds: (instance as any).gameState.subTimer.remainingSeconds,
+            totalDuration: (instance as any).gameState.subTimer.totalDuration
+          };
+
+          // hibernation準備（全接続削除）
+          const webSocketPair = new WebSocketPair();
+          const [client, server] = Object.values(webSocketPair);
+          client.accept();
+          await (instance as any).handleSession(server);
+          await (instance as any).safelyDeleteConnection(server);
+
+          // hibernation解除をシミュレート（状態をリセット）
+          (instance as any).isStateLoaded = false;
+          (instance as any).gameState = null;
+
+          // 時間経過をシミュレート
+          await new Promise(resolve => setTimeout(resolve, 100));
+
+          // 新規接続による復帰
+          const newWebSocketPair = new WebSocketPair();
+          const [newClient, newServer] = Object.values(newWebSocketPair);
+          newClient.accept();
+          await (instance as any).handleSession(newServer);
+
+          // 時刻更新
+          (instance as any).updateSubTimerRemainingTime();
+
+          const afterHibernation = {
+            isRunning: (instance as any).gameState.subTimer.isRunning,
+            startTime: (instance as any).gameState.subTimer.startTime,
+            remainingSeconds: (instance as any).gameState.subTimer.remainingSeconds,
+            totalDuration: (instance as any).gameState.subTimer.totalDuration
+          };
+
+          // hibernation後の操作確認
+          await (instance as any).handleAction({ type: 'SUB_TIMER_PAUSE' });
+          const pauseAfterHibernation = {
+            isRunning: (instance as any).gameState.subTimer.isRunning,
+            isPaused: (instance as any).gameState.subTimer.isPaused
+          };
+
+          return {
+            beforeHibernation,
+            afterHibernation,
+            pauseAfterHibernation,
+            statePreservedAfterHibernation: beforeHibernation.isRunning === afterHibernation.isRunning &&
+                                          beforeHibernation.startTime === afterHibernation.startTime &&
+                                          beforeHibernation.totalDuration === afterHibernation.totalDuration,
+            timeAdvancedAfterHibernation: afterHibernation.remainingSeconds < beforeHibernation.remainingSeconds,
+            operationWorksAfterHibernation: !pauseAfterHibernation.isRunning && pauseAfterHibernation.isPaused
+          };
+        });
+
+        // hibernation後の状態保持確認
+        expect(result.statePreservedAfterHibernation).toBe(true);
+        expect(result.beforeHibernation.isRunning).toBe(true);
+        expect(result.afterHibernation.isRunning).toBe(true);
+        expect(result.afterHibernation.totalDuration).toBe(30);
+
+        // hibernation中の時間経過反映
+        expect(result.timeAdvancedAfterHibernation).toBe(true);
+
+        // hibernation後の操作確認
+        expect(result.operationWorksAfterHibernation).toBe(true);
+      });
+    });
+  });
+
   describe('エラーハンドリング', () => {
     it('無効なパスを拒否する', async () => {
       const id = env.GAME_SESSION.idFromName('test-game-invalid-path');
