@@ -4,6 +4,8 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, minimum-scale=1.0">
   <title>スコアボード - {{gameId}}</title>
+  <link rel="icon" href="/images/favicon.ico" type="image/x-icon">
+  <link rel="shortcut icon" href="/images/favicon.ico" type="image/x-icon">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DotGothic16&display=swap" rel="stylesheet">
@@ -144,7 +146,7 @@
             </a>
             <span class="text-gray-500">|</span>
             <button @click="openCreditsModal()" class="hover:text-white transition-colors cursor-pointer flex items-center">
-              <i data-lucide="user" class="w-4 h-4"></i>
+              <i data-lucide="hammer" class="w-4 h-4"></i>
             </button>
           </div>
         </div>
@@ -529,7 +531,7 @@
             </a>
             <span class="text-gray-500">|</span>
             <button @click="openCreditsModal()" class="hover:text-white transition-colors cursor-pointer flex items-center">
-              <i data-lucide="user" class="w-3 h-3"></i>
+              <i data-lucide="hammer" class="w-3 h-3"></i>
             </button>
           </div>
         </div>
@@ -1063,8 +1065,8 @@
             </template>
             <template x-if="modalType === 'credits'">
               <div class="flex items-center gap-2">
-                <i data-lucide="user" class="w-5 h-5"></i>
-                <span>Kabaddi Timer</span>
+                <i data-lucide="hammer" class="w-5 h-5"></i>
+                <span>About</span>
               </div>
             </template>
           </h3>
@@ -1106,14 +1108,27 @@
         <!-- クレジットモーダルの内容 -->
         <div x-show="modalType === 'credits'" class="space-y-6 text-gray-700" style="font-family: 'DotGothic16', monospace;">
           <!-- アプリケーション情報 -->
-          <div class="text-center">
-            <p class="text-sm text-gray-600">カバディ用リアルタイムタイマー・スコアボード</p>
+          <div class="mb-4">
+            <div class="bg-gray-50 rounded-lg p-4 ml-4">
+              <div class="flex items-start space-x-4">
+                <!-- 左側：アプリアイコン -->
+                <div class="w-16 h-16 rounded-lg overflow-hidden border-2 border-gray-200 bg-white flex-shrink-0 flex items-center justify-center">
+                  <img src="/images/kabaddi-timer-app-icon.png" alt="Kabaddi Timer Icon" class="w-full h-full object-cover">
+                </div>
+
+                <!-- 右側：タイトル・説明文 -->
+                <div class="flex-1 min-w-0">
+                  <h5 class="font-bold text-xl text-gray-800 mb-2">Kabaddi Timer</h5>
+                  <p class="text-sm text-gray-600">カバディ用リアルタイムタイマー・スコアボード</p>
+                </div>
+              </div>
+            </div>
           </div>
 
           <!-- Development by & 開発者カード -->
-          <div class="mb-6">
-            <h4 class="font-medium mb-0 text-gray-800">Development by</h4>
-            <div class="bg-gray-50 rounded-lg p-4 mt-2">
+          <div class="mb-4">
+            <h4 class="font-medium mb-2 text-gray-800">Development by</h4>
+            <div class="bg-gray-50 rounded-lg p-4 ml-4">
             <div class="flex items-start space-x-4">
               <!-- 左側：PNG画像（丸抜き） -->
               <div class="w-16 h-16 rounded-full overflow-hidden border-2 border-gray-200 bg-white flex-shrink-0">
@@ -1150,7 +1165,7 @@
           <!-- Built with -->
           <div class="mb-4">
             <h4 class="font-medium mb-2 text-gray-800">Built with Cloudflare Workers</h4>
-            <p class="text-sm text-gray-600 ml-4">TypeScript / Alpine.js / Tailwind CSS</p>
+            <p class="text-sm text-gray-600 ml-4">TypeScript / Alpine.js / Tailwind CSS / WebRTC</p>
           </div>
 
           <!-- Special Thanks -->
