@@ -4,6 +4,9 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, minimum-scale=1.0">
   <title>スコアボード - {{gameId}}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DotGothic16&display=swap" rel="stylesheet">
   <script src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
@@ -1101,7 +1104,7 @@
         </div>
 
         <!-- クレジットモーダルの内容 -->
-        <div x-show="modalType === 'credits'" class="space-y-6 text-gray-700 font-mono">
+        <div x-show="modalType === 'credits'" class="space-y-6 text-gray-700" style="font-family: 'DotGothic16', monospace;">
           <!-- アプリケーション情報 -->
           <div class="text-center">
             <p class="text-sm text-gray-600">カバディ用リアルタイムタイマー・スコアボード</p>
