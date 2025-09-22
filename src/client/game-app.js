@@ -12,6 +12,9 @@ window.gameApp = function(gameId, apis = BrowserAPIs) {
   // アクション作成ヘルパーの初期化
   const actionCreators = createActionCreators(Constants);
 
+  // WebSocket管理の初期化
+  const websocketManager = createWebSocketManager(apis, Constants);
+
   return {
     gameState: {
       teamA: { name: DEFAULT_VALUES.teamNames.teamA, score: DEFAULT_VALUES.score, doOrDieCount: DEFAULT_VALUES.doOrDieCount },
@@ -27,18 +30,13 @@ window.gameApp = function(gameId, apis = BrowserAPIs) {
       serverTime: 0,
       lastUpdated: 0
     },
-    connected: false,
-    ws: null,
     gameId: gameId,
     timerSeconds: DEFAULT_VALUES.timer.defaultDuration,
     timerRunning: false,
     subTimerSeconds: 30,
     subTimerRunning: false,
-    serverTimeOffset: 0,
     timerAnimationId: null,
-    timeSyncIntervalId: null,
-    reconnectTimeoutId: null,
-    lastSyncRequest: 0,
+    websocketManager: websocketManager,
 
     init() {
       // UI状態管理の初期化
@@ -49,124 +47,45 @@ window.gameApp = function(gameId, apis = BrowserAPIs) {
         apis.timer.cancelAnimationFrame(this.timerAnimationId);
         this.timerAnimationId = null;
       }
-      if (this.timeSyncIntervalId) {
-        apis.timer.clearInterval(this.timeSyncIntervalId);
-        this.timeSyncIntervalId = null;
-      }
 
-      this.connectWebSocket();
+      // WebSocket接続を開始
+      this.websocketManager.connect(this.gameId, {
+        onConnected: () => {
+          apis.console.log('Game app: WebSocket connected');
+        },
+        onDisconnected: () => {
+          apis.console.log('Game app: WebSocket disconnected');
+          this.stopTimerUpdate(); // タイマー更新を停止
+        },
+        onGameStateReceived: (gameState) => {
+          this.gameState = gameState;
+
+          // 入力フィールドをサーバー状態と同期
+          inputFields.syncWithGameState(this.gameState);
+
+          // タイマーが停止している場合、直接値を更新
+          if (this.gameState.timer && !this.gameState.timer.isRunning) {
+            this.timerSeconds = Math.floor(this.gameState.timer.remainingSeconds);
+            apis.console.log('Timer updated to:', this.timerSeconds, 'seconds');
+          }
+
+          this.updateTimerDisplay();
+        },
+        onTimeSyncReceived: (syncData) => {
+          // 時刻同期データをwebsocketManagerから取得
+        },
+        onError: (type, error) => {
+          apis.console.error('WebSocket error:', type, error);
+        }
+      });
+
       // タイマー更新の初期化
       this.updateTimerDisplay();
-
-      // 定期的な時刻同期リクエスト（60秒ごと）
-      this.timeSyncIntervalId = apis.timer.setInterval(() => {
-        if (this.ws && apis.websocket.getReadyState(this.ws) === apis.websocket.OPEN) {
-          this.sendAction({
-            type: 'TIME_SYNC_REQUEST',
-            clientRequestTime: apis.timer.now()
-          });
-        }
-      }, 60000);
     },
 
-    connectWebSocket() {
-      // 既存のWebSocket接続をクリーンアップ
-      if (this.ws) {
-        apis.websocket.close(this.ws);
-        this.ws = null;
-      }
-
-      const protocol = apis.window.location.getProtocol() === 'https:' ? 'wss:' : 'ws:';
-      const wsUrl = `${protocol}//${apis.window.location.getHost()}/ws/${this.gameId}`;
-
-      this.ws = apis.websocket.create(wsUrl);
-
-      this.ws.onopen = () => {
-        this.connected = true;
-        apis.console.log('WebSocket connected');
-        // 接続成功時に初期時刻同期を要求
-        this.sendAction({
-          type: 'TIME_SYNC_REQUEST',
-          clientRequestTime: apis.timer.now()
-        });
-      };
-
-      this.ws.onmessage = (event) => {
-        try {
-          const message = JSON.parse(event.data);
-
-          if (message.type === 'game_state') {
-            apis.console.log('Received game state:', message.data);
-            this.gameState = message.data;
-
-            // 入力フィールドをサーバー状態と同期
-            inputFields.syncWithGameState(this.gameState);
-
-            // タイマーが停止している場合、直接値を更新
-            if (this.gameState.timer && !this.gameState.timer.isRunning) {
-              this.timerSeconds = Math.floor(this.gameState.timer.remainingSeconds);
-
-              apis.console.log('Timer updated to:', this.timerSeconds, 'seconds');
-            }
-
-            this.updateTimerDisplay();
-          }
-
-          else if (message.type === 'time_sync') {
-            const clientTime = apis.timer.now();
-            const serverTime = message.data.serverTime;
-            const rtt = message.data.clientRequestTime ?
-              (clientTime - message.data.clientRequestTime) : 0;
-            this.serverTimeOffset = serverTime - clientTime + (rtt / 2);
-            apis.console.log('Time sync: offset =', this.serverTimeOffset, 'ms, RTT =', rtt, 'ms');
-          }
-
-          else if (message.type === 'error') {
-            apis.console.error('Server error:', message.data);
-          }
-
-        } catch (error) {
-          apis.console.error('WebSocket message parse error:', error);
-        }
-      };
-
-      this.ws.onclose = () => {
-        this.connected = false;
-        apis.console.log('WebSocket disconnected');
-        this.stopTimerUpdate(); // タイマー更新を停止
-
-        // 既存の再接続タイマーをクリア
-        if (this.reconnectTimeoutId) {
-          apis.timer.clearTimeout(this.reconnectTimeoutId);
-          this.reconnectTimeoutId = null;
-        }
-
-        // 3秒後に再接続
-        this.reconnectTimeoutId = apis.timer.setTimeout(() => this.connectWebSocket(), 3000);
-      };
-
-      this.ws.onerror = (error) => {
-        apis.console.error('WebSocket error:', error);
-        this.connected = false;
-        this.stopTimerUpdate(); // タイマー更新を停止
-      };
-    },
-
-    sendAction(action) {
-      if (this.ws && apis.websocket.getReadyState(this.ws) === apis.websocket.OPEN) {
-        try {
-          apis.websocket.send(this.ws, JSON.stringify({ action }));
-          apis.console.log('Sent action:', action);
-        } catch (error) {
-          apis.console.error('Failed to send action:', error);
-        }
-      } else {
-        apis.console.warn('WebSocket not connected, action not sent:', action);
-      }
-    },
 
     updateScore(team, points) {
-      this.sendAction({
+      this.websocketManager.sendAction({
         type: 'SCORE_UPDATE',
         team: team,
         points: points
@@ -174,19 +93,19 @@ window.gameApp = function(gameId, apis = BrowserAPIs) {
     },
 
     resetScores() {
-      this.sendAction(actionCreators.score.reset());
+      this.websocketManager.sendAction(actionCreators.score.reset());
     },
 
     courtChange() {
-      this.sendAction({ type: 'COURT_CHANGE' });
+      this.websocketManager.sendAction({ type: 'COURT_CHANGE' });
     },
 
     resetAll() {
-      this.sendAction({ type: 'RESET_ALL' });
+      this.websocketManager.sendAction({ type: 'RESET_ALL' });
     },
 
     updateDoOrDie(team, delta) {
-      this.sendAction({
+      this.websocketManager.sendAction({
         type: 'DO_OR_DIE_UPDATE',
         team: team,
         delta: delta
@@ -194,7 +113,7 @@ window.gameApp = function(gameId, apis = BrowserAPIs) {
     },
 
     resetDoOrDie() {
-      this.sendAction(actionCreators.doOrDie.reset());
+      this.websocketManager.sendAction(actionCreators.doOrDie.reset());
     },
 
     get teamADoOrDieIndicators() {
@@ -208,7 +127,7 @@ window.gameApp = function(gameId, apis = BrowserAPIs) {
     },
 
     setTeamName(team, name) {
-      this.sendAction({
+      this.websocketManager.sendAction({
         type: 'SET_TEAM_NAME',
         team: team,
         name: name
@@ -273,15 +192,15 @@ window.gameApp = function(gameId, apis = BrowserAPIs) {
     },
 
     startTimer() {
-      this.sendAction(actionCreators.timer.start());
+      this.websocketManager.sendAction(actionCreators.timer.start());
     },
 
     stopTimer() {
-      this.sendAction(actionCreators.timer.pause());
+      this.websocketManager.sendAction(actionCreators.timer.pause());
     },
 
     adjustTimer(seconds) {
-      this.sendAction({
+      this.websocketManager.sendAction({
         type: 'TIMER_ADJUST',
         seconds: seconds
       });
@@ -290,7 +209,7 @@ window.gameApp = function(gameId, apis = BrowserAPIs) {
     setTimer(minutes, seconds) {
       const duration = (minutes * 60) + seconds;
       apis.console.log('Setting timer to:', minutes, 'minutes,', seconds, 'seconds (', duration, 'total seconds)');
-      this.sendAction({
+      this.websocketManager.sendAction({
         type: 'TIMER_SET',
         duration: duration
       });
@@ -305,19 +224,19 @@ window.gameApp = function(gameId, apis = BrowserAPIs) {
     },
 
     resetTimer() {
-      this.sendAction(actionCreators.timer.reset());
+      this.websocketManager.sendAction(actionCreators.timer.reset());
     },
 
     startSubTimer() {
-      this.sendAction({ type: 'SUB_TIMER_START' });
+      this.websocketManager.sendAction({ type: 'SUB_TIMER_START' });
     },
 
     stopSubTimer() {
-      this.sendAction({ type: 'SUB_TIMER_PAUSE' });
+      this.websocketManager.sendAction({ type: 'SUB_TIMER_PAUSE' });
     },
 
     resetSubTimer() {
-      this.sendAction({ type: 'SUB_TIMER_RESET' });
+      this.websocketManager.sendAction({ type: 'SUB_TIMER_RESET' });
     },
 
     updateTimerDisplay() {
@@ -351,7 +270,8 @@ window.gameApp = function(gameId, apis = BrowserAPIs) {
       if (!timer) return;
 
       // 純粋関数を使用してタイマー計算
-      const result = TimerLogic.calculateRemainingSeconds(timer, this.serverTimeOffset);
+      const serverTimeOffset = this.websocketManager.getServerTimeOffset();
+      const result = TimerLogic.calculateRemainingSeconds(timer, serverTimeOffset);
       this.timerSeconds = result.seconds;
       this.timerRunning = result.isRunning;
     },
@@ -361,7 +281,8 @@ window.gameApp = function(gameId, apis = BrowserAPIs) {
       if (!subTimer) return;
 
       // 純粋関数を使用してサブタイマー計算
-      const result = TimerLogic.calculateSubTimerRemainingSeconds(subTimer, this.serverTimeOffset);
+      const serverTimeOffset = this.websocketManager.getServerTimeOffset();
+      const result = TimerLogic.calculateSubTimerRemainingSeconds(subTimer, serverTimeOffset);
       this.subTimerSeconds = result.seconds;
       this.subTimerRunning = result.isRunning;
     },
@@ -379,29 +300,16 @@ window.gameApp = function(gameId, apis = BrowserAPIs) {
         uiState.cleanup();
       }
 
-      // 全てのアニメーション・インターバルをクリア
+      // WebSocket管理のクリーンアップ
+      if (this.websocketManager) {
+        this.websocketManager.cleanup();
+      }
+
+      // タイマーアニメーションをクリア
       if (this.timerAnimationId) {
         apis.timer.cancelAnimationFrame(this.timerAnimationId);
         this.timerAnimationId = null;
       }
-      if (this.timeSyncIntervalId) {
-        apis.timer.clearInterval(this.timeSyncIntervalId);
-        this.timeSyncIntervalId = null;
-      }
-
-      // 再接続タイマーをクリア
-      if (this.reconnectTimeoutId) {
-        apis.timer.clearTimeout(this.reconnectTimeoutId);
-        this.reconnectTimeoutId = null;
-      }
-
-      // WebSocket接続をクローズ
-      if (this.ws) {
-        apis.websocket.close(this.ws);
-        this.ws = null;
-      }
-
-      this.connected = false;
     },
 
     // QRモーダル表示 (グローバル関数を呼び出す)
