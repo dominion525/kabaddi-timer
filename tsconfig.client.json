@@ -1,0 +1,27 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "target": "ES2020",
+    "module": "None",
+    "lib": ["ES2020", "DOM"],
+    "outDir": "./public/js",
+    "removeComments": false,
+    "sourceMap": false,
+    "declaration": false,
+    "skipLibCheck": true,
+    "allowJs": false,
+    "noEmit": false,
+    "moduleDetection": "legacy"
+  },
+  "include": [
+    "src/client/components/**/*.ts"
+  ],
+  "exclude": [
+    "node_modules",
+    "dist",
+    "public",
+    "**/*.test.ts",
+    "**/test/**/*",
+    "**/__tests__/**/*"
+  ]
+}

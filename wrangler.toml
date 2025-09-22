@@ -2,6 +2,10 @@ name = "kabaddi-timer"
 main = "src/index.ts"
 compatibility_date = "2024-11-01"
 
+# Cloudflare Workers標準の静的アセット設定
+[assets]
+directory = "./public"
+binding = "ASSETS"
 
 [[durable_objects.bindings]]
 name = "GAME_SESSION"

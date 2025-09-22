@@ -27,6 +27,12 @@ const clientScripts = [
     inputFile: 'src/client/components/websocket-manager.ts',
     outputFile: 'src/client/websocket-manager.ts',
     exportName: 'websocketManagerScript'
+  },
+  {
+    name: 'score-logic',
+    inputFile: 'src/client/components/score-logic.ts',
+    outputFile: 'src/client/score-logic.ts',
+    exportName: 'scoreLogicScript'
   }
 ];
 

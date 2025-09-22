@@ -66,6 +66,7 @@ export interface WebSocketMessage {
 
 export interface Env {
   GAME_SESSION: DurableObjectNamespace;
+  ASSETS: Fetcher;
 }
 
 export interface GameSessionState {

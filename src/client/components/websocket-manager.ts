@@ -2,76 +2,6 @@
 // WebSocket通信の確立、管理、メッセージハンドリングを担当
 // 責務の分離により接続管理を独立化
 
-// 型定義
-interface BrowserAPIs {
-  websocket: {
-    create(url: string): WebSocket;
-    send(ws: WebSocket, data: string): void;
-    close(ws: WebSocket): void;
-    getReadyState(ws: WebSocket): number;
-  };
-  timer: {
-    setTimeout(callback: () => void, delay: number): number;
-    clearTimeout(id: number): void;
-    setInterval(callback: () => void, interval: number): number;
-    clearInterval(id: number): void;
-    now(): number;
-  };
-  console: {
-    log(...args: any[]): void;
-    error(...args: any[]): void;
-    warn(...args: any[]): void;
-  };
-  window: {
-    location: {
-      getProtocol(): string;
-      getHost(): string;
-    };
-  };
-}
-
-interface Constants {
-  MESSAGE_TYPES: {
-    GAME_STATE: string;
-    TIME_SYNC_RESPONSE: string;
-    ERROR: string;
-  };
-  WEBSOCKET_STATES: {
-    OPEN: number;
-  };
-}
-
-interface CallbackHandlers {
-  onConnected?: () => void;
-  onDisconnected?: () => void;
-  onGameStateReceived?: (data: any) => void;
-  onTimeSyncReceived?: (data: TimeSyncData) => void;
-  onError?: (type: string, error: any) => void;
-  onActionSent?: (action: any) => void;
-}
-
-interface TimeSyncData {
-  offset: number;
-  rtt: number;
-  serverTime: number;
-  clientTime: number;
-}
-
-interface WebSocketMessage {
-  type: string;
-  data: any;
-}
-
-interface WebSocketManager {
-  connect(id: string, callbackHandlers?: CallbackHandlers): void;
-  sendAction(action: any): boolean;
-  reconnect(): void;
-  cleanup(): void;
-  isConnected(): boolean;
-  getServerTimeOffset(): number;
-  getDebugInfo(): any;
-}
-
 (function(global: any) {
   'use strict';
 
@@ -82,9 +12,8 @@ interface WebSocketManager {
    * @param constants - 定数管理オブジェクト
    * @returns WebSocket管理オブジェクト
    */
-  function createWebSocketManager(apis: BrowserAPIs, constants: Constants): WebSocketManager {
+  function createWebSocketManager(apis: any, constants: any) {
     const { MESSAGE_TYPES, WEBSOCKET_STATES } = constants;
-
     let ws: WebSocket | null = null;
     let connected = false;
     let serverTimeOffset = 0;
@@ -93,13 +22,13 @@ interface WebSocketManager {
     let gameId: string | null = null;
 
     // コールバック関数群
-    let callbacks: CallbackHandlers = {
+    let callbacks = {
       onConnected: () => {},
       onDisconnected: () => {},
-      onGameStateReceived: () => {},
-      onTimeSyncReceived: () => {},
-      onError: () => {},
-      onActionSent: () => {}
+      onGameStateReceived: (_data: any) => {},
+      onTimeSyncReceived: (_data: any) => {},
+      onError: (_type: string, _error?: any) => {},
+      onActionSent: (_action: any) => {}
     };
 
     /**
@@ -107,7 +36,7 @@ interface WebSocketManager {
      * @param id - ゲームID
      * @param callbackHandlers - イベントハンドラー
      */
-    function connect(id: string, callbackHandlers: CallbackHandlers = {}): void {
+    function connect(id: string, callbackHandlers: any = {}) {
       gameId = id;
       callbacks = { ...callbacks, ...callbackHandlers };
 
@@ -119,29 +48,27 @@ interface WebSocketManager {
 
       const protocol = apis.window.location.getProtocol() === 'https:' ? 'wss:' : 'ws:';
       const wsUrl = `${protocol}//${apis.window.location.getHost()}/ws/${gameId}`;
-
       ws = apis.websocket.create(wsUrl);
 
-      ws.onopen = () => {
+      ws!.onopen = () => {
         connected = true;
         apis.console.log('WebSocket connected');
         callbacks.onConnected?.();
-
         // 接続成功時に初期時刻同期を要求
         sendTimeSync();
       };
 
-      ws.onmessage = (event: MessageEvent) => {
+      ws!.onmessage = (event: MessageEvent) => {
         try {
-          const message: WebSocketMessage = JSON.parse(event.data);
+          const message = JSON.parse(event.data);
           handleMessage(message);
-        } catch (error) {
-          apis.console.error('WebSocket message parse error:', error);
-          callbacks.onError?.('Message parse error', error);
+        } catch (err) {
+          apis.console.error('WebSocket message parse error:', err);
+          callbacks.onError?.('Message parse error', err);
         }
       };
 
-      ws.onclose = () => {
+      ws!.onclose = () => {
         connected = false;
         apis.console.log('WebSocket disconnected');
         callbacks.onDisconnected?.();
@@ -160,10 +87,10 @@ interface WebSocketManager {
         }, 3000);
       };
 
-      ws.onerror = (error: Event) => {
-        apis.console.error('WebSocket error:', error);
+      ws!.onerror = (event: Event) => {
+        apis.console.error('WebSocket error:', event);
         connected = false;
-        callbacks.onError?.('WebSocket error', error);
+        callbacks.onError?.('WebSocket error', event);
       };
 
       // 定期的な時刻同期を開始（60秒ごと）
@@ -174,15 +101,13 @@ interface WebSocketManager {
      * メッセージハンドリング
      * @param message - 受信メッセージ
      */
-    function handleMessage(message: WebSocketMessage): void {
+    function handleMessage(message: any) {
       if (message.type === MESSAGE_TYPES.GAME_STATE) {
         apis.console.log('Received game state:', message.data);
         callbacks.onGameStateReceived?.(message.data);
-      }
-      else if (message.type === MESSAGE_TYPES.TIME_SYNC_RESPONSE) {
+      } else if (message.type === MESSAGE_TYPES.TIME_SYNC_RESPONSE) {
         handleTimeSync(message.data);
-      }
-      else if (message.type === MESSAGE_TYPES.ERROR) {
+      } else if (message.type === MESSAGE_TYPES.ERROR) {
         apis.console.error('Server error:', message.data);
         callbacks.onError?.('Server error', message.data);
       }
@@ -192,14 +117,16 @@ interface WebSocketManager {
      * 時刻同期処理
      * @param data - 時刻同期データ
      */
-    function handleTimeSync(data: any): void {
+    function handleTimeSync(data: any) {
       const clientTime = apis.timer.now();
       const serverTime = data.serverTime;
       const rtt = data.clientRequestTime ?
         (clientTime - data.clientRequestTime) : 0;
+
       serverTimeOffset = serverTime - clientTime + (rtt / 2);
 
       apis.console.log('Time sync: offset =', serverTimeOffset, 'ms, RTT =', rtt, 'ms');
+
       callbacks.onTimeSyncReceived?.({
         offset: serverTimeOffset,
         rtt: rtt,
@@ -234,7 +161,7 @@ interface WebSocketManager {
     /**
      * 時刻同期リクエストを送信
      */
-    function sendTimeSync(): void {
+    function sendTimeSync() {
       sendAction({
         type: 'TIME_SYNC_REQUEST',
         clientRequestTime: apis.timer.now()
@@ -244,7 +171,7 @@ interface WebSocketManager {
     /**
      * 定期的な時刻同期を開始
      */
-    function startTimeSyncInterval(): void {
+    function startTimeSyncInterval() {
       if (timeSyncIntervalId) {
         apis.timer.clearInterval(timeSyncIntervalId);
       }
@@ -275,7 +202,7 @@ interface WebSocketManager {
     /**
      * 手動で再接続を実行
      */
-    function reconnect(): void {
+    function reconnect() {
       if (gameId) {
         connect(gameId, callbacks);
       }
@@ -284,7 +211,7 @@ interface WebSocketManager {
     /**
      * リソースのクリーンアップ
      */
-    function cleanup(): void {
+    function cleanup() {
       // 時刻同期インターバルをクリア
       if (timeSyncIntervalId) {
         apis.timer.clearInterval(timeSyncIntervalId);
@@ -312,7 +239,7 @@ interface WebSocketManager {
      * デバッグ情報を取得
      * @returns 接続状態の詳細情報
      */
-    function getDebugInfo(): any {
+    function getDebugInfo() {
       return {
         connected: connected,
         gameId: gameId,
@@ -326,26 +253,21 @@ interface WebSocketManager {
     // 公開API
     return {
       // 基本機能
-      connect: connect,
-      sendAction: sendAction,
-      reconnect: reconnect,
-      cleanup: cleanup,
+      connect,
+      sendAction,
+      reconnect,
+      cleanup,
 
       // 状態取得
-      isConnected: isConnected,
-      getServerTimeOffset: getServerTimeOffset,
+      isConnected,
+      getServerTimeOffset,
 
       // デバッグ
-      getDebugInfo: getDebugInfo
+      getDebugInfo
     };
   }
 
   // グローバルに公開
   global.createWebSocketManager = createWebSocketManager;
 
-  // CommonJS対応
-  if (typeof module !== 'undefined' && module.exports) {
-    module.exports = { createWebSocketManager };
-  }
-
-})(typeof window !== 'undefined' ? window : global);
+})(window);

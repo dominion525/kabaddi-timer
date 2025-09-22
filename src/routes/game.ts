@@ -1,22 +1,5 @@
 import { Hono } from 'hono';
 import { Env } from '../types/game';
-import { gameAppScript } from '../client/game-app';
-import { timerLogicScript } from '../client/timer-logic';
-import { browserAPIsScript } from '../client/browser-apis';
-import { uiStateScript } from '../client/ui-state';
-import { inputFieldsScript } from '../client/input-fields';
-/* eslint-disable-next-line */
-// @ts-ignore - Used in allScripts array
-import { constantsScript } from '../client/constants';
-/* eslint-disable-next-line */
-// @ts-ignore - Used in allScripts array
-import { actionCreatorsScript } from '../client/action-creators';
-/* eslint-disable-next-line */
-// @ts-ignore - Used in allScripts array
-import { scoreLogicScript } from '../client/score-logic';
-/* eslint-disable-next-line */
-// @ts-ignore - Used in allScripts array
-import { websocketManagerScript } from '../client/websocket-manager';
 import { gameTemplate } from '../templates/game-template';
 
 const gameRouter = new Hono<{ Bindings: Env }>();
@@ -41,23 +24,8 @@ gameRouter.get('/game/:gameId', async (c) => {
     return c.text('Invalid game ID', 400);
   }
 
-  // 完全なゲームテンプレートを使用
-  // スクリプト読み込み順序: browser-apis → constants → action-creators → score-logic → websocket-manager → ui-state → input-fields → timer-logic → game-app
-  const allScripts = [
-    browserAPIsScript,
-    constantsScript,
-    actionCreatorsScript,
-    scoreLogicScript,
-    websocketManagerScript,
-    uiStateScript,
-    inputFieldsScript,
-    timerLogicScript,
-    gameAppScript
-  ].join('\n');
-
-  const html = gameTemplate
-    .replace(/\{\{gameId\}\}/g, gameId)
-    .replace('{{gameAppScript}}', allScripts);
+  // シンプルなHTMLレンダリング（外部スクリプトを使用）
+  const html = gameTemplate.replace(/\{\{gameId\}\}/g, gameId);
 
   return c.html(html);
 });
