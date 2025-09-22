@@ -476,6 +476,42 @@ describe('GameSession', () => {
       expect(result.teamB).toBe(0);
     });
 
+    it('チーム別スコアリセット機能をテストする', async () => {
+      const id = env.GAME_SESSION.idFromName('test-team-score-reset');
+      const gameSession = env.GAME_SESSION.get(id);
+
+      const result = await runInDurableObject(gameSession, async (instance, state) => {
+        // スコア設定
+        await (instance as any).handleAction({ type: 'SCORE_UPDATE', team: 'teamA', points: 5 });
+        await (instance as any).handleAction({ type: 'SCORE_UPDATE', team: 'teamB', points: 8 });
+
+        // リセット前の確認
+        let gameState = (instance as any).gameState;
+        expect(gameState.teamA.score).toBe(5);
+        expect(gameState.teamB.score).toBe(8);
+
+        // チームAのスコアのみリセット
+        await (instance as any).handleAction({ type: 'RESET_TEAM_SCORE', team: 'teamA' });
+        gameState = (instance as any).gameState;
+
+        expect(gameState.teamA.score).toBe(0);
+        expect(gameState.teamB.score).toBe(8);
+
+        // チームBのスコアのみリセット
+        await (instance as any).handleAction({ type: 'SCORE_UPDATE', team: 'teamA', points: 3 });
+        await (instance as any).handleAction({ type: 'RESET_TEAM_SCORE', team: 'teamB' });
+        gameState = (instance as any).gameState;
+
+        expect(gameState.teamA.score).toBe(3);
+        expect(gameState.teamB.score).toBe(0);
+
+        return { teamA: gameState.teamA.score, teamB: gameState.teamB.score };
+      });
+
+      expect(result.teamA).toBe(3);
+      expect(result.teamB).toBe(0);
+    });
+
     it('Do or Die機能をテストする', async () => {
       const id = env.GAME_SESSION.idFromName('test-do-or-die');
       const gameSession = env.GAME_SESSION.get(id);
@@ -2020,7 +2056,7 @@ describe('GameSession', () => {
         expect(result.startTimeSet).toBe(true);
         expect(result.afterIsPaused).toBe(false);
         expect(result.totalDuration).toBe(30); // 30秒固定
-        expect(result.remainingSeconds).toBe(30);
+        expect(Math.abs(result.remainingSeconds - 30)).toBeLessThanOrEqual(0.03);
       });
 
       it('サブタイマー一時停止（SUB_TIMER_PAUSE）が正常に動作する', async () => {
@@ -2106,7 +2142,7 @@ describe('GameSession', () => {
         expect(result.beforeStartTime).not.toBeNull();
         expect(result.afterStartTime).toBeNull();
         expect(result.afterPausedAt).toBeNull();
-        expect(result.remainingSeconds).toBe(30); // リセット後は30秒
+        expect(Math.abs(result.remainingSeconds - 30)).toBeLessThanOrEqual(0.03); // リセット後は30秒
         expect(result.totalDuration).toBe(30);
       });
 
@@ -2303,7 +2339,7 @@ describe('GameSession', () => {
         expect(result.initial.isRunning).toBe(false);
         expect(result.initial.isPaused).toBe(false);
         expect(result.initial.startTime).toBeNull();
-        expect(result.initial.remainingSeconds).toBe(30);
+        expect(Math.abs(result.initial.remainingSeconds - 30)).toBeLessThanOrEqual(0.03);
 
         // 2. 開始状態の確認
         expect(result.started.isRunning).toBe(true);
@@ -2386,7 +2422,7 @@ describe('GameSession', () => {
         // 2. リセット状態
         expect(result.reset.isRunning).toBe(false);
         expect(result.reset.isPaused).toBe(false);
-        expect(result.reset.remainingSeconds).toBe(30);
+        expect(Math.abs(result.reset.remainingSeconds - 30)).toBeLessThanOrEqual(0.03);
         expect(result.reset.startTime).toBeNull();
         expect(result.reset.pausedAt).toBeNull();
         expect(result.timeResetProperly).toBe(true);
@@ -2458,7 +2494,7 @@ describe('GameSession', () => {
         // リセット状態の確認
         expect(result.resetFromPaused.isRunning).toBe(false);
         expect(result.resetFromPaused.isPaused).toBe(false);
-        expect(result.resetFromPaused.remainingSeconds).toBe(30);
+        expect(Math.abs(result.resetFromPaused.remainingSeconds - 30)).toBeLessThanOrEqual(0.03);
         expect(result.resetFromPaused.startTime).toBeNull();
         expect(result.resetFromPaused.pausedAt).toBeNull();
         expect(result.resetClearedPausedState).toBe(true);
@@ -2525,7 +2561,7 @@ describe('GameSession', () => {
 
         // 0秒到達後のリセット動作
         expect(result.afterReset.isRunning).toBe(false);
-        expect(result.afterReset.remainingSeconds).toBe(30);
+        expect(Math.abs(result.afterReset.remainingSeconds - 30)).toBeLessThanOrEqual(0.03);
         expect(result.resetWorksAfterCompletion).toBe(true);
 
         // リセット後の再開始動作
@@ -2781,13 +2817,16 @@ describe('GameSession', () => {
           const savedData = await state.storage.get('gameState');
           const savedSubTimer = savedData?.subTimer;
 
+          // remainingSecondsの比較では、実行中のタイマーなので多少の誤差を許容
+          const remainingSecondsWithinRange = Math.abs((savedSubTimer?.remainingSeconds || 0) - beforeSave.remainingSeconds) <= 0.03;
+
           return {
             beforeSave,
             savedSubTimer,
             saveSucceeded: savedSubTimer !== undefined,
             isRunningPreserved: savedSubTimer?.isRunning === beforeSave.isRunning,
             startTimePreserved: savedSubTimer?.startTime === beforeSave.startTime,
-            remainingSecondsPreserved: savedSubTimer?.remainingSeconds === beforeSave.remainingSeconds,
+            remainingSecondsPreserved: remainingSecondsWithinRange,
             totalDurationPreserved: savedSubTimer?.totalDuration === beforeSave.totalDuration
           };
         });

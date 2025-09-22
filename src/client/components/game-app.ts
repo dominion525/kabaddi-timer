@@ -24,6 +24,7 @@ function gameApp(gameId: string) {
     TIMER_PAUSE: { type: 'TIMER_PAUSE' },
     TIMER_RESET: { type: 'TIMER_RESET' },
     RESET_SCORES: { type: 'RESET_SCORES' },
+    RESET_TEAM_SCORE: 'RESET_TEAM_SCORE',
     DO_OR_DIE_RESET: { type: 'DO_OR_DIE_RESET' }
   };
 
@@ -248,6 +249,13 @@ function gameApp(gameId: string) {
 
     resetScores() {
       this.sendAction(ACTIONS.RESET_SCORES);
+    },
+
+    resetTeamScore(team: 'teamA' | 'teamB') {
+      this.sendAction({
+        type: ACTIONS.RESET_TEAM_SCORE,
+        team: team
+      });
     },
 
     courtChange() {

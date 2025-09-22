@@ -283,6 +283,14 @@ export class GameSession {
         this.gameState.teamA.score = 0;
         this.gameState.teamB.score = 0;
         break;
+
+      case 'RESET_TEAM_SCORE':
+        if (action.team === 'teamA') {
+          this.gameState.teamA.score = 0;
+        } else if (action.team === 'teamB') {
+          this.gameState.teamB.score = 0;
+        }
+        break;
     }
   }
 

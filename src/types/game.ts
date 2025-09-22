@@ -34,6 +34,7 @@ export interface GameState {
 export type GameAction =
   | { type: 'SCORE_UPDATE'; team: 'teamA' | 'teamB'; points: number }
   | { type: 'RESET_SCORES' }
+  | { type: 'RESET_TEAM_SCORE'; team: 'teamA' | 'teamB' }
   | { type: 'SET_TEAM_NAME'; team: 'teamA' | 'teamB'; name: string }
   | { type: 'TIMER_START' }
   | { type: 'TIMER_PAUSE' }

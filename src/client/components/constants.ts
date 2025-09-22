@@ -56,6 +56,7 @@
     // スコア操作
     SCORE_UPDATE: 'SCORE_UPDATE',
     RESET_SCORES: { type: 'RESET_SCORES' },
+    RESET_TEAM_SCORE: 'RESET_TEAM_SCORE',
 
     // Do or Die 操作
     DO_OR_DIE_UPDATE: 'DO_OR_DIE_UPDATE',
@@ -70,7 +71,7 @@
 
     // 同期操作
     TIME_SYNC_REQUEST: 'TIME_SYNC_REQUEST'
-  };
+  };;
 
   /**
    * WebSocket接続状態の定数
