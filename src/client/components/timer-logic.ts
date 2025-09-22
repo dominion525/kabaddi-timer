@@ -62,8 +62,10 @@
    * @returns {string} MM:SS形式の文字列
    */
   function formatTimer(seconds: number): string {
-    const minutes = Math.floor(seconds / 60);
-    const remainingSeconds = seconds % 60;
+    // 負の値は0として扱う
+    const positiveSeconds = Math.max(0, seconds);
+    const minutes = Math.floor(positiveSeconds / 60);
+    const remainingSeconds = positiveSeconds % 60;
     return minutes.toString().padStart(2, '0') + ':' + remainingSeconds.toString().padStart(2, '0');
   }
 
@@ -76,23 +78,12 @@
     return seconds.toString().padStart(2, '0');
   }
 
-  /**
-   * Do or Die インジケーター配列を生成
-   * @param {number} count - 現在のカウント
-   * @param {number} max - 最大値（デフォルト3）
-   * @returns {boolean[]} インジケーター状態の配列
-   */
-  function generateDoOrDieIndicators(count: number, max: number = 3): boolean[] {
-    return Array(max).fill(0).map((_, i) => i < (count || 0));
-  }
-
   // グローバル名前空間に公開
   global.TimerLogic = {
     calculateRemainingSeconds,
     calculateSubTimerRemainingSeconds,
     formatTimer,
-    formatSubTimer,
-    generateDoOrDieIndicators
+    formatSubTimer
   };
 
 })(window);
