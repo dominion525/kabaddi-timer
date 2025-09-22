@@ -30,6 +30,9 @@ window.gameApp = function(gameId, apis = BrowserAPIs) {
   // UI状態管理の初期化
   const uiState = createUIState(apis);
 
+  // 入力フィールド管理の初期化
+  const inputFields = createInputFields(apis, DEFAULT_VALUES);
+
   return {
     gameState: {
       teamA: { name: DEFAULT_VALUES.teamNames.teamA, score: DEFAULT_VALUES.score, doOrDieCount: DEFAULT_VALUES.doOrDieCount },
@@ -57,10 +60,6 @@ window.gameApp = function(gameId, apis = BrowserAPIs) {
     timeSyncIntervalId: null,
     reconnectTimeoutId: null,
     lastSyncRequest: 0,
-    timerInputMinutes: DEFAULT_VALUES.timer.presetMinutes.short,
-    timerInputSeconds: 0,
-    teamANameInput: DEFAULT_VALUES.teamNames.teamA,
-    teamBNameInput: DEFAULT_VALUES.teamNames.teamB,
 
     init() {
       // UI状態管理の初期化
@@ -121,17 +120,12 @@ window.gameApp = function(gameId, apis = BrowserAPIs) {
             apis.console.log('Received game state:', message.data);
             this.gameState = message.data;
 
-            // ローカルのチーム名入力をサーバーの値で同期
-            this.teamANameInput = this.gameState.teamA.name;
-            this.teamBNameInput = this.gameState.teamB.name;
+            // 入力フィールドをサーバー状態と同期
+            inputFields.syncWithGameState(this.gameState);
 
             // タイマーが停止している場合、直接値を更新
             if (this.gameState.timer && !this.gameState.timer.isRunning) {
               this.timerSeconds = Math.floor(this.gameState.timer.remainingSeconds);
-
-              // タイマー入力値も同期
-              this.timerInputMinutes = Math.floor(this.gameState.timer.remainingSeconds / 60);
-              this.timerInputSeconds = this.gameState.timer.remainingSeconds % 60;
 
               apis.console.log('Timer updated to:', this.timerSeconds, 'seconds');
             }
@@ -272,6 +266,23 @@ window.gameApp = function(gameId, apis = BrowserAPIs) {
       return uiState.get('isDesktop');
     },
 
+    // 入力フィールドのgetters
+    get timerInputMinutes() {
+      return inputFields.get('timerInputMinutes');
+    },
+
+    get timerInputSeconds() {
+      return inputFields.get('timerInputSeconds');
+    },
+
+    get teamANameInput() {
+      return inputFields.get('teamANameInput');
+    },
+
+    get teamBNameInput() {
+      return inputFields.get('teamBNameInput');
+    },
+
     get formattedTimer() {
       // 純粋関数を使用してフォーマット
       return TimerLogic.formatTimer(this.timerSeconds);
@@ -307,10 +318,11 @@ window.gameApp = function(gameId, apis = BrowserAPIs) {
     },
 
     setTimerPreset(presetKey) {
-      const minutes = DEFAULT_VALUES.timer.presetMinutes[presetKey];
-      this.timerInputMinutes = minutes;
-      this.timerInputSeconds = 0;
-      this.setTimer(minutes, 0);
+      const result = inputFields.setTimerPreset(presetKey);
+      if (result.success) {
+        this.setTimer(result.minutes, 0);
+      }
+      return result;
     },
 
     resetTimer() {
