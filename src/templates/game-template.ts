@@ -1,14 +1,6 @@
-import { readFileSync } from 'fs';
-import { join } from 'path';
-
-let cachedTemplate: string | null = null;
+import gameHTML from './game.html';
 
 export function gameTemplate(gameId: string, env?: any): string {
-  if (!cachedTemplate) {
-    const templatePath = join(process.cwd(), 'src', 'templates', 'game.html');
-    cachedTemplate = readFileSync(templatePath, 'utf-8');
-  }
-
   // 環境変数によるJavaScript読み込み切り替え
   const isProd = env?.NODE_ENV === 'production' || env?.ENVIRONMENT === 'production';
 
@@ -30,7 +22,7 @@ export function gameTemplate(gameId: string, env?: any): string {
   <script src="/js/game-app.js"></script>`;
   }
 
-  return cachedTemplate
+  return gameHTML
     .replace(/{{gameId}}/g, gameId)
     .replace('{{JS_INCLUDES}}', jsIncludes);
 }
