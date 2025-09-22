@@ -1,5 +1,5 @@
 import { Hono } from 'hono';
-import { GameSession } from './durable-objects/game-session';
+import { GameSession } from './durable-objects';
 import { Env } from './types/game';
 import websocketRouter from './routes/websocket';
 import gameRouter from './routes/game';
