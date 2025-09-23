@@ -1,4 +1,4 @@
-import gameHTML from './game.html';
+import { buildGameTemplate } from './build-template';
 
 // リビジョン情報を取得する関数
 function getRevision(): string {
@@ -35,6 +35,9 @@ export function gameTemplate(gameId: string, env?: any): string {
 
   // リビジョン情報を取得
   const revision = getRevision();
+
+  // 分離されたパーツから動的にテンプレートを構築
+  const gameHTML = buildGameTemplate();
 
   return gameHTML
     .replace(/{{gameId}}/g, gameId)

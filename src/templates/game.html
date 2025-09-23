@@ -447,7 +447,6 @@
         </div>
       </div>
     </div>
-
     <!-- スマホ表示用 (md未満) -->
     <div class="md:hidden min-h-screen flex flex-col bg-gray-900 touch-manipulation">
       <!-- ヘッダー -->
@@ -1057,7 +1056,6 @@
         </div>
       </div>
     </div>
-
     <!-- ゲーム共有モーダル -->
     <div x-show="showQRModal" @click.self="closeQRModal()" @keydown.escape.window="closeQRModal()" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" x-cloak>
       <div class="bg-white rounded-lg p-6 m-4 max-w-md w-full">
@@ -1305,10 +1303,8 @@
       </div>
     </div>
   </div>
-
   <!-- Cloudflare Workers標準の外部スクリプト読み込み（依存関係順） -->
   {{JS_INCLUDES}}
-
 
 </body>
 </html>
