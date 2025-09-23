@@ -61,6 +61,11 @@ function gameApp(gameId: string) {
     subTimerSeconds: 30,
     subTimerRunning: false,
     serverTimeOffset: 0,
+    // 時刻同期状態管理
+    timeSyncStatus: 'unknown' as 'good' | 'warning' | 'error' | 'unknown',
+    lastRTT: 0,
+    lastSyncTime: null as Date | null,
+    showTimeSyncModal: false,
     timerAnimationId: null as number | null,
     timeSyncIntervalId: null as number | null,
     reconnectTimeoutId: null as number | null,
@@ -192,7 +197,13 @@ function gameApp(gameId: string) {
             const rtt = message.data.clientRequestTime ?
               (clientTime - message.data.clientRequestTime) : 0;
             this.serverTimeOffset = serverTime - clientTime + (rtt / 2);
-            console.log('Time sync: offset =', this.serverTimeOffset, 'ms, RTT =', rtt, 'ms');
+
+            // 時刻同期状態を更新
+            this.lastRTT = rtt;
+            this.lastSyncTime = new Date();
+            this.updateTimeSyncStatus();
+
+            console.log('Time sync: offset =', this.serverTimeOffset, 'ms, RTT =', rtt, 'ms, status =', this.timeSyncStatus);
           }
 
           else if (message.type === 'error') {
@@ -432,6 +443,41 @@ function gameApp(gameId: string) {
       if (this.timerAnimationId) {
         cancelAnimationFrame(this.timerAnimationId);
         this.timerAnimationId = null;
+      }
+    },
+
+    // 時刻同期状態を判定・更新
+    updateTimeSyncStatus() {
+      const absOffset = Math.abs(this.serverTimeOffset);
+      const rtt = this.lastRTT;
+
+      // 判定基準
+      if (rtt > 1000 || absOffset > 3000) {
+        this.timeSyncStatus = 'error';
+      } else if (rtt > 500 || absOffset > 1000) {
+        this.timeSyncStatus = 'warning';
+      } else {
+        this.timeSyncStatus = 'good';
+      }
+    },
+
+    // 時刻同期モーダルを開く
+    openTimeSyncModal() {
+      this.showTimeSyncModal = true;
+    },
+
+    // 時刻同期モーダルを閉じる
+    closeTimeSyncModal() {
+      this.showTimeSyncModal = false;
+    },
+
+    // 手動で時刻同期を要求
+    requestTimeSync() {
+      if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+        this.sendAction({
+          type: 'TIME_SYNC_REQUEST',
+          clientRequestTime: Date.now()
+        });
       }
     },
 

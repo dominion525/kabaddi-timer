@@ -131,8 +131,11 @@
       <!-- 接続状態とコントロールボタン -->
       <div x-show="showStatusBar" class="bg-gray-800 text-white p-2 flex justify-between items-center fixed bottom-0 left-0 right-0 z-50">
         <div class="flex items-center space-x-4">
-          <div>
-            <span x-show="connected" class="text-green-400">● 接続中</span>
+          <div @click="connected ? openTimeSyncModal() : null" :class="connected ? 'cursor-pointer hover:bg-gray-700 px-2 py-1 rounded transition-colors' : ''">
+            <span x-show="connected && timeSyncStatus === 'good'" class="text-green-400">● 接続中</span>
+            <span x-show="connected && timeSyncStatus === 'warning'" class="text-yellow-400">● 接続中 (同期注意)</span>
+            <span x-show="connected && timeSyncStatus === 'error'" class="text-orange-400">● 接続中 (同期問題)</span>
+            <span x-show="connected && timeSyncStatus === 'unknown'" class="text-blue-400">● 接続中 (同期中...)</span>
             <span x-show="!connected" class="text-red-400">● 切断</span>
           </div>
           <div class="flex items-center space-x-2 text-gray-300">
@@ -522,8 +525,11 @@
       <!-- 接続状態とコントロールボタン -->
       <div x-show="showStatusBar" class="bg-gray-800 text-white p-3 flex justify-between items-center fixed bottom-0 left-0 right-0 z-50">
         <div class="flex items-center space-x-3">
-          <div>
-            <span x-show="connected" class="text-green-400">● 接続中</span>
+          <div @click="connected ? openTimeSyncModal() : null" :class="connected ? 'cursor-pointer hover:bg-gray-700 px-2 py-1 rounded transition-colors' : ''">
+            <span x-show="connected && timeSyncStatus === 'good'" class="text-green-400">● 接続中</span>
+            <span x-show="connected && timeSyncStatus === 'warning'" class="text-yellow-400">● 接続中 (同期注意)</span>
+            <span x-show="connected && timeSyncStatus === 'error'" class="text-orange-400">● 接続中 (同期問題)</span>
+            <span x-show="connected && timeSyncStatus === 'unknown'" class="text-blue-400">● 接続中 (同期中...)</span>
             <span x-show="!connected" class="text-red-400">● 切断</span>
           </div>
           <div class="flex items-center space-x-1.5 text-gray-300 text-xs">
@@ -1200,6 +1206,117 @@
     </div>
   </div>
 
+  <!-- 時刻同期詳細モーダル -->
+  <div x-show="showTimeSyncModal" @click.self="closeTimeSyncModal()" @keydown.escape.window="closeTimeSyncModal()" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" x-cloak>
+    <div class="bg-white rounded-lg p-6 m-4 max-w-md w-full">
+      <div class="flex items-center justify-between mb-4">
+        <h3 class="text-lg font-bold text-gray-800 flex items-center gap-2">
+          <i data-lucide="clock" class="w-5 h-5"></i>
+          <span>時刻同期状態</span>
+        </h3>
+        <button @click="closeTimeSyncModal()" class="text-gray-500 hover:text-gray-700">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <div class="space-y-4">
+        <!-- 状態インジケーター -->
+        <div class="flex items-center gap-3 p-3 rounded-lg" :class="{
+          'bg-green-50 border border-green-200': timeSyncStatus === 'good',
+          'bg-yellow-50 border border-yellow-200': timeSyncStatus === 'warning',
+          'bg-red-50 border border-red-200': timeSyncStatus === 'error',
+          'bg-blue-50 border border-blue-200': timeSyncStatus === 'unknown'
+        }">
+          <div class="text-2xl">
+            <span x-show="timeSyncStatus === 'good'">✅</span>
+            <span x-show="timeSyncStatus === 'warning'">⚠️</span>
+            <span x-show="timeSyncStatus === 'error'">❌</span>
+            <span x-show="timeSyncStatus === 'unknown'">🔄</span>
+          </div>
+          <div>
+            <div class="font-medium" :class="{
+              'text-green-800': timeSyncStatus === 'good',
+              'text-yellow-800': timeSyncStatus === 'warning',
+              'text-red-800': timeSyncStatus === 'error',
+              'text-blue-800': timeSyncStatus === 'unknown'
+            }">
+              <span x-show="timeSyncStatus === 'good'">同期良好</span>
+              <span x-show="timeSyncStatus === 'warning'">同期注意</span>
+              <span x-show="timeSyncStatus === 'error'">同期問題</span>
+              <span x-show="timeSyncStatus === 'unknown'">同期確認中...</span>
+            </div>
+            <div class="text-sm" :class="{
+              'text-green-600': timeSyncStatus === 'good',
+              'text-yellow-600': timeSyncStatus === 'warning',
+              'text-red-600': timeSyncStatus === 'error',
+              'text-blue-600': timeSyncStatus === 'unknown'
+            }">
+              <span x-show="timeSyncStatus === 'good'">タイマーは正確に動作しています</span>
+              <span x-show="timeSyncStatus === 'warning'">ネットワーク遅延が検出されています</span>
+              <span x-show="timeSyncStatus === 'error'">大きな時刻ずれが発生しています</span>
+              <span x-show="timeSyncStatus === 'unknown'">サーバーとの同期を確認中です</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 詳細情報 -->
+        <div class="grid grid-cols-2 gap-2 text-sm">
+          <div class="flex justify-between items-center p-2 bg-gray-50 rounded">
+            <span class="text-gray-600 text-xs">時刻差:</span>
+            <span class="font-mono font-medium text-xs" x-text="serverTimeOffset + 'ms'"></span>
+          </div>
+          <div class="flex justify-between items-center p-2 bg-gray-50 rounded">
+            <span class="text-gray-600 text-xs">RTT:</span>
+            <span class="font-mono font-medium text-xs" x-text="lastRTT + 'ms'"></span>
+          </div>
+          <div class="flex justify-between items-center p-2 bg-gray-50 rounded">
+            <span class="text-gray-600 text-xs">クライアント:</span>
+            <span class="font-mono font-medium text-xs" x-text="new Date().toLocaleTimeString() + '.' + String(new Date().getMilliseconds()).padStart(3, '0')"></span>
+          </div>
+          <div class="flex justify-between items-center p-2 bg-gray-50 rounded">
+            <span class="text-gray-600 text-xs">サーバー:</span>
+            <span class="font-mono font-medium text-xs" x-text="new Date(Date.now() + serverTimeOffset).toLocaleTimeString() + '.' + String(new Date(Date.now() + serverTimeOffset).getMilliseconds()).padStart(3, '0')"></span>
+          </div>
+        </div>
+
+        <!-- 最終同期時刻 -->
+        <div class="flex justify-center items-center p-2 bg-gray-50 rounded text-sm">
+          <span class="text-gray-600 mr-2">最終同期:</span>
+          <span class="font-mono font-medium text-xs" x-text="lastSyncTime ? lastSyncTime.toLocaleTimeString() : '未同期'"></span>
+        </div>
+
+        <!-- 警告メッセージ -->
+        <div x-show="timeSyncStatus === 'warning'" class="p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+          <div class="flex items-start gap-2">
+            <span class="text-yellow-600 mt-0.5">⚠️</span>
+            <div class="text-sm text-yellow-800">
+              <p class="font-medium mb-1">ネットワーク遅延が検出されています</p>
+              <p>タイマーに若干のずれが生じる可能性があります。重要な試合では手動同期をお試しください。</p>
+            </div>
+          </div>
+        </div>
+
+        <div x-show="timeSyncStatus === 'error'" class="p-3 bg-red-50 border border-red-200 rounded-lg">
+          <div class="flex items-start gap-2">
+            <span class="text-red-600 mt-0.5">❌</span>
+            <div class="text-sm text-red-800">
+              <p class="font-medium mb-1">大きな時刻ずれが発生しています</p>
+              <p>タイマーの精度に問題が生じています。手動同期を実行するか、ネットワーク環境をご確認ください。</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- アクションボタン -->
+        <div class="pt-2">
+          <button @click="requestTimeSync()"
+                  class="w-full bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition-colors flex items-center justify-center gap-2">
+            <i data-lucide="refresh-cw" class="w-4 h-4"></i>
+            <span>今すぐ同期</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
 
   <!-- Cloudflare Workers標準の外部スクリプト読み込み（依存関係順） -->
   {{JS_INCLUDES}}
