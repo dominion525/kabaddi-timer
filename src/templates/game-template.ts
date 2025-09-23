@@ -1,4 +1,9 @@
-import { buildGameTemplate } from './build-template';
+// HTMLパーツを静的インポート
+import headContent from './partials/head.html';
+import desktopContent from './partials/desktop.html';
+import mobileContent from './partials/mobile.html';
+import modalsContent from './partials/modals.html';
+import scriptsContent from './partials/scripts.html';
 
 // リビジョン情報を取得する関数
 function getRevision(): string {
@@ -9,6 +14,21 @@ function getRevision(): string {
     // ファイルが存在しない場合はunknownを返す
     return 'unknown';
   }
+}
+
+/**
+ * HTMLテンプレートの各パーツを結合する
+ */
+function buildGameTemplate(): string {
+  const combinedHtml = [
+    headContent,
+    desktopContent,
+    mobileContent,
+    modalsContent,
+    scriptsContent
+  ].join('\n');
+
+  return combinedHtml;
 }
 
 export function gameTemplate(gameId: string, env?: any): string {
