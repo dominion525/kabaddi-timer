@@ -27,6 +27,7 @@ export interface GameState {
   teamB: TeamState;
   timer: TimerState;
   subTimer?: SubTimerState;
+  leftSideTeam: 'teamA' | 'teamB';  // どちらのチームが左側にいるかを明示
   serverTime: number;
   lastUpdated: number;
 }
