@@ -163,7 +163,7 @@
      */
     function sendTimeSync() {
       sendAction({
-        type: 'TIME_SYNC_REQUEST',
+        type: constants.ACTIONS.TIME_SYNC_REQUEST,
         clientRequestTime: apis.timer.now()
       });
     }

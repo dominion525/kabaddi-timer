@@ -201,7 +201,25 @@
    */
   const STORAGE_KEYS = {
     simpleMode: 'kabaddi-timer-simple-mode',
+    scrollLock: 'kabaddi-timer-scroll-lock',
+    displayFlippedPrefix: 'kabaddi-timer-display-flipped-',
     gameSettings: 'kabaddi-timer-game-settings'
+  };
+
+  /**
+   * DOM要素IDの定数
+   * 画面要素のID名を一元管理
+   */
+  const UI_ELEMENTS = {
+    // QRモーダル関連
+    qrModal: 'qrModal',
+    qrCanvas: 'qrCanvas',
+    modalGameId: 'modalGameId',
+    urlDisplay: 'urlDisplay',
+
+    // ホーム画面関連
+    timerIdInput: 'timerIdInput',
+    techModal: 'techModal'
   };
 
   /**
@@ -282,6 +300,7 @@
     MESSAGE_TYPES,
     VALIDATION_CONSTRAINTS,
     UI_CONSTANTS,
+    UI_ELEMENTS,
     STORAGE_KEYS,
 
     // ユーティリティ関数

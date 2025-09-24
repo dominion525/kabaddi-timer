@@ -2,11 +2,12 @@ export const qrModalScript = `
 // QRモーダル関連の関数群
 
 window.openQRModal = function() {
+  const constants = window.Constants;
   const gameUrl = window.location.href;
-  const modal = document.getElementById('qrModal');
-  const canvas = document.getElementById('qrCanvas');
-  const gameIdElement = document.getElementById('modalGameId');
-  const urlDisplay = document.getElementById('urlDisplay');
+  const modal = document.getElementById(constants.UI_ELEMENTS.qrModal);
+  const canvas = document.getElementById(constants.UI_ELEMENTS.qrCanvas);
+  const gameIdElement = document.getElementById(constants.UI_ELEMENTS.modalGameId);
+  const urlDisplay = document.getElementById(constants.UI_ELEMENTS.urlDisplay);
 
   // ゲームIDを表示
   const gameId = window.location.pathname.split('/').pop();
@@ -59,7 +60,8 @@ function showQRFallback(canvas) {
 }
 
 window.closeQRModal = function() {
-  document.getElementById('qrModal').classList.add('hidden');
+  const constants = window.Constants;
+  document.getElementById(constants.UI_ELEMENTS.qrModal).classList.add('hidden');
 };
 
 window.copyGameId = function() {
@@ -99,7 +101,8 @@ window.copyGameURL = function() {
 // ESCキーでモーダルを閉じる
 document.addEventListener('keydown', function(e) {
   if (e.key === 'Escape') {
-    const modal = document.getElementById('qrModal');
+    const constants = window.Constants;
+    const modal = document.getElementById(constants.UI_ELEMENTS.qrModal);
     if (modal && !modal.classList.contains('hidden')) {
       modal.classList.add('hidden');
     }
@@ -108,7 +111,8 @@ document.addEventListener('keydown', function(e) {
 
 // QRモーダル背景クリックで閉じる
 document.addEventListener('DOMContentLoaded', function() {
-  const modal = document.getElementById('qrModal');
+  const constants = window.Constants;
+  const modal = document.getElementById(constants.UI_ELEMENTS.qrModal);
   if (modal) {
     modal.addEventListener('click', function(e) {
       if (e.target === modal) {

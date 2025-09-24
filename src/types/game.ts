@@ -51,6 +51,13 @@ export type GameAction =
   | { type: 'COURT_CHANGE' }
   | { type: 'RESET_ALL' };
 
+export const MESSAGE_TYPES = {
+  GAME_STATE: 'game_state',
+  ACTION: 'action',
+  ERROR: 'error',
+  TIME_SYNC: 'time_sync'
+} as const;
+
 export interface GameMessage {
   type: 'game_state' | 'action' | 'error' | 'time_sync';
   data: GameState | GameAction | string | TimeSyncData;

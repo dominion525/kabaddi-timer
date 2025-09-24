@@ -31,7 +31,8 @@ function createNewTimer() {
 
 // 既存タイマーに移動
 function goToTimer() {
-  const input = document.getElementById('timerIdInput');
+  const constants = window.Constants;
+  const input = document.getElementById(constants.UI_ELEMENTS.timerIdInput);
   const timerId = input.value.trim();
 
   if (!timerId) {
@@ -65,7 +66,8 @@ function goToTimer() {
 
 // Enterキーでタイマーへ移動
 document.addEventListener('DOMContentLoaded', function() {
-  const input = document.getElementById('timerIdInput');
+  const constants = window.Constants;
+  const input = document.getElementById(constants.UI_ELEMENTS.timerIdInput);
   if (input) {
     input.addEventListener('keypress', function(e) {
       if (e.key === 'Enter') {

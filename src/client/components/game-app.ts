@@ -1,33 +1,5 @@
 // ゲームアプリケーションのメイン関数
 function gameApp(gameId: string) {
-  // デフォルト値の一元管理（Single Source of Truth）
-  const DEFAULT_VALUES = {
-    teamNames: {
-      teamA: 'チームA',
-      teamB: 'チームB'
-    },
-    timer: {
-      defaultDuration: 900, // 15分
-      presetMinutes: {
-        short: 3,
-        medium: 15,
-        long: 20
-      }
-    },
-    score: 0,
-    doOrDieCount: 0
-  };
-
-  // アクションタイプの一元管理
-  const ACTIONS = {
-    TIMER_START: { type: 'TIMER_START' },
-    TIMER_PAUSE: { type: 'TIMER_PAUSE' },
-    TIMER_RESET: { type: 'TIMER_RESET' },
-    RESET_SCORES: { type: 'RESET_SCORES' },
-    RESET_TEAM_SCORE: 'RESET_TEAM_SCORE',
-    DO_OR_DIE_RESET: { type: 'DO_OR_DIE_RESET' }
-  };
-
   // 依存モジュールの取得
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const timerLogic = (window as any).TimerLogic;
@@ -35,6 +7,11 @@ function gameApp(gameId: string) {
   const scoreLogic = (window as any).ScoreLogic;
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const constants = (window as any).Constants;
+
+  // 定数の取得
+  const DEFAULT_VALUES = constants.DEFAULT_VALUES;
+  const ACTIONS = constants.ACTIONS;
+  const STORAGE_KEYS = constants.STORAGE_KEYS;
 
   return {
     gameState: {
@@ -90,19 +67,19 @@ function gameApp(gameId: string) {
 
     init() {
       // localStorageからsimpleModeを読み込み
-      const savedSimpleMode = localStorage.getItem('kabaddi-timer-simple-mode');
+      const savedSimpleMode = localStorage.getItem(STORAGE_KEYS.simpleMode);
       if (savedSimpleMode !== null) {
         this.simpleMode = JSON.parse(savedSimpleMode);
       }
 
       // localStorageからscrollLockEnabledを読み込み
-      const savedScrollLock = localStorage.getItem('kabaddi-timer-scroll-lock');
+      const savedScrollLock = localStorage.getItem(STORAGE_KEYS.scrollLock);
       if (savedScrollLock !== null) {
         this.scrollLockEnabled = JSON.parse(savedScrollLock);
       }
 
       // localStorageからdisplayFlippedを読み込み
-      const savedDisplayFlipped = localStorage.getItem(`kabaddi-timer-display-flipped-${this.gameId}`);
+      const savedDisplayFlipped = localStorage.getItem(STORAGE_KEYS.displayFlippedPrefix + this.gameId);
       if (savedDisplayFlipped !== null) {
         this.displayFlipped = JSON.parse(savedDisplayFlipped);
       }
@@ -344,12 +321,12 @@ function gameApp(gameId: string) {
 
     toggleSimpleMode() {
       this.simpleMode = !this.simpleMode;
-      localStorage.setItem('kabaddi-timer-simple-mode', JSON.stringify(this.simpleMode));
+      localStorage.setItem(STORAGE_KEYS.simpleMode, JSON.stringify(this.simpleMode));
     },
 
     toggleScrollLock() {
       this.scrollLockEnabled = !this.scrollLockEnabled;
-      localStorage.setItem('kabaddi-timer-scroll-lock', JSON.stringify(this.scrollLockEnabled));
+      localStorage.setItem(STORAGE_KEYS.scrollLock, JSON.stringify(this.scrollLockEnabled));
     },
 
     get formattedTimer() {
@@ -586,7 +563,7 @@ function gameApp(gameId: string) {
      */
     toggleDisplayFlip() {
       this.displayFlipped = !this.displayFlipped;
-      localStorage.setItem(`kabaddi-timer-display-flipped-${this.gameId}`, String(this.displayFlipped));
+      localStorage.setItem(STORAGE_KEYS.displayFlippedPrefix + this.gameId, String(this.displayFlipped));
     },
 
     /**

@@ -1,4 +1,4 @@
-import { GameState, GameAction, GameMessage, WebSocketMessage, TimeSyncData } from '../types/game';
+import { GameState, GameAction, GameMessage, WebSocketMessage, TimeSyncData, MESSAGE_TYPES } from '../types/game';
 
 export class GameSession {
   private state: DurableObjectState;
@@ -66,14 +66,14 @@ export class GameSession {
 
     // ゲーム状態を送信（gameStateは常に利用可能）
     this.sendToClient(webSocket, {
-      type: 'game_state',
+      type: MESSAGE_TYPES.GAME_STATE,
       data: this.gameState,
       timestamp: Date.now()
     });
 
     // 初期時刻同期を送信
     this.sendToClient(webSocket, {
-      type: 'time_sync',
+      type: MESSAGE_TYPES.TIME_SYNC,
       data: { serverTime: Date.now() },
       timestamp: Date.now()
     });
@@ -99,7 +99,7 @@ export class GameSession {
         console.error('Message processing error:', error);
         console.error('Raw data:', event.data);
         this.sendToClient(webSocket, {
-          type: 'error',
+          type: MESSAGE_TYPES.ERROR,
           data: `Invalid message format: ${error instanceof Error ? error.message : String(error)}`,
           timestamp: Date.now()
         });
@@ -387,7 +387,7 @@ export class GameSession {
       };
 
       const syncMessage: GameMessage = {
-        type: 'time_sync',
+        type: MESSAGE_TYPES.TIME_SYNC,
         data: syncData,
         timestamp: Date.now()
       };
@@ -440,7 +440,7 @@ export class GameSession {
     this.gameState.serverTime = Date.now();
 
     const message: GameMessage = {
-      type: 'game_state',
+      type: MESSAGE_TYPES.GAME_STATE,
       data: this.gameState,
       timestamp: Date.now()
     };
@@ -671,7 +671,7 @@ export class GameSession {
     };
 
     const message: GameMessage = {
-      type: 'time_sync',
+      type: MESSAGE_TYPES.TIME_SYNC,
       data: syncData,
       timestamp: Date.now()
     };
