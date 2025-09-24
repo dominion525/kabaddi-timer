@@ -18,13 +18,13 @@
     if (timer.isRunning && timer.startTime) {
       const serverNow = Date.now() - serverTimeOffset;
       const elapsed = (serverNow - timer.startTime) / 1000;
-      const remainingSeconds = Math.max(0, Math.floor(timer.totalDuration - elapsed));
+      const remainingSeconds = Math.max(0, Math.ceil(timer.totalDuration - elapsed));
       // タイマーが0になったら停止状態として扱う
       const isRunning = remainingSeconds > 0;
       return { seconds: remainingSeconds, isRunning };
     } else {
       return {
-        seconds: Math.floor(timer.remainingSeconds),
+        seconds: Math.ceil(timer.remainingSeconds),
         isRunning: timer.isRunning
       };
     }
@@ -44,13 +44,13 @@
     if (subTimer.isRunning && subTimer.startTime) {
       const serverNow = Date.now() - serverTimeOffset;
       const elapsed = (serverNow - subTimer.startTime) / 1000;
-      const remainingSeconds = Math.max(0, Math.floor(subTimer.totalDuration - elapsed));
+      const remainingSeconds = Math.max(0, Math.ceil(subTimer.totalDuration - elapsed));
       // サブタイマーが0になったら停止状態として扱う
       const isRunning = remainingSeconds > 0;
       return { seconds: remainingSeconds, isRunning };
     } else {
       return {
-        seconds: Math.floor(subTimer.remainingSeconds),
+        seconds: Math.ceil(subTimer.remainingSeconds),
         isRunning: subTimer.isRunning
       };
     }

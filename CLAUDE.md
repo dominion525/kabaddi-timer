@@ -51,6 +51,10 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - サーバーサイドで開始時刻を管理し、クライアントで経過時間を計算
 - 60秒ごとの自動時刻同期でドリフト防止
 - WebSocket接続断・再接続時の状態復元
+- **タイマー表示計算**: `Math.ceil()`を使用して自然なカウントダウン表示を実現
+  - 開始時に設定時間を維持（60秒タイマーなら「60」を表示）
+  - 0.1秒残っていても「1」と表示（0表示を避ける）
+  - `timer-logic.ts`で実装（メインタイマー・サブタイマー両方に適用）
 
 ### Durable Objects設定
 - `wrangler.toml`でGameSessionクラスをバインディング
