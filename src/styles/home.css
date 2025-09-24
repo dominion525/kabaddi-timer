@@ -1,0 +1,51 @@
+/* ホームページ専用スタイル */
+
+/* カスタムアニメーション */
+.transition-colors {
+  transition-property: background-color, border-color, color, fill, stroke;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  transition-duration: 150ms;
+}
+
+/* ボタンホバーエフェクト */
+button:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+button:active {
+  transform: translateY(0);
+}
+
+/* カード要素のシャドウ */
+.card-shadow {
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+}
+
+.card-shadow:hover {
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+}
+
+/* レスポンシブ対応 */
+@media (max-width: 768px) {
+  .container {
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+
+  h1 {
+    font-size: 2.5rem;
+  }
+}
+
+/* モーダル用 */
+.modal-backdrop {
+  backdrop-filter: blur(4px);
+}
+
+/* フォーカススタイル */
+input:focus,
+button:focus {
+  outline: 2px solid #3b82f6;
+  outline-offset: 2px;
+}

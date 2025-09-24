@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="64" height="64" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
+  <!-- 黒い背景 -->
+  <rect width="64" height="64" rx="8" fill="#000000"/>
+
+  <!-- 左の数字 "0" (7セグメント - 太め) -->
+  <!-- 上 -->
+  <rect x="12" y="16" width="12" height="4" rx="2" fill="#FFD700"/>
+  <!-- 右上 -->
+  <rect x="22" y="19" width="4" height="10" rx="2" fill="#FFD700"/>
+  <!-- 右下 -->
+  <rect x="22" y="33" width="4" height="10" rx="2" fill="#FFD700"/>
+  <!-- 下 -->
+  <rect x="12" y="44" width="12" height="4" rx="2" fill="#FFD700"/>
+  <!-- 左下 -->
+  <rect x="10" y="33" width="4" height="10" rx="2" fill="#FFD700"/>
+  <!-- 左上 -->
+  <rect x="10" y="19" width="4" height="10" rx="2" fill="#FFD700"/>
+
+  <!-- 右の数字 "0" (7セグメント - 太め) -->
+  <!-- 上 -->
+  <rect x="36" y="16" width="12" height="4" rx="2" fill="#FFD700"/>
+  <!-- 右上 -->
+  <rect x="46" y="19" width="4" height="10" rx="2" fill="#FFD700"/>
+  <!-- 右下 -->
+  <rect x="46" y="33" width="4" height="10" rx="2" fill="#FFD700"/>
+  <!-- 下 -->
+  <rect x="36" y="44" width="12" height="4" rx="2" fill="#FFD700"/>
+  <!-- 左下 -->
+  <rect x="34" y="33" width="4" height="10" rx="2" fill="#FFD700"/>
+  <!-- 左上 -->
+  <rect x="34" y="19" width="4" height="10" rx="2" fill="#FFD700"/>
+</svg>

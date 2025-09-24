@@ -1,0 +1,55 @@
+{
+  "name": "kabaddi-timer",
+  "version": "0.0.2",
+  "description": "カバディ用のタイマー・スコアボードアプリケーション",
+  "main": "src/index.ts",
+  "scripts": {
+    "dev": "npm run build:client:dev && wrangler dev",
+    "build:client:dev": "tsc -p tsconfig.client.json",
+    "build:client:prod": "esbuild src/client/bundle.ts --bundle --minify --target=es2020 --outfile=public/js/bundle.min.js",
+    "build:client": "npm run build:client:dev",
+    "build:worker": "tsc",
+    "build": "node scripts/inject-revision.js && npm run build:client && npm run build:worker",
+    "build:prod": "node scripts/inject-revision.js && npm run build:client:prod && npm run build:worker",
+    "deploy": "npm run build:prod && NODE_ENV=production wrangler deploy --env=\"\"",
+    "typecheck": "tsc --noEmit",
+    "typecheck:client": "tsc -p tsconfig.client.json --noEmit",
+    "build:frontend": "vite build",
+    "dev:frontend": "vite dev --port 3000",
+    "test": "vitest",
+    "test:ui": "vitest --ui",
+    "test:run": "vitest run",
+    "test:client": "vitest --config vitest.client.config.ts",
+    "test:client:run": "vitest run --config vitest.client.config.ts"
+  },
+  "keywords": [
+    "kabaddi",
+    "timer",
+    "scoreboard",
+    "cloudflare",
+    "durable-objects"
+  ],
+  "author": "Satoshi",
+  "license": "MIT",
+  "devDependencies": {
+    "@cloudflare/vitest-pool-workers": "^0.9.3",
+    "@cloudflare/workers-types": "^4.20241127.0",
+    "@types/node": "^22.0.0",
+    "@vitest/ui": "^3.2.4",
+    "esbuild": "^0.25.10",
+    "jsdom": "^27.0.0",
+    "miniflare": "^4.20250917.0",
+    "tsx": "^4.20.5",
+    "typescript": "^5.6.3",
+    "vite": "^5.4.8",
+    "vitest": "^3.2.4",
+    "wrangler": "^4.38.0"
+  },
+  "dependencies": {
+    "alpinejs": "^3.14.0",
+    "autoprefixer": "^10.4.20",
+    "hono": "^4.6.0",
+    "postcss": "^8.4.47",
+    "tailwindcss": "^3.4.0"
+  }
+}
