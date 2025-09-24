@@ -32,6 +32,10 @@ src/revision.json
 *.swp
 *.swo
 
+# MCP configuration
+.mcp.json
+.serena/
+
 # OS generated files
 .DS_Store
 .DS_Store?
