@@ -37,6 +37,62 @@
   };
 
   /**
+   * チーム設定の定数
+   * チームのアイデンティティ（色、スタイル）を一元管理
+   * コートチェンジ時もチームの色は維持される
+   */
+  const TEAM_CONFIG = {
+    teamA: {
+      id: 'teamA',
+      defaultName: 'チームA',
+      color: 'red',
+      // テキスト色
+      colorClass: 'text-red-600',
+      colorClassDark: 'text-red-500',
+      // 背景色
+      bgClass: 'bg-red-600',
+      bgClassLight: 'bg-red-100',
+      bgClassDark: 'bg-red-700',
+      // ホバー状態
+      hoverBgClass: 'hover:bg-red-700',
+      hoverBgClassLight: 'hover:bg-red-200',
+      // ボーダー色
+      borderClass: 'border-red-600',
+      borderClassLight: 'border-red-300',
+      // フォーカス状態
+      focusRingClass: 'focus:ring-red-500',
+      // アクティブ状態
+      activeBgClass: 'active:bg-red-800',
+      // Do or Die非アクティブ色
+      doOrDieInactiveClass: 'bg-red-900'
+    },
+    teamB: {
+      id: 'teamB',
+      defaultName: 'チームB',
+      color: 'blue',
+      // テキスト色
+      colorClass: 'text-blue-600',
+      colorClassDark: 'text-blue-500',
+      // 背景色
+      bgClass: 'bg-blue-600',
+      bgClassLight: 'bg-blue-100',
+      bgClassDark: 'bg-blue-700',
+      // ホバー状態
+      hoverBgClass: 'hover:bg-blue-700',
+      hoverBgClassLight: 'hover:bg-blue-200',
+      // ボーダー色
+      borderClass: 'border-blue-600',
+      borderClassLight: 'border-blue-300',
+      // フォーカス状態
+      focusRingClass: 'focus:ring-blue-500',
+      // アクティブ状態
+      activeBgClass: 'active:bg-blue-800',
+      // Do or Die非アクティブ色
+      doOrDieInactiveClass: 'bg-blue-900'
+    }
+  };
+
+  /**
    * アクションタイプの定数
    * サーバーとの通信で使用するアクション種別
    */
@@ -220,6 +276,7 @@
   const Constants = {
     // 定数オブジェクト
     DEFAULT_VALUES,
+    TEAM_CONFIG,
     ACTIONS,
     WEBSOCKET_STATES,
     MESSAGE_TYPES,

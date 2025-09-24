@@ -3,30 +3,30 @@
       <!-- ヘッダー -->
       <div class="text-white">
         <div class="grid w-full" style="grid-template-columns: 2fr 1fr 2fr;">
-          <div class="bg-red-500 p-4">
-            <h1 class="text-3xl font-bold text-center" x-text="gameState.teamA.name"></h1>
+          <div class="p-4" :class="getTeamStyleClasses(getLeftTeamId()).bgColor">
+            <h1 class="text-3xl font-bold text-center" x-text="getLeftTeam().name"></h1>
           </div>
           <div class="bg-blue-600 p-4">
             <div class="text-3xl font-bold text-center">vs</div>
           </div>
-          <div class="bg-blue-500 p-4">
-            <h1 class="text-3xl font-bold text-center" x-text="gameState.teamB.name"></h1>
+          <div class="p-4" :class="getTeamStyleClasses(getRightTeamId()).bgColor">
+            <h1 class="text-3xl font-bold text-center" x-text="getRightTeam().name"></h1>
           </div>
         </div>
       </div>
 
       <!-- メインスコア表示 -->
       <div class="flex-1 grid grid-cols-3 gap-0" :class="showStatusBar ? 'pb-16' : 'pb-0'" style="grid-template-rows: 1fr 1.5fr;">
-        <!-- 上段：チームA -->
-        <div class="bg-red-500 text-white flex flex-col">
+        <!-- 上段：左側チーム -->
+        <div class="text-white flex flex-col" :class="getTeamStyleClasses(getLeftTeamId()).bgColor">
           <div class="flex-1 flex items-center justify-center py-1 px-4">
-            <div class="font-bold font-mono" style="font-size: 12rem; line-height: 1;" x-text="gameState.teamA.score"></div>
+            <div class="font-bold font-mono" style="font-size: 12rem; line-height: 1;" x-text="getLeftTeam().score"></div>
           </div>
           <!-- Do or Dieインジケーター -->
           <div class="h-8 flex space-x-2 px-4 mb-2">
-            <template x-for="(isActive, index) in teamADoOrDieIndicators" :key="index">
+            <template x-for="i in 3" :key="i">
               <div class="flex-1 transition-colors duration-200 rounded"
-                   :class="isActive ? 'bg-yellow-400' : 'bg-red-900'"></div>
+                   :class="getLeftTeam().doOrDieCount >= i ? 'bg-yellow-400' : getTeamStyleClasses(getLeftTeamId()).doOrDieInactive"></div>
             </template>
           </div>
         </div>
@@ -42,16 +42,16 @@
           </div>
         </div>
 
-        <!-- 上段：チームB -->
-        <div class="bg-blue-500 text-white flex flex-col">
+        <!-- 上段：右側チーム -->
+        <div class="text-white flex flex-col" :class="getTeamStyleClasses(getRightTeamId()).bgColor">
           <div class="flex-1 flex items-center justify-center py-1 px-4">
-            <div class="font-bold font-mono" style="font-size: 12rem; line-height: 1;" x-text="gameState.teamB.score"></div>
+            <div class="font-bold font-mono" style="font-size: 12rem; line-height: 1;" x-text="getRightTeam().score"></div>
           </div>
           <!-- Do or Dieインジケーター -->
           <div class="h-8 flex space-x-2 px-4 mb-2">
-            <template x-for="(isActive, index) in teamBDoOrDieIndicators" :key="index">
+            <template x-for="i in 3" :key="i">
               <div class="flex-1 transition-colors duration-200 rounded"
-                   :class="isActive ? 'bg-yellow-400' : 'bg-blue-900'"></div>
+                   :class="getRightTeam().doOrDieCount >= i ? 'bg-yellow-400' : getTeamStyleClasses(getRightTeamId()).doOrDieInactive"></div>
             </template>
           </div>
         </div>

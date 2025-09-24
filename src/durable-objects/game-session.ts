@@ -30,6 +30,7 @@ export class GameSession {
         pausedAt: null,
         remainingSeconds: 30
       },
+      leftSideTeam: 'teamA', // デフォルトでチームAが左側
       serverTime: Date.now(),
       lastUpdated: Date.now()
     };
@@ -180,6 +181,9 @@ export class GameSession {
     // 基本時刻情報の検証
     if (typeof state.serverTime !== 'number' || typeof state.lastUpdated !== 'number') return false;
 
+    // leftSideTeamの検証
+    if (typeof state.leftSideTeam !== 'string' || !['teamA', 'teamB'].includes(state.leftSideTeam)) return false;
+
     return true;
   }
 
@@ -213,6 +217,7 @@ export class GameSession {
         pausedAt: (state.subTimer?.pausedAt && (typeof state.subTimer.pausedAt === 'number' || state.subTimer.pausedAt === null)) ? state.subTimer.pausedAt : defaultState.subTimer!.pausedAt,
         remainingSeconds: (state.subTimer?.remainingSeconds && typeof state.subTimer.remainingSeconds === 'number' && state.subTimer.remainingSeconds >= 0) ? state.subTimer.remainingSeconds : defaultState.subTimer!.remainingSeconds
       } : defaultState.subTimer,
+      leftSideTeam: (state?.leftSideTeam && typeof state.leftSideTeam === 'string' && ['teamA', 'teamB'].includes(state.leftSideTeam)) ? state.leftSideTeam : defaultState.leftSideTeam,
       serverTime: Date.now(),
       lastUpdated: Date.now()
     };
@@ -623,19 +628,9 @@ export class GameSession {
   }
 
   private changeCourtSides(): void {
-    const tempTeam = {
-      name: this.gameState.teamA.name,
-      score: this.gameState.teamA.score,
-      doOrDieCount: this.gameState.teamA.doOrDieCount
-    };
-
-    this.gameState.teamA.name = this.gameState.teamB.name;
-    this.gameState.teamA.score = this.gameState.teamB.score;
-    this.gameState.teamA.doOrDieCount = this.gameState.teamB.doOrDieCount;
-
-    this.gameState.teamB.name = tempTeam.name;
-    this.gameState.teamB.score = tempTeam.score;
-    this.gameState.teamB.doOrDieCount = tempTeam.doOrDieCount;
+    // チームデータは変更せず、位置だけを切り替える
+    // チームのアイデンティティ（色）は維持され、位置のみが変わる
+    this.gameState.leftSideTeam = this.gameState.leftSideTeam === 'teamA' ? 'teamB' : 'teamA';
   }
 
   private resetAllGame(): void {
@@ -657,6 +652,9 @@ export class GameSession {
       this.gameState.subTimer.pausedAt = null;
       this.gameState.subTimer.remainingSeconds = this.gameState.subTimer.totalDuration;
     }
+
+    // コートポジションもデフォルトに戻す
+    this.gameState.leftSideTeam = 'teamA';
   }
 
   private setTeamName(team: 'teamA' | 'teamB', name: string): void {
