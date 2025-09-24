@@ -51,6 +51,32 @@ export type GameAction =
   | { type: 'COURT_CHANGE' }
   | { type: 'RESET_ALL' };
 
+export const MESSAGE_TYPES = {
+  GAME_STATE: 'game_state',
+  ACTION: 'action',
+  ERROR: 'error',
+  TIME_SYNC: 'time_sync'
+} as const;
+export const ACTION_TYPES = {
+  SCORE_UPDATE: 'SCORE_UPDATE',
+  RESET_SCORES: 'RESET_SCORES',
+  RESET_TEAM_SCORE: 'RESET_TEAM_SCORE',
+  SET_TEAM_NAME: 'SET_TEAM_NAME',
+  TIMER_START: 'TIMER_START',
+  TIMER_PAUSE: 'TIMER_PAUSE',
+  TIMER_RESET: 'TIMER_RESET',
+  TIMER_SET: 'TIMER_SET',
+  TIMER_ADJUST: 'TIMER_ADJUST',
+  SUB_TIMER_START: 'SUB_TIMER_START',
+  SUB_TIMER_PAUSE: 'SUB_TIMER_PAUSE',
+  SUB_TIMER_RESET: 'SUB_TIMER_RESET',
+  TIME_SYNC_REQUEST: 'TIME_SYNC_REQUEST',
+  DO_OR_DIE_UPDATE: 'DO_OR_DIE_UPDATE',
+  DO_OR_DIE_RESET: 'DO_OR_DIE_RESET',
+  COURT_CHANGE: 'COURT_CHANGE',
+  RESET_ALL: 'RESET_ALL'
+} as const;
+
 export interface GameMessage {
   type: 'game_state' | 'action' | 'error' | 'time_sync';
   data: GameState | GameAction | string | TimeSyncData;

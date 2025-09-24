@@ -1,33 +1,5 @@
 // ゲームアプリケーションのメイン関数
 function gameApp(gameId: string) {
-  // デフォルト値の一元管理（Single Source of Truth）
-  const DEFAULT_VALUES = {
-    teamNames: {
-      teamA: 'チームA',
-      teamB: 'チームB'
-    },
-    timer: {
-      defaultDuration: 900, // 15分
-      presetMinutes: {
-        short: 3,
-        medium: 15,
-        long: 20
-      }
-    },
-    score: 0,
-    doOrDieCount: 0
-  };
-
-  // アクションタイプの一元管理
-  const ACTIONS = {
-    TIMER_START: { type: 'TIMER_START' },
-    TIMER_PAUSE: { type: 'TIMER_PAUSE' },
-    TIMER_RESET: { type: 'TIMER_RESET' },
-    RESET_SCORES: { type: 'RESET_SCORES' },
-    RESET_TEAM_SCORE: 'RESET_TEAM_SCORE',
-    DO_OR_DIE_RESET: { type: 'DO_OR_DIE_RESET' }
-  };
-
   // 依存モジュールの取得
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const timerLogic = (window as any).TimerLogic;
@@ -35,6 +7,12 @@ function gameApp(gameId: string) {
   const scoreLogic = (window as any).ScoreLogic;
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const constants = (window as any).Constants;
+
+  // 定数の取得
+  const DEFAULT_VALUES = constants.DEFAULT_VALUES;
+  const ACTIONS = constants.ACTIONS;
+  const MESSAGE_TYPES = constants.MESSAGE_TYPES;
+  const STORAGE_KEYS = constants.STORAGE_KEYS;
 
   return {
     gameState: {
@@ -52,6 +30,7 @@ function gameApp(gameId: string) {
       lastUpdated: 0
     },
     connected: false,
+    connectionStatus: 'disconnected' as 'connected' | 'disconnected' | 'connecting' | 'reconnecting',
     ws: null as WebSocket | null,
     gameId: gameId,
     showControlPanel: false,
@@ -90,19 +69,19 @@ function gameApp(gameId: string) {
 
     init() {
       // localStorageからsimpleModeを読み込み
-      const savedSimpleMode = localStorage.getItem('kabaddi-timer-simple-mode');
+      const savedSimpleMode = localStorage.getItem(STORAGE_KEYS.simpleMode);
       if (savedSimpleMode !== null) {
         this.simpleMode = JSON.parse(savedSimpleMode);
       }
 
       // localStorageからscrollLockEnabledを読み込み
-      const savedScrollLock = localStorage.getItem('kabaddi-timer-scroll-lock');
+      const savedScrollLock = localStorage.getItem(STORAGE_KEYS.scrollLock);
       if (savedScrollLock !== null) {
         this.scrollLockEnabled = JSON.parse(savedScrollLock);
       }
 
       // localStorageからdisplayFlippedを読み込み
-      const savedDisplayFlipped = localStorage.getItem(`kabaddi-timer-display-flipped-${this.gameId}`);
+      const savedDisplayFlipped = localStorage.getItem(STORAGE_KEYS.displayFlippedPrefix + this.gameId);
       if (savedDisplayFlipped !== null) {
         this.displayFlipped = JSON.parse(savedDisplayFlipped);
       }
@@ -136,7 +115,7 @@ function gameApp(gameId: string) {
       this.timeSyncIntervalId = setInterval(() => {
         if (this.ws && this.ws.readyState === WebSocket.OPEN) {
           this.sendAction({
-            type: 'TIME_SYNC_REQUEST',
+            ...ACTIONS.TIME_SYNC_REQUEST,
             clientRequestTime: Date.now()
           });
         }
@@ -163,6 +142,9 @@ function gameApp(gameId: string) {
         this.ws = null;
       }
 
+      // 接続中状態に設定
+      this.connectionStatus = 'connecting';
+
       const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
       const wsUrl = `${protocol}//${window.location.host}/ws/${this.gameId}`;
 
@@ -170,10 +152,11 @@ function gameApp(gameId: string) {
 
       this.ws.onopen = () => {
         this.connected = true;
+        this.connectionStatus = 'connected';
         console.log('WebSocket connected');
         // 接続成功時に初期時刻同期を要求
         this.sendAction({
-          type: 'TIME_SYNC_REQUEST',
+          ...ACTIONS.TIME_SYNC_REQUEST,
           clientRequestTime: Date.now()
         });
       };
@@ -182,7 +165,7 @@ function gameApp(gameId: string) {
         try {
           const message = JSON.parse(event.data);
 
-          if (message.type === 'game_state') {
+          if (message.type === MESSAGE_TYPES.GAME_STATE) {
             console.log('Received game state:', message.data);
             this.gameState = message.data;
 
@@ -204,7 +187,7 @@ function gameApp(gameId: string) {
             this.updateTimerDisplay();
           }
 
-          else if (message.type === 'time_sync') {
+          else if (message.type === MESSAGE_TYPES.TIME_SYNC) {
             const clientTime = Date.now();
             const serverTime = message.data.serverTime;
             const rtt = message.data.clientRequestTime ?
@@ -222,7 +205,7 @@ function gameApp(gameId: string) {
             console.log('Time sync: offset =', this.serverTimeOffset, 'ms, RTT =', rtt, 'ms, status =', this.timeSyncStatus);
           }
 
-          else if (message.type === 'error') {
+          else if (message.type === MESSAGE_TYPES.ERROR) {
             console.error('Server error:', message.data);
           }
 
@@ -242,13 +225,15 @@ function gameApp(gameId: string) {
           this.reconnectTimeoutId = null;
         }
 
-        // 3秒後に再接続
+        // 再接続中状態に設定し、3秒後に再接続
+        this.connectionStatus = 'reconnecting';
         this.reconnectTimeoutId = setTimeout(() => this.connectWebSocket(), 3000) as any;
       };
 
       this.ws.onerror = (error: Event) => {
         console.error('WebSocket error:', error);
         this.connected = false;
+        // onerrorでは状態を変更しない（oncloseで処理される）
         this.stopTimerUpdate(); // タイマー更新を停止
       };
     },
@@ -268,7 +253,7 @@ function gameApp(gameId: string) {
 
     updateScore(team: string, points: number) {
       this.sendAction({
-        type: 'SCORE_UPDATE',
+        ...ACTIONS.SCORE_UPDATE,
         team: team,
         points: points
       });
@@ -286,16 +271,16 @@ function gameApp(gameId: string) {
     },
 
     courtChange() {
-      this.sendAction({ type: 'COURT_CHANGE' });
+      this.sendAction(ACTIONS.COURT_CHANGE);
     },
 
     resetAll() {
-      this.sendAction({ type: 'RESET_ALL' });
+      this.sendAction(ACTIONS.RESET_ALL);
     },
 
     updateDoOrDie(team: string, delta: number) {
       this.sendAction({
-        type: 'DO_OR_DIE_UPDATE',
+        ...ACTIONS.DO_OR_DIE_UPDATE,
         team: team,
         delta: delta
       });
@@ -328,7 +313,7 @@ function gameApp(gameId: string) {
 
     setTeamName(team: string, name: string) {
       this.sendAction({
-        type: 'SET_TEAM_NAME',
+        ...ACTIONS.SET_TEAM_NAME,
         team: team,
         name: name
       });
@@ -344,12 +329,12 @@ function gameApp(gameId: string) {
 
     toggleSimpleMode() {
       this.simpleMode = !this.simpleMode;
-      localStorage.setItem('kabaddi-timer-simple-mode', JSON.stringify(this.simpleMode));
+      localStorage.setItem(STORAGE_KEYS.simpleMode, JSON.stringify(this.simpleMode));
     },
 
     toggleScrollLock() {
       this.scrollLockEnabled = !this.scrollLockEnabled;
-      localStorage.setItem('kabaddi-timer-scroll-lock', JSON.stringify(this.scrollLockEnabled));
+      localStorage.setItem(STORAGE_KEYS.scrollLock, JSON.stringify(this.scrollLockEnabled));
     },
 
     get formattedTimer() {
@@ -372,7 +357,7 @@ function gameApp(gameId: string) {
 
     adjustTimer(seconds: number) {
       this.sendAction({
-        type: 'TIMER_ADJUST',
+        ...ACTIONS.TIMER_ADJUST,
         seconds: seconds
       });
     },
@@ -381,7 +366,7 @@ function gameApp(gameId: string) {
       const duration = (minutes * 60) + seconds;
       console.log('Setting timer to:', minutes, 'minutes,', seconds, 'seconds (', duration, 'total seconds)');
       this.sendAction({
-        type: 'TIMER_SET',
+        ...ACTIONS.TIMER_SET,
         duration: duration
       });
     },
@@ -398,15 +383,15 @@ function gameApp(gameId: string) {
     },
 
     startSubTimer() {
-      this.sendAction({ type: 'SUB_TIMER_START' });
+      this.sendAction(ACTIONS.SUB_TIMER_START);
     },
 
     stopSubTimer() {
-      this.sendAction({ type: 'SUB_TIMER_PAUSE' });
+      this.sendAction(ACTIONS.SUB_TIMER_PAUSE);
     },
 
     resetSubTimer() {
-      this.sendAction({ type: 'SUB_TIMER_RESET' });
+      this.sendAction(ACTIONS.SUB_TIMER_RESET);
     },
 
     updateTimerDisplay() {
@@ -504,7 +489,7 @@ function gameApp(gameId: string) {
       
       if (this.ws && this.ws.readyState === WebSocket.OPEN) {
         this.sendAction({
-          type: 'TIME_SYNC_REQUEST',
+          ...ACTIONS.TIME_SYNC_REQUEST,
           clientRequestTime: Date.now()
         });
       }
@@ -586,7 +571,7 @@ function gameApp(gameId: string) {
      */
     toggleDisplayFlip() {
       this.displayFlipped = !this.displayFlipped;
-      localStorage.setItem(`kabaddi-timer-display-flipped-${this.gameId}`, String(this.displayFlipped));
+      localStorage.setItem(STORAGE_KEYS.displayFlippedPrefix + this.gameId, String(this.displayFlipped));
     },
 
     /**
