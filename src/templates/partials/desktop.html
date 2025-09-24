@@ -3,14 +3,20 @@
       <!-- ヘッダー -->
       <div class="text-white">
         <div class="grid w-full" style="grid-template-columns: 2fr 1fr 2fr;">
-          <div class="p-4" :class="getTeamStyleClasses(getLeftTeamId()).bgColor">
-            <h1 class="text-3xl font-bold text-center" x-text="getLeftTeam().name"></h1>
+          <div class="p-4" :class="getTeamStyleClasses(getDisplayLeftTeamId()).bgColor">
+            <h1 class="text-3xl font-bold text-center" x-text="getDisplayLeftTeam().name"></h1>
           </div>
-          <div class="bg-gray-700 p-4">
+          <div class="bg-gray-700 p-4 cursor-pointer relative" @click="toggleDisplayFlip()">
             <div class="text-3xl font-bold text-center">vs</div>
+            <!-- 反転インジケーター -->
+            <div x-show="displayFlipped" class="absolute bottom-1 left-1/2 transform -translate-x-1/2">
+              <svg class="w-6 h-3 text-gray-400" viewBox="0 0 24 12">
+                <path d="M3 6L1 8L3 10 M21 6L23 8L21 10 M1 8H23" stroke="currentColor" stroke-width="1" fill="none"/>
+              </svg>
+            </div>
           </div>
-          <div class="p-4" :class="getTeamStyleClasses(getRightTeamId()).bgColor">
-            <h1 class="text-3xl font-bold text-center" x-text="getRightTeam().name"></h1>
+          <div class="p-4" :class="getTeamStyleClasses(getDisplayRightTeamId()).bgColor">
+            <h1 class="text-3xl font-bold text-center" x-text="getDisplayRightTeam().name"></h1>
           </div>
         </div>
       </div>
@@ -18,15 +24,15 @@
       <!-- メインスコア表示 -->
       <div class="flex-1 grid grid-cols-3 gap-0" :class="showStatusBar ? 'pb-16' : 'pb-0'" style="grid-template-rows: 1fr 1.5fr;">
         <!-- 上段：左側チーム -->
-        <div class="text-white flex flex-col" :class="getTeamStyleClasses(getLeftTeamId()).bgColor">
+        <div class="text-white flex flex-col" :class="getTeamStyleClasses(getDisplayLeftTeamId()).bgColor">
           <div class="flex-1 flex items-center justify-center py-1 px-4">
-            <div class="font-bold font-mono" style="font-size: 12rem; line-height: 1;" x-text="getLeftTeam().score"></div>
+            <div class="font-bold font-mono" style="font-size: 12rem; line-height: 1;" x-text="getDisplayLeftTeam().score"></div>
           </div>
           <!-- Do or Dieインジケーター -->
           <div class="h-8 flex space-x-2 px-4 mb-2">
             <template x-for="i in 3" :key="i">
               <div class="flex-1 transition-colors duration-200 rounded"
-                   :class="getLeftTeam().doOrDieCount >= i ? 'bg-yellow-400' : getTeamStyleClasses(getLeftTeamId()).doOrDieInactive"></div>
+                   :class="getDisplayLeftTeam().doOrDieCount >= i ? 'bg-yellow-400' : getTeamStyleClasses(getDisplayLeftTeamId()).doOrDieInactive"></div>
             </template>
           </div>
         </div>
@@ -43,15 +49,15 @@
         </div>
 
         <!-- 上段：右側チーム -->
-        <div class="text-white flex flex-col" :class="getTeamStyleClasses(getRightTeamId()).bgColor">
+        <div class="text-white flex flex-col" :class="getTeamStyleClasses(getDisplayRightTeamId()).bgColor">
           <div class="flex-1 flex items-center justify-center py-1 px-4">
-            <div class="font-bold font-mono" style="font-size: 12rem; line-height: 1;" x-text="getRightTeam().score"></div>
+            <div class="font-bold font-mono" style="font-size: 12rem; line-height: 1;" x-text="getDisplayRightTeam().score"></div>
           </div>
           <!-- Do or Dieインジケーター -->
           <div class="h-8 flex space-x-2 px-4 mb-2">
             <template x-for="i in 3" :key="i">
               <div class="flex-1 transition-colors duration-200 rounded"
-                   :class="getRightTeam().doOrDieCount >= i ? 'bg-yellow-400' : getTeamStyleClasses(getRightTeamId()).doOrDieInactive"></div>
+                   :class="getDisplayRightTeam().doOrDieCount >= i ? 'bg-yellow-400' : getTeamStyleClasses(getDisplayRightTeamId()).doOrDieInactive"></div>
             </template>
           </div>
         </div>
@@ -261,17 +267,17 @@
                 <!-- チーム名行 -->
                 <div class="flex justify-between gap-x-8 mb-2">
                   <div class="text-center flex-1">
-                    <div class="text-lg font-bold text-red-700" x-text="gameState.teamA.name"></div>
+                    <div class="text-lg font-bold" :class="getTeamStyleClasses(getDisplayLeftTeamId()).textColor" x-text="getDisplayLeftTeam().name"></div>
                   </div>
                   <div class="text-center flex-1">
-                    <div class="text-lg font-bold text-blue-700" x-text="gameState.teamB.name"></div>
+                    <div class="text-lg font-bold" :class="getTeamStyleClasses(getDisplayRightTeamId()).textColor" x-text="getDisplayRightTeam().name"></div>
                   </div>
                 </div>
                 <!-- カテゴリー行 -->
                 <div class="flex justify-between gap-x-8">
                   <div class="flex-1 grid grid-cols-2 gap-x-2">
                     <div class="text-center">
-                      <div class="text-xs text-red-600">得点</div>
+                      <div class="text-xs" :class="getTeamStyleClasses(getDisplayLeftTeamId()).textColor">得点</div>
                     </div>
                     <div class="text-center">
                       <div class="text-xs text-orange-600">Do or Die</div>
@@ -282,7 +288,7 @@
                       <div class="text-xs text-orange-600">Do or Die</div>
                     </div>
                     <div class="text-center">
-                      <div class="text-xs text-blue-600">得点</div>
+                      <div class="text-xs" :class="getTeamStyleClasses(getDisplayRightTeamId()).textColor">得点</div>
                     </div>
                   </div>
                 </div>
@@ -290,74 +296,78 @@
 
               <!-- ボタングリッド -->
               <div class="flex justify-between gap-x-8 relative z-10">
-                <!-- チームA側（左） -->
+                <!-- 左側表示チーム -->
                 <div class="flex-1 space-y-3">
                   <!-- +1ボタン行 -->
                   <div class="grid grid-cols-2 gap-x-2">
-                    <button @click="updateScore('teamA', 1)"
-                            class="aspect-square bg-red-500 hover:bg-red-600 text-white rounded-lg font-bold transition-colors active:scale-95">
+                    <button @click="updateScore(getDisplayLeftTeamId(), 1)"
+                            class="aspect-square text-white rounded-lg font-bold transition-colors active:scale-95"
+                            :class="displayFlipped ? 'bg-blue-600 hover:bg-blue-700' : 'bg-red-600 hover:bg-red-700'">
                       +1
                     </button>
-                    <button @click="updateDoOrDie('teamA', 1)"
+                    <button @click="updateDoOrDie(getDisplayLeftTeamId(), 1)"
                             class="aspect-square bg-orange-400 hover:bg-orange-500 text-white rounded-lg font-bold transition-colors active:scale-95">
                       +1
                     </button>
                   </div>
                   <!-- -1ボタン行 -->
                   <div class="grid grid-cols-2 gap-x-2">
-                    <button @click="updateScore('teamA', -1)"
-                            class="aspect-square bg-red-300 hover:bg-red-400 text-red-800 rounded-lg font-bold transition-colors active:scale-95">
+                    <button @click="updateScore(getDisplayLeftTeamId(), -1)"
+                            class="aspect-square rounded-lg font-bold transition-colors active:scale-95"
+                            :class="displayFlipped ? 'bg-blue-100 hover:bg-blue-200 text-blue-600' : 'bg-red-100 hover:bg-red-200 text-red-600'">
                       -1
                     </button>
-                    <button @click="updateDoOrDie('teamA', -1)"
+                    <button @click="updateDoOrDie(getDisplayLeftTeamId(), -1)"
                             class="aspect-square bg-orange-200 hover:bg-orange-300 text-orange-800 rounded-lg font-bold transition-colors active:scale-95">
                       -1
                     </button>
                   </div>
                   <!-- リセットボタン行 -->
                   <div class="grid grid-cols-2 gap-x-2">
-                    <button @click="resetTeamScore('teamA')"
+                    <button @click="resetTeamScore(getDisplayLeftTeamId())"
                             class="h-12 bg-gray-500 hover:bg-gray-600 text-white rounded-lg font-bold text-xs transition-colors active:scale-95">
                       スコア<br>リセット
                     </button>
-                    <button @click="resetTeamDoOrDie('teamA')"
+                    <button @click="resetTeamDoOrDie(getDisplayLeftTeamId())"
                             class="h-12 bg-gray-400 hover:bg-gray-500 text-white rounded-lg font-bold text-xs transition-colors active:scale-95">
                       リセット
                     </button>
                   </div>
                 </div>
 
-                <!-- チームB側（右） -->
+                <!-- 右側表示チーム -->
                 <div class="flex-1 space-y-3">
                   <!-- +1ボタン行 -->
                   <div class="grid grid-cols-2 gap-x-2">
-                    <button @click="updateDoOrDie('teamB', 1)"
+                    <button @click="updateDoOrDie(getDisplayRightTeamId(), 1)"
                             class="aspect-square bg-orange-400 hover:bg-orange-500 text-white rounded-lg font-bold transition-colors active:scale-95">
                       +1
                     </button>
-                    <button @click="updateScore('teamB', 1)"
-                            class="aspect-square bg-blue-500 hover:bg-blue-600 text-white rounded-lg font-bold transition-colors active:scale-95">
+                    <button @click="updateScore(getDisplayRightTeamId(), 1)"
+                            class="aspect-square text-white rounded-lg font-bold transition-colors active:scale-95"
+                            :class="displayFlipped ? 'bg-red-600 hover:bg-red-700' : 'bg-blue-600 hover:bg-blue-700'">
                       +1
                     </button>
                   </div>
                   <!-- -1ボタン行 -->
                   <div class="grid grid-cols-2 gap-x-2">
-                    <button @click="updateDoOrDie('teamB', -1)"
+                    <button @click="updateDoOrDie(getDisplayRightTeamId(), -1)"
                             class="aspect-square bg-orange-200 hover:bg-orange-300 text-orange-800 rounded-lg font-bold transition-colors active:scale-95">
                       -1
                     </button>
-                    <button @click="updateScore('teamB', -1)"
-                            class="aspect-square bg-blue-300 hover:bg-blue-400 text-blue-800 rounded-lg font-bold transition-colors active:scale-95">
+                    <button @click="updateScore(getDisplayRightTeamId(), -1)"
+                            class="aspect-square rounded-lg font-bold transition-colors active:scale-95"
+                            :class="displayFlipped ? 'bg-red-100 hover:bg-red-200 text-red-600' : 'bg-blue-100 hover:bg-blue-200 text-blue-600'">
                       -1
                     </button>
                   </div>
                   <!-- リセットボタン行 -->
                   <div class="grid grid-cols-2 gap-x-2">
-                    <button @click="resetTeamDoOrDie('teamB')"
+                    <button @click="resetTeamDoOrDie(getDisplayRightTeamId())"
                             class="h-12 bg-gray-400 hover:bg-gray-500 text-white rounded-lg font-bold text-xs transition-colors active:scale-95">
                       リセット
                     </button>
-                    <button @click="resetTeamScore('teamB')"
+                    <button @click="resetTeamScore(getDisplayRightTeamId())"
                             class="h-12 bg-gray-500 hover:bg-gray-600 text-white rounded-lg font-bold text-xs transition-colors active:scale-95">
                       スコア<br>リセット
                     </button>

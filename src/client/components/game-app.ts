@@ -85,6 +85,8 @@ function gameApp(gameId: string) {
     modalType: '', // 'qr' または 'credits'
     gameUrl: '',
     gameIdText: '',
+    // ローカル表示反転状態（審判向けスマホ表示用）
+    displayFlipped: false,
 
     init() {
       // localStorageからsimpleModeを読み込み
@@ -97,6 +99,12 @@ function gameApp(gameId: string) {
       const savedScrollLock = localStorage.getItem('kabaddi-timer-scroll-lock');
       if (savedScrollLock !== null) {
         this.scrollLockEnabled = JSON.parse(savedScrollLock);
+      }
+
+      // localStorageからdisplayFlippedを読み込み
+      const savedDisplayFlipped = localStorage.getItem(`kabaddi-timer-display-flipped-${this.gameId}`);
+      if (savedDisplayFlipped !== null) {
+        this.displayFlipped = JSON.parse(savedDisplayFlipped);
       }
 
       // 既存のアニメーション・インターバルをクリアして重複を防止
@@ -569,6 +577,46 @@ function gameApp(gameId: string) {
         activeBg: config?.activeBgClass || '',
         doOrDieInactive: config?.doOrDieInactiveClass || ''
       };
+    },
+
+    // ローカル表示反転関連のヘルパーメソッド
+
+    /**
+     * 表示反転をトグル
+     */
+    toggleDisplayFlip() {
+      this.displayFlipped = !this.displayFlipped;
+      localStorage.setItem(`kabaddi-timer-display-flipped-${this.gameId}`, String(this.displayFlipped));
+    },
+
+    /**
+     * 表示上の左側にいるチームのIDを取得（反転考慮）
+     */
+    getDisplayLeftTeamId(): 'teamA' | 'teamB' {
+      return this.displayFlipped ? this.getRightTeamId() : this.getLeftTeamId();
+    },
+
+    /**
+     * 表示上の右側にいるチームのIDを取得（反転考慮）
+     */
+    getDisplayRightTeamId(): 'teamA' | 'teamB' {
+      return this.displayFlipped ? this.getLeftTeamId() : this.getRightTeamId();
+    },
+
+    /**
+     * 表示上の左側にいるチームのデータを取得（反転考慮）
+     */
+    getDisplayLeftTeam() {
+      const teamId = this.getDisplayLeftTeamId();
+      return (this.gameState as any)[teamId];
+    },
+
+    /**
+     * 表示上の右側にいるチームのデータを取得（反転考慮）
+     */
+    getDisplayRightTeam() {
+      const teamId = this.getDisplayRightTeamId();
+      return (this.gameState as any)[teamId];
     },
 
     cleanup() {
