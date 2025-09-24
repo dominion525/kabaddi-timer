@@ -186,11 +186,11 @@
           </div>
           <div class="flex justify-between items-center p-2 bg-gray-50 rounded">
             <span class="text-gray-600 text-xs">クライアント:</span>
-            <span class="font-mono font-medium text-xs" x-text="new Date().toLocaleTimeString() + '.' + String(new Date().getMilliseconds()).padStart(3, '0')"></span>
+            <span class="font-mono font-medium text-xs" x-text="currentClientTime"></span>
           </div>
           <div class="flex justify-between items-center p-2 bg-gray-50 rounded">
             <span class="text-gray-600 text-xs">サーバー:</span>
-            <span class="font-mono font-medium text-xs" x-text="new Date(Date.now() + serverTimeOffset).toLocaleTimeString() + '.' + String(new Date(Date.now() + serverTimeOffset).getMilliseconds()).padStart(3, '0')"></span>
+            <span class="font-mono font-medium text-xs" x-text="currentServerTime"></span>
           </div>
         </div>
 

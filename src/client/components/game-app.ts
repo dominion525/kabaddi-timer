@@ -66,6 +66,9 @@ function gameApp(gameId: string) {
     lastRTT: 0,
     lastSyncTime: null as Date | null,
     showTimeSyncModal: false,
+    currentClientTime: '',
+    currentServerTime: '',
+    timeDisplayIntervalId: null as number | null,
     timerAnimationId: null as number | null,
     timeSyncIntervalId: null as number | null,
     reconnectTimeoutId: null as number | null,
@@ -202,6 +205,9 @@ function gameApp(gameId: string) {
             this.lastRTT = rtt;
             this.lastSyncTime = new Date();
             this.updateTimeSyncStatus();
+            
+            // 時刻表示を更新
+            this.updateTimeDisplay();
 
             console.log('Time sync: offset =', this.serverTimeOffset, 'ms, RTT =', rtt, 'ms, status =', this.timeSyncStatus);
           }
@@ -464,6 +470,16 @@ function gameApp(gameId: string) {
     // 時刻同期モーダルを開く
     openTimeSyncModal() {
       this.showTimeSyncModal = true;
+      this.updateTimeDisplay();
+    },
+
+    // 時刻表示を更新
+    updateTimeDisplay() {
+      const now = new Date();
+      const serverNow = new Date(now.getTime() + this.serverTimeOffset);
+
+      this.currentClientTime = now.toLocaleTimeString() + '.' + String(now.getMilliseconds()).padStart(3, '0');
+      this.currentServerTime = serverNow.toLocaleTimeString() + '.' + String(serverNow.getMilliseconds()).padStart(3, '0');
     },
 
     // 時刻同期モーダルを閉じる
@@ -473,6 +489,9 @@ function gameApp(gameId: string) {
 
     // 手動で時刻同期を要求
     requestTimeSync() {
+      // 時刻表示を即座に更新
+      this.updateTimeDisplay();
+      
       if (this.ws && this.ws.readyState === WebSocket.OPEN) {
         this.sendAction({
           type: 'TIME_SYNC_REQUEST',
