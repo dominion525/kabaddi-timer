@@ -11,6 +11,7 @@ function gameApp(gameId: string) {
   // 定数の取得
   const DEFAULT_VALUES = constants.DEFAULT_VALUES;
   const ACTIONS = constants.ACTIONS;
+  const MESSAGE_TYPES = constants.MESSAGE_TYPES;
   const STORAGE_KEYS = constants.STORAGE_KEYS;
 
   return {
@@ -113,7 +114,7 @@ function gameApp(gameId: string) {
       this.timeSyncIntervalId = setInterval(() => {
         if (this.ws && this.ws.readyState === WebSocket.OPEN) {
           this.sendAction({
-            type: 'TIME_SYNC_REQUEST',
+            ...ACTIONS.TIME_SYNC_REQUEST,
             clientRequestTime: Date.now()
           });
         }
@@ -150,7 +151,7 @@ function gameApp(gameId: string) {
         console.log('WebSocket connected');
         // 接続成功時に初期時刻同期を要求
         this.sendAction({
-          type: 'TIME_SYNC_REQUEST',
+          ...ACTIONS.TIME_SYNC_REQUEST,
           clientRequestTime: Date.now()
         });
       };
@@ -159,7 +160,7 @@ function gameApp(gameId: string) {
         try {
           const message = JSON.parse(event.data);
 
-          if (message.type === 'game_state') {
+          if (message.type === MESSAGE_TYPES.GAME_STATE) {
             console.log('Received game state:', message.data);
             this.gameState = message.data;
 
@@ -181,7 +182,7 @@ function gameApp(gameId: string) {
             this.updateTimerDisplay();
           }
 
-          else if (message.type === 'time_sync') {
+          else if (message.type === MESSAGE_TYPES.TIME_SYNC) {
             const clientTime = Date.now();
             const serverTime = message.data.serverTime;
             const rtt = message.data.clientRequestTime ?
@@ -199,7 +200,7 @@ function gameApp(gameId: string) {
             console.log('Time sync: offset =', this.serverTimeOffset, 'ms, RTT =', rtt, 'ms, status =', this.timeSyncStatus);
           }
 
-          else if (message.type === 'error') {
+          else if (message.type === MESSAGE_TYPES.ERROR) {
             console.error('Server error:', message.data);
           }
 
@@ -245,7 +246,7 @@ function gameApp(gameId: string) {
 
     updateScore(team: string, points: number) {
       this.sendAction({
-        type: 'SCORE_UPDATE',
+        ...ACTIONS.SCORE_UPDATE,
         team: team,
         points: points
       });
@@ -263,16 +264,16 @@ function gameApp(gameId: string) {
     },
 
     courtChange() {
-      this.sendAction({ type: 'COURT_CHANGE' });
+      this.sendAction(ACTIONS.COURT_CHANGE);
     },
 
     resetAll() {
-      this.sendAction({ type: 'RESET_ALL' });
+      this.sendAction(ACTIONS.RESET_ALL);
     },
 
     updateDoOrDie(team: string, delta: number) {
       this.sendAction({
-        type: 'DO_OR_DIE_UPDATE',
+        ...ACTIONS.DO_OR_DIE_UPDATE,
         team: team,
         delta: delta
       });
@@ -305,7 +306,7 @@ function gameApp(gameId: string) {
 
     setTeamName(team: string, name: string) {
       this.sendAction({
-        type: 'SET_TEAM_NAME',
+        ...ACTIONS.SET_TEAM_NAME,
         team: team,
         name: name
       });
@@ -349,7 +350,7 @@ function gameApp(gameId: string) {
 
     adjustTimer(seconds: number) {
       this.sendAction({
-        type: 'TIMER_ADJUST',
+        ...ACTIONS.TIMER_ADJUST,
         seconds: seconds
       });
     },
@@ -358,7 +359,7 @@ function gameApp(gameId: string) {
       const duration = (minutes * 60) + seconds;
       console.log('Setting timer to:', minutes, 'minutes,', seconds, 'seconds (', duration, 'total seconds)');
       this.sendAction({
-        type: 'TIMER_SET',
+        ...ACTIONS.TIMER_SET,
         duration: duration
       });
     },
@@ -375,15 +376,15 @@ function gameApp(gameId: string) {
     },
 
     startSubTimer() {
-      this.sendAction({ type: 'SUB_TIMER_START' });
+      this.sendAction(ACTIONS.SUB_TIMER_START);
     },
 
     stopSubTimer() {
-      this.sendAction({ type: 'SUB_TIMER_PAUSE' });
+      this.sendAction(ACTIONS.SUB_TIMER_PAUSE);
     },
 
     resetSubTimer() {
-      this.sendAction({ type: 'SUB_TIMER_RESET' });
+      this.sendAction(ACTIONS.SUB_TIMER_RESET);
     },
 
     updateTimerDisplay() {
@@ -481,7 +482,7 @@ function gameApp(gameId: string) {
       
       if (this.ws && this.ws.readyState === WebSocket.OPEN) {
         this.sendAction({
-          type: 'TIME_SYNC_REQUEST',
+          ...ACTIONS.TIME_SYNC_REQUEST,
           clientRequestTime: Date.now()
         });
       }

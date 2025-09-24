@@ -1,4 +1,5 @@
-import { GameState, GameAction, GameMessage, WebSocketMessage, TimeSyncData, MESSAGE_TYPES } from '../types/game';
+// @ts-ignore: ACTION_TYPES is used in switch case statements
+import { GameState, GameAction, GameMessage, WebSocketMessage, TimeSyncData, MESSAGE_TYPES, ACTION_TYPES } from '../types/game';
 
 export class GameSession {
   private state: DurableObjectState;
@@ -276,7 +277,7 @@ export class GameSession {
 
   private async handleScoreActions(action: GameAction): Promise<void> {
     switch (action.type) {
-      case 'SCORE_UPDATE':
+      case ACTION_TYPES.SCORE_UPDATE:
         if (action.team === 'teamA') {
           this.gameState.teamA.score = Math.max(0, this.gameState.teamA.score + action.points);
         } else {
@@ -284,12 +285,12 @@ export class GameSession {
         }
         break;
 
-      case 'RESET_SCORES':
+      case ACTION_TYPES.RESET_SCORES:
         this.gameState.teamA.score = 0;
         this.gameState.teamB.score = 0;
         break;
 
-      case 'RESET_TEAM_SCORE':
+      case ACTION_TYPES.RESET_TEAM_SCORE:
         if (action.team === 'teamA') {
           this.gameState.teamA.score = 0;
         } else if (action.team === 'teamB') {
@@ -301,7 +302,7 @@ export class GameSession {
 
   private async handleDoOrDieActions(action: GameAction): Promise<void> {
     switch (action.type) {
-      case 'DO_OR_DIE_UPDATE':
+      case ACTION_TYPES.DO_OR_DIE_UPDATE:
         if (action.team === 'teamA') {
           this.gameState.teamA.doOrDieCount = Math.max(0, Math.min(3, this.gameState.teamA.doOrDieCount + action.delta));
         } else {
@@ -309,7 +310,7 @@ export class GameSession {
         }
         break;
 
-      case 'DO_OR_DIE_RESET':
+      case ACTION_TYPES.DO_OR_DIE_RESET:
         this.gameState.teamA.doOrDieCount = 0;
         this.gameState.teamB.doOrDieCount = 0;
         break;
@@ -318,15 +319,15 @@ export class GameSession {
 
   private async handleGameManagementActions(action: GameAction): Promise<void> {
     switch (action.type) {
-      case 'COURT_CHANGE':
+      case ACTION_TYPES.COURT_CHANGE:
         this.changeCourtSides();
         break;
 
-      case 'RESET_ALL':
+      case ACTION_TYPES.RESET_ALL:
         this.resetAllGame();
         break;
 
-      case 'SET_TEAM_NAME':
+      case ACTION_TYPES.SET_TEAM_NAME:
         this.setTeamName(action.team, action.name);
         break;
     }
@@ -334,23 +335,23 @@ export class GameSession {
 
   private async handleTimerActions(action: GameAction): Promise<boolean> {
     switch (action.type) {
-      case 'TIMER_START':
+      case ACTION_TYPES.TIMER_START:
         await this.startTimer();
         return true;
 
-      case 'TIMER_PAUSE':
+      case ACTION_TYPES.TIMER_PAUSE:
         await this.pauseTimer();
         return true;
 
-      case 'TIMER_RESET':
+      case ACTION_TYPES.TIMER_RESET:
         await this.resetTimer();
         return true;
 
-      case 'TIMER_SET':
+      case ACTION_TYPES.TIMER_SET:
         await this.setTimerDuration(action.duration);
         return true;
 
-      case 'TIMER_ADJUST':
+      case ACTION_TYPES.TIMER_ADJUST:
         await this.adjustTimerTime(action.seconds);
         return true;
 
@@ -361,15 +362,15 @@ export class GameSession {
 
   private async handleSubTimerActions(action: GameAction): Promise<boolean> {
     switch (action.type) {
-      case 'SUB_TIMER_START':
+      case ACTION_TYPES.SUB_TIMER_START:
         await this.startSubTimer();
         return true;
 
-      case 'SUB_TIMER_PAUSE':
+      case ACTION_TYPES.SUB_TIMER_PAUSE:
         await this.pauseSubTimer();
         return true;
 
-      case 'SUB_TIMER_RESET':
+      case ACTION_TYPES.SUB_TIMER_RESET:
         await this.resetSubTimer();
         return true;
 

@@ -101,33 +101,33 @@
     TIMER_START: { type: 'TIMER_START' },
     TIMER_PAUSE: { type: 'TIMER_PAUSE' },
     TIMER_RESET: { type: 'TIMER_RESET' },
-    TIMER_SET: 'TIMER_SET',
-    TIMER_ADJUST: 'TIMER_ADJUST',
+    TIMER_SET: { type: 'TIMER_SET' },
+    TIMER_ADJUST: { type: 'TIMER_ADJUST' },
 
     // サブタイマー操作
-    SUB_TIMER_START: 'SUB_TIMER_START',
-    SUB_TIMER_PAUSE: 'SUB_TIMER_PAUSE',
-    SUB_TIMER_RESET: 'SUB_TIMER_RESET',
+    SUB_TIMER_START: { type: 'SUB_TIMER_START' },
+    SUB_TIMER_PAUSE: { type: 'SUB_TIMER_PAUSE' },
+    SUB_TIMER_RESET: { type: 'SUB_TIMER_RESET' },
 
     // スコア操作
-    SCORE_UPDATE: 'SCORE_UPDATE',
+    SCORE_UPDATE: { type: 'SCORE_UPDATE' },
     RESET_SCORES: { type: 'RESET_SCORES' },
-    RESET_TEAM_SCORE: 'RESET_TEAM_SCORE',
+    RESET_TEAM_SCORE: { type: 'RESET_TEAM_SCORE' },
 
     // Do or Die 操作
-    DO_OR_DIE_UPDATE: 'DO_OR_DIE_UPDATE',
+    DO_OR_DIE_UPDATE: { type: 'DO_OR_DIE_UPDATE' },
     DO_OR_DIE_RESET: { type: 'DO_OR_DIE_RESET' },
 
     // チーム操作
-    SET_TEAM_NAME: 'SET_TEAM_NAME',
-    COURT_CHANGE: 'COURT_CHANGE',
+    SET_TEAM_NAME: { type: 'SET_TEAM_NAME' },
+    COURT_CHANGE: { type: 'COURT_CHANGE' },
 
     // 全体操作
-    RESET_ALL: 'RESET_ALL',
+    RESET_ALL: { type: 'RESET_ALL' },
 
     // 同期操作
-    TIME_SYNC_REQUEST: 'TIME_SYNC_REQUEST'
-  };;
+    TIME_SYNC_REQUEST: { type: 'TIME_SYNC_REQUEST' }
+  };
 
   /**
    * WebSocket接続状態の定数
@@ -147,7 +147,7 @@
   const MESSAGE_TYPES = {
     // 受信メッセージ
     GAME_STATE: 'game_state',
-    TIME_SYNC_RESPONSE: 'time_sync_response',
+    TIME_SYNC: 'time_sync',
     ERROR: 'error',
 
     // 送信メッセージ
@@ -229,9 +229,7 @@
    * @returns {boolean} 有効なアクションタイプの場合true
    */
   function isValidActionType(actionType: string): boolean {
-    const validTypes = Object.values(ACTIONS).map(action =>
-      typeof action === 'object' ? action.type : action
-    );
+    const validTypes = Object.values(ACTIONS).map(action => action.type);
     return validTypes.includes(actionType);
   }
 
@@ -276,9 +274,7 @@
     });
 
     // アクションタイプの重複チェック
-    const actionTypes = Object.values(ACTIONS).map(action =>
-      typeof action === 'object' ? action.type : action
-    );
+    const actionTypes = Object.values(ACTIONS).map(action => action.type);
     const uniqueTypes = new Set(actionTypes);
     if (actionTypes.length !== uniqueTypes.size) {
       issues.push('Duplicate action types detected');

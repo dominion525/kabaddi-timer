@@ -105,7 +105,7 @@
       if (message.type === MESSAGE_TYPES.GAME_STATE) {
         apis.console.log('Received game state:', message.data);
         callbacks.onGameStateReceived?.(message.data);
-      } else if (message.type === MESSAGE_TYPES.TIME_SYNC_RESPONSE) {
+      } else if (message.type === MESSAGE_TYPES.TIME_SYNC) {
         handleTimeSync(message.data);
       } else if (message.type === MESSAGE_TYPES.ERROR) {
         apis.console.error('Server error:', message.data);
