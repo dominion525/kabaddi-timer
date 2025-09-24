@@ -10,6 +10,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ### 必須コマンド
 - **開発サーバー起動**: `npm run dev` - Cloudflare Workersローカル開発環境
+  - **重要**: 開発サーバーは必ずバックグラウンドで実行すること（`run_in_background: true`）
 - **ビルド**: `npm run build` - TypeScriptコンパイル（クライアント+ワーカー）
   - `npm run build:client:dev` - 開発用個別ファイル出力
   - `npm run build:client:prod` - 本番用バンドル+ミニファイ（esbuild）

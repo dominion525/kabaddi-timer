@@ -30,6 +30,7 @@ function gameApp(gameId: string) {
       lastUpdated: 0
     },
     connected: false,
+    connectionStatus: 'disconnected' as 'connected' | 'disconnected' | 'connecting' | 'reconnecting',
     ws: null as WebSocket | null,
     gameId: gameId,
     showControlPanel: false,
@@ -141,6 +142,9 @@ function gameApp(gameId: string) {
         this.ws = null;
       }
 
+      // 接続中状態に設定
+      this.connectionStatus = 'connecting';
+
       const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
       const wsUrl = `${protocol}//${window.location.host}/ws/${this.gameId}`;
 
@@ -148,6 +152,7 @@ function gameApp(gameId: string) {
 
       this.ws.onopen = () => {
         this.connected = true;
+        this.connectionStatus = 'connected';
         console.log('WebSocket connected');
         // 接続成功時に初期時刻同期を要求
         this.sendAction({
@@ -220,13 +225,15 @@ function gameApp(gameId: string) {
           this.reconnectTimeoutId = null;
         }
 
-        // 3秒後に再接続
+        // 再接続中状態に設定し、3秒後に再接続
+        this.connectionStatus = 'reconnecting';
         this.reconnectTimeoutId = setTimeout(() => this.connectWebSocket(), 3000) as any;
       };
 
       this.ws.onerror = (error: Event) => {
         console.error('WebSocket error:', error);
         this.connected = false;
+        // onerrorでは状態を変更しない（oncloseで処理される）
         this.stopTimerUpdate(); // タイマー更新を停止
       };
     },
