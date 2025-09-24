@@ -3,7 +3,7 @@
       <!-- ヘッダー -->
       <div class="text-white">
         <div class="grid w-full" style="grid-template-columns: 2fr 1fr 2fr;">
-          <div class="p-2" :class="displayFlipped ? 'bg-blue-600' : 'bg-red-600'">
+          <div class="p-2" :class="getDisplayLeftTeam().id === 'teamA' ? 'bg-red-600' : 'bg-blue-600'">
             <h1 class="text-lg font-bold text-center" x-text="getDisplayLeftTeam().name"></h1>
           </div>
           <div class="bg-gray-700 p-2 cursor-pointer hover:bg-gray-600 transition-colors" @click="toggleDisplayFlip()">
@@ -12,7 +12,7 @@
               <span x-show="displayFlipped" class="absolute -top-1 -right-2 text-xs text-yellow-400">⇄</span>
             </div>
           </div>
-          <div class="p-2" :class="displayFlipped ? 'bg-red-600' : 'bg-blue-600'">
+          <div class="p-2" :class="getDisplayRightTeam().id === 'teamA' ? 'bg-red-600' : 'bg-blue-600'">
             <h1 class="text-lg font-bold text-center" x-text="getDisplayRightTeam().name"></h1>
           </div>
         </div>
@@ -21,7 +21,7 @@
       <!-- メインスコア表示 -->
       <div class="flex-1 grid grid-cols-3 gap-0" :class="showStatusBar ? 'pb-16' : 'pb-0'" style="grid-template-rows: 0.7fr 0.6fr; max-height: 45vh;">
         <!-- 上段：左側チーム -->
-        <div class="text-white flex flex-col score-area" :class="displayFlipped ? 'bg-blue-600' : 'bg-red-600'">
+        <div class="text-white flex flex-col score-area" :class="getDisplayLeftTeam().id === 'teamA' ? 'bg-red-600' : 'bg-blue-600'">
           <div class="flex-1 flex items-center justify-center py-0 px-1">
             <div class="font-bold font-mono" style="font-size: 4rem; line-height: 1;" x-text="getDisplayLeftTeam().score"></div>
           </div>
@@ -29,7 +29,7 @@
           <div class="h-6 flex space-x-1 px-2 pb-3">
             <template x-for="i in 3" :key="i">
               <div class="flex-1 transition-colors duration-200 rounded-sm"
-                   :class="getDisplayLeftTeam().doOrDieCount >= i ? 'bg-yellow-400' : (displayFlipped ? 'bg-blue-900' : 'bg-red-900')"></div>
+                   :class="getDisplayLeftTeam().doOrDieCount >= i ? 'bg-yellow-400' : (getDisplayLeftTeam().id === 'teamA' ? 'bg-red-900' : 'bg-blue-900')"></div>
             </template>
           </div>
         </div>
@@ -46,7 +46,7 @@
         </div>
 
         <!-- 上段：右側チーム -->
-        <div class="text-white flex flex-col score-area" :class="displayFlipped ? 'bg-red-600' : 'bg-blue-600'">
+        <div class="text-white flex flex-col score-area" :class="getDisplayRightTeam().id === 'teamA' ? 'bg-red-600' : 'bg-blue-600'">
           <div class="flex-1 flex items-center justify-center py-0 px-1">
             <div class="font-bold font-mono" style="font-size: 4rem; line-height: 1;" x-text="getDisplayRightTeam().score"></div>
           </div>
@@ -54,7 +54,7 @@
           <div class="h-6 flex space-x-1 px-2 pb-3">
             <template x-for="i in 3" :key="i">
               <div class="flex-1 transition-colors duration-200 rounded-sm"
-                   :class="getDisplayRightTeam().doOrDieCount >= i ? 'bg-yellow-400' : (displayFlipped ? 'bg-red-900' : 'bg-blue-900')"></div>
+                   :class="getDisplayRightTeam().doOrDieCount >= i ? 'bg-yellow-400' : (getDisplayRightTeam().id === 'teamA' ? 'bg-red-900' : 'bg-blue-900')"></div>
             </template>
           </div>
         </div>
