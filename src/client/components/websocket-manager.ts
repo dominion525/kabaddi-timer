@@ -287,5 +287,5 @@ import type {
     };
   }
 
-// ES6モジュールとしてエクスポート
-export { createWebSocketManager };
+// グローバル関数として利用可能にする
+(window as any).createWebSocketManager = createWebSocketManager;

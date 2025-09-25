@@ -6,13 +6,9 @@ import './components/browser-apis';
 import './components/constants';
 import './components/action-creators';
 import './components/score-logic';
-import { createWebSocketManager } from './components/websocket-manager';
 import './components/timer-logic';
 import './components/ui-state';
 import './components/input-fields';
-
-// WebSocketManagerをグローバル変数として公開（互換性のため）
-(window as any).createWebSocketManager = createWebSocketManager;
 
 // メインアプリケーション（最後に読み込み）
 import './components/game-app';
