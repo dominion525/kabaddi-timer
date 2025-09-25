@@ -57,10 +57,10 @@ function createMockAPIs(): WebSocketAPIs {
     },
     timer: {
       now: vi.fn(() => Date.now()),
-      setTimeout: vi.fn(),
-      clearTimeout: vi.fn(),
-      setInterval: vi.fn(),
-      clearInterval: vi.fn()
+      setTimeout: vi.fn((fn: () => void, ms: number) => setTimeout(fn, ms)),
+      clearTimeout: vi.fn((id: number) => clearTimeout(id)),
+      setInterval: vi.fn((fn: () => void, ms: number) => setInterval(fn, ms)),
+      clearInterval: vi.fn((id: number) => clearInterval(id))
     }
   };
 }
@@ -927,6 +927,601 @@ describe('WebSocketManager - フェーズ1: 基本機能テスト', () => {
         expect(mockOnGameStateReceived).toHaveBeenCalledWith(gameStateData);
         expect(mockOnActionSent).toHaveBeenCalledTimes(1);
         expect(mockOnActionSent).toHaveBeenCalledWith(action);
+      });
+    });
+  });
+
+  // ========================================
+  // Phase 4: 時刻同期インターバルテスト
+  // ========================================
+  describe('Time Sync Interval Tests', () => {
+    let manager: WebSocketManager;
+    let mockWebSocket: any;
+    let mockAPIs: any;
+
+    beforeEach(() => {
+      // タイマーをモック化
+      vi.useFakeTimers();
+
+      mockWebSocket = createMockWebSocket();
+      mockAPIs = createMockAPIs();
+      mockAPIs.websocket.create.mockReturnValue(mockWebSocket);
+      manager = createWebSocketManager(mockAPIs, mockConstants);
+    });
+
+    afterEach(() => {
+      // テスト後のクリーンアップ
+      vi.restoreAllMocks();
+      vi.useRealTimers();
+    });
+
+    describe('インターバル開始・管理テスト', () => {
+      test('接続時に時刻同期インターバルが自動的に開始される', () => {
+        // Arrange - インターバル設定前はタイマーが0個
+        expect(vi.getTimerCount()).toBe(0);
+
+        // Act - WebSocket接続
+        manager.connect('test-game-123');
+        mockWebSocket.onopen();
+
+        // Assert - インターバルが設定される（60秒インターバル1個 + 初回sendTimeSync用のタイマー）
+        expect(vi.getTimerCount()).toBeGreaterThan(0);
+        expect(mockAPIs.timer.setInterval).toHaveBeenCalledWith(
+          expect.any(Function),
+          60000 // 60秒
+        );
+      });
+
+      test('既存のインターバルがある場合は先にクリアしてから新しいインターバルを設定', () => {
+        // Arrange - 最初の接続でインターバルを設定
+        manager.connect('test-game-123');
+        mockWebSocket.onopen();
+
+        const initialSetIntervalCallCount = mockAPIs.timer.setInterval.mock.calls.length;
+        const initialClearIntervalCallCount = mockAPIs.timer.clearInterval.mock.calls.length;
+
+        // Act - 再接続（同じmanagerインスタンスで再度connect）
+        manager.connect('test-game-456');
+
+        // Assert - 既存インターバルがクリアされてから新しいインターバルが設定される
+        expect(mockAPIs.timer.clearInterval).toHaveBeenCalledTimes(initialClearIntervalCallCount + 1);
+        expect(mockAPIs.timer.setInterval).toHaveBeenCalledTimes(initialSetIntervalCallCount + 1);
+      });
+    });
+
+    describe('インターバル実行テスト', () => {
+      test('60秒ごとにsendTimeSyncが呼ばれる', () => {
+        // Arrange
+        manager.connect('test-game-123');
+        mockWebSocket.onopen();
+        mockWebSocket.readyState = WebSocket.OPEN;
+        mockAPIs.websocket.getReadyState.mockReturnValue(WebSocket.OPEN);
+
+        // 初期状態でのsendAction呼び出し回数を記録（接続時の初回同期分）
+        const initialSendActionCalls = mockAPIs.websocket.send.mock.calls.length;
+
+        // Act - 60秒進める
+        vi.advanceTimersByTime(60000);
+
+        // Assert - 1回目の時刻同期が実行される
+        expect(mockAPIs.websocket.send).toHaveBeenCalledTimes(initialSendActionCalls + 1);
+
+        // 最新の呼び出しが時刻同期リクエストであることを確認
+        const lastCall = mockAPIs.websocket.send.mock.calls[mockAPIs.websocket.send.mock.calls.length - 1];
+        const sentMessage = JSON.parse(lastCall[1]);
+        expect(sentMessage.action.type).toBe('timeSyncRequest');
+      });
+
+      test('複数回のインターバル実行で継続的に時刻同期が行われる', () => {
+        // Arrange
+        manager.connect('test-game-123');
+        mockWebSocket.onopen();
+        mockWebSocket.readyState = WebSocket.OPEN;
+        mockAPIs.websocket.getReadyState.mockReturnValue(WebSocket.OPEN);
+
+        const initialSendActionCalls = mockAPIs.websocket.send.mock.calls.length;
+
+        // Act - 3回のインターバル（180秒）
+        vi.advanceTimersByTime(180000);
+
+        // Assert - 3回の時刻同期が実行される
+        expect(mockAPIs.websocket.send).toHaveBeenCalledTimes(initialSendActionCalls + 3);
+      });
+
+      test('未接続時はインターバルが動いてもsendTimeSyncが呼ばれない', () => {
+        // Arrange
+        manager.connect('test-game-123');
+        mockWebSocket.onopen();
+
+        // WebSocketを切断状態にする
+        mockWebSocket.readyState = WebSocket.CLOSED;
+        mockAPIs.websocket.getReadyState.mockReturnValue(WebSocket.CLOSED);
+
+        const initialSendActionCalls = mockAPIs.websocket.send.mock.calls.length;
+
+        // Act - 60秒進める（未接続状態）
+        vi.advanceTimersByTime(60000);
+
+        // Assert - 未接続なので時刻同期は実行されない
+        expect(mockAPIs.websocket.send).toHaveBeenCalledTimes(initialSendActionCalls);
+      });
+
+      test('接続→切断→再接続のパターンでインターバルが正しく動作', () => {
+        // Arrange - 初回接続
+        manager.connect('test-game-123');
+        mockWebSocket.onopen();
+        mockWebSocket.readyState = WebSocket.OPEN;
+        mockAPIs.websocket.getReadyState.mockReturnValue(WebSocket.OPEN);
+
+        const initialSendActionCalls = mockAPIs.websocket.send.mock.calls.length;
+
+        // Act 1 - 接続中に60秒進める
+        vi.advanceTimersByTime(60000);
+        expect(mockAPIs.websocket.send).toHaveBeenCalledTimes(initialSendActionCalls + 1);
+
+        // Act 2 - 切断する
+        mockWebSocket.readyState = WebSocket.CLOSED;
+        mockAPIs.websocket.getReadyState.mockReturnValue(WebSocket.CLOSED);
+
+        // Act 3 - 切断中に60秒進める
+        vi.advanceTimersByTime(60000);
+        expect(mockAPIs.websocket.send).toHaveBeenCalledTimes(initialSendActionCalls + 1); // 増えない
+
+        // Act 4 - 再接続
+        mockWebSocket.readyState = WebSocket.OPEN;
+        mockAPIs.websocket.getReadyState.mockReturnValue(WebSocket.OPEN);
+
+        // Act 5 - 再接続後に60秒進める
+        vi.advanceTimersByTime(60000);
+
+        // Assert - 再接続後は再び時刻同期が動作
+        expect(mockAPIs.websocket.send).toHaveBeenCalledTimes(initialSendActionCalls + 2);
+      });
+    });
+
+    describe('インターバルクリーンアップテスト', () => {
+      test('cleanup実行時にインターバルがクリアされる', () => {
+        // Arrange
+        manager.connect('test-game-123');
+        mockWebSocket.onopen();
+
+        // インターバルが設定されていることを確認
+        expect(vi.getTimerCount()).toBeGreaterThan(0);
+
+        // Act - クリーンアップ実行
+        manager.cleanup();
+
+        // Assert - インターバルがクリアされる
+        expect(mockAPIs.timer.clearInterval).toHaveBeenCalled();
+        expect(vi.getTimerCount()).toBe(0);
+      });
+
+      test('クリーンアップ後はインターバルが動作しない', () => {
+        // Arrange
+        manager.connect('test-game-123');
+        mockWebSocket.onopen();
+        mockWebSocket.readyState = WebSocket.OPEN;
+        mockAPIs.websocket.getReadyState.mockReturnValue(WebSocket.OPEN);
+
+        const initialSendActionCalls = mockAPIs.websocket.send.mock.calls.length;
+
+        // Act - クリーンアップしてから時間を進める
+        manager.cleanup();
+        vi.advanceTimersByTime(120000); // 2分進める
+
+        // Assert - クリーンアップ後なのでインターバルは動作しない
+        expect(mockAPIs.websocket.send).toHaveBeenCalledTimes(initialSendActionCalls);
+      });
+
+      test('複数回のcleanupでもエラーが発生しない', () => {
+        // Arrange
+        manager.connect('test-game-123');
+        mockWebSocket.onopen();
+
+        // Act & Assert - 複数回cleanupしてもエラーが発生しない
+        expect(() => {
+          manager.cleanup();
+          manager.cleanup();
+          manager.cleanup();
+        }).not.toThrow();
+      });
+    });
+
+    describe('デバッグ情報での確認', () => {
+      test('getDebugInfoでインターバルの状態が確認できる', () => {
+        // Arrange - インターバル設定前
+        let debugInfo = manager.getDebugInfo();
+        expect(debugInfo.hasTimeSyncInterval).toBe(false);
+
+        // Act - 接続してインターバル開始
+        manager.connect('test-game-123');
+        mockWebSocket.onopen();
+
+        // Assert - インターバルが設定されている
+        debugInfo = manager.getDebugInfo();
+        expect(debugInfo.hasTimeSyncInterval).toBe(true);
+
+        // Act - クリーンアップ
+        manager.cleanup();
+
+        // Assert - インターバルがクリアされている
+        debugInfo = manager.getDebugInfo();
+        expect(debugInfo.hasTimeSyncInterval).toBe(false);
+      });
+    });
+
+    describe('エッジケーステスト', () => {
+      test('connect前にcleanupを呼んでもエラーにならない', () => {
+        // Act & Assert - 初期化前のクリーンアップでもエラーが発生しない
+        expect(() => {
+          manager.cleanup();
+        }).not.toThrow();
+      });
+
+      test('高頻度での接続・切断でもインターバルが正しく管理される', () => {
+        // Arrange & Act - 高頻度での接続・切断を繰り返す
+        for (let i = 0; i < 5; i++) {
+          manager.connect(`test-game-${i}`);
+          mockWebSocket.onopen();
+          manager.cleanup();
+        }
+
+        // Assert - 最終的にインターバルがクリアされている
+        expect(vi.getTimerCount()).toBe(0);
+
+        const debugInfo = manager.getDebugInfo();
+        expect(debugInfo.hasTimeSyncInterval).toBe(false);
+      });
+    });
+  });
+
+  // ========================================
+  // Phase 5: 再接続・リトライ機能テスト
+  // ========================================
+  describe('Reconnection and Retry Tests', () => {
+    let manager: WebSocketManager;
+    let mockWebSocket: any;
+    let mockAPIs: any;
+
+    beforeEach(() => {
+      // タイマーをモック化
+      vi.useFakeTimers();
+
+      mockWebSocket = createMockWebSocket();
+      mockAPIs = createMockAPIs();
+      mockAPIs.websocket.create.mockReturnValue(mockWebSocket);
+      manager = createWebSocketManager(mockAPIs, mockConstants);
+    });
+
+    afterEach(() => {
+      // テスト後のクリーンアップ
+      vi.restoreAllMocks();
+      vi.useRealTimers();
+    });
+
+    describe('自動再接続テスト', () => {
+      test('WebSocket切断時に3秒後の自動再接続タイマーが設定される', () => {
+        // Arrange
+        manager.connect('test-game-123');
+        mockWebSocket.onopen();
+
+        // 切断前の状態確認
+        expect(manager.getDebugInfo().hasReconnectTimeout).toBe(false);
+
+        // Act - WebSocket切断をシミュレート
+        mockWebSocket.onclose();
+
+        // Assert - 再接続タイマーが設定される
+        expect(mockAPIs.timer.setTimeout).toHaveBeenCalledWith(
+          expect.any(Function),
+          3000 // 3秒
+        );
+        expect(manager.getDebugInfo().hasReconnectTimeout).toBe(true);
+      });
+
+      test('3秒経過後に自動再接続が実行される', () => {
+        // Arrange
+        manager.connect('test-game-123');
+        mockWebSocket.onopen();
+
+        const initialConnectCalls = mockAPIs.websocket.create.mock.calls.length;
+
+        // Act - 切断してから3秒進める
+        mockWebSocket.onclose();
+        vi.advanceTimersByTime(3000);
+
+        // Assert - 再接続のためのWebSocket作成が実行される
+        expect(mockAPIs.websocket.create).toHaveBeenCalledTimes(initialConnectCalls + 1);
+
+        // 新しいWebSocketが同じURLで作成されることを確認
+        const lastCall = mockAPIs.websocket.create.mock.calls[mockAPIs.websocket.create.mock.calls.length - 1];
+        expect(lastCall[0]).toContain('test-game-123');
+      });
+
+      test('自動再接続時にonDisconnectedコールバックが呼ばれる', () => {
+        // Arrange
+        const mockOnDisconnected = vi.fn();
+        manager.connect('test-game-123', {
+          onDisconnected: mockOnDisconnected
+        });
+        mockWebSocket.onopen();
+
+        // Act - WebSocket切断をシミュレート
+        mockWebSocket.onclose();
+
+        // Assert - onDisconnectedコールバックが呼ばれる
+        expect(mockOnDisconnected).toHaveBeenCalledTimes(1);
+      });
+
+      test('gameIdがない場合は再接続されない', () => {
+        // Arrange - gameIdをnullに設定
+        manager.connect('test-game-123');
+        mockWebSocket.onopen();
+
+        // gameIdを内部的にnullにする（通常のクリーンアップでは発生しないが、テストケースとして）
+        manager.cleanup();
+        manager = createWebSocketManager(mockAPIs, mockConstants);
+
+        const initialConnectCalls = mockAPIs.websocket.create.mock.calls.length;
+
+        // Act - 切断してから3秒進める（gameIdなしの状態）
+        mockWebSocket.onclose();
+        vi.advanceTimersByTime(3000);
+
+        // Assert - 再接続は実行されない
+        expect(mockAPIs.websocket.create).toHaveBeenCalledTimes(initialConnectCalls);
+      });
+    });
+
+    describe('再接続タイマー管理テスト', () => {
+      test('複数回切断時は既存の再接続タイマーがクリアされてから新しいタイマーが設定される', () => {
+        // Arrange
+        manager.connect('test-game-123');
+        mockWebSocket.onopen();
+
+        // Act - 1回目の切断
+        mockWebSocket.onclose();
+        const firstSetTimeoutCalls = mockAPIs.timer.setTimeout.mock.calls.length;
+
+        // Act - 再度切断（まだ3秒経過前）
+        mockWebSocket.onclose();
+
+        // Assert - 既存タイマーがクリアされてから新しいタイマーが設定
+        expect(mockAPIs.timer.clearTimeout).toHaveBeenCalled();
+        expect(mockAPIs.timer.setTimeout).toHaveBeenCalledTimes(firstSetTimeoutCalls + 1);
+      });
+
+      test('再接続実行後はreconnectTimeoutIdがクリアされる', () => {
+        // Arrange
+        manager.connect('test-game-123');
+        mockWebSocket.onopen();
+
+        // Act - 切断して3秒進めて再接続実行
+        mockWebSocket.onclose();
+        expect(manager.getDebugInfo().hasReconnectTimeout).toBe(true);
+
+        const initialConnectCalls = mockAPIs.websocket.create.mock.calls.length;
+        vi.advanceTimersByTime(3000);
+
+        // Assert - 再接続が実行されている
+        expect(mockAPIs.websocket.create).toHaveBeenCalledTimes(initialConnectCalls + 1);
+
+        // Assert - 再接続実行後はタイマーIDがクリアされている
+        expect(manager.getDebugInfo().hasReconnectTimeout).toBe(false);
+      });
+    });
+
+    describe('手動再接続テスト', () => {
+      test('reconnect()メソッドで即座に再接続が実行される', () => {
+        // Arrange
+        manager.connect('test-game-123');
+        mockWebSocket.onopen();
+
+        const initialConnectCalls = mockAPIs.websocket.create.mock.calls.length;
+
+        // Act - 手動再接続
+        manager.reconnect();
+
+        // Assert - 即座に再接続が実行される（タイマー待機なし）
+        expect(mockAPIs.websocket.create).toHaveBeenCalledTimes(initialConnectCalls + 1);
+
+        // 同じgameIdで再接続されることを確認
+        const lastCall = mockAPIs.websocket.create.mock.calls[mockAPIs.websocket.create.mock.calls.length - 1];
+        expect(lastCall[0]).toContain('test-game-123');
+      });
+
+      test('reconnect()は既存の自動再接続タイマーをキャンセル', () => {
+        // Arrange
+        manager.connect('test-game-123');
+        mockWebSocket.onopen();
+        mockWebSocket.onclose();
+
+        // 自動再接続タイマーが設定されている
+        expect(manager.getDebugInfo().hasReconnectTimeout).toBe(true);
+        const initialClearTimeoutCalls = mockAPIs.timer.clearTimeout.mock.calls.length;
+        const initialConnectCalls = mockAPIs.websocket.create.mock.calls.length;
+
+        // Act - 手動再接続
+        manager.reconnect();
+
+        // Assert - 既存タイマーがキャンセルされる
+        expect(mockAPIs.timer.clearTimeout).toHaveBeenCalledTimes(initialClearTimeoutCalls + 1);
+        expect(manager.getDebugInfo().hasReconnectTimeout).toBe(false);
+
+        // 手動再接続が実行される
+        expect(mockAPIs.websocket.create).toHaveBeenCalledTimes(initialConnectCalls + 1);
+
+        // 3秒後に二重接続が起きないことを確認
+        vi.advanceTimersByTime(3000);
+        expect(mockAPIs.websocket.create).toHaveBeenCalledTimes(initialConnectCalls + 1);
+      });
+
+      test('gameIdがない場合はreconnect()でも再接続されない', () => {
+        // Arrange - 初期化のみでconnectしない
+        const initialConnectCalls = mockAPIs.websocket.create.mock.calls.length;
+
+        // Act - gameIdがない状態で手動再接続
+        manager.reconnect();
+
+        // Assert - 再接続は実行されない
+        expect(mockAPIs.websocket.create).toHaveBeenCalledTimes(initialConnectCalls);
+      });
+    });
+
+    describe('connect()の冪等性テスト', () => {
+      test('connect()は既存の再接続タイマーをクリアしてから新規接続', () => {
+        // Arrange - 初回接続→切断で自動再接続タイマー設定
+        manager.connect('game-1');
+        mockWebSocket.onopen();
+        mockWebSocket.onclose();
+        expect(manager.getDebugInfo().hasReconnectTimeout).toBe(true);
+
+        const initialClearTimeoutCalls = mockAPIs.timer.clearTimeout.mock.calls.length;
+        const initialConnectCalls = mockAPIs.websocket.create.mock.calls.length;
+
+        // Act - 別のゲームに接続（自動再接続待機中）
+        manager.connect('game-2');
+
+        // Assert - 既存タイマーがクリアされている
+        expect(manager.getDebugInfo().hasReconnectTimeout).toBe(false);
+        expect(mockAPIs.timer.clearTimeout).toHaveBeenCalledTimes(initialClearTimeoutCalls + 1);
+
+        // 新しい接続が実行されている
+        expect(mockAPIs.websocket.create).toHaveBeenCalledTimes(initialConnectCalls + 1);
+        expect(manager.getDebugInfo().gameId).toBe('game-2');
+
+        // 3秒後に旧タイマーによる二重接続が起きない
+        vi.advanceTimersByTime(3000);
+        expect(mockAPIs.websocket.create).toHaveBeenCalledTimes(initialConnectCalls + 1);
+      });
+    });
+
+    describe('クリーンアップテスト', () => {
+      test('cleanup実行時に再接続タイマーがクリアされる', () => {
+        // Arrange
+        manager.connect('test-game-123');
+        mockWebSocket.onopen();
+        mockWebSocket.onclose(); // 切断して再接続タイマーを設定
+
+        expect(manager.getDebugInfo().hasReconnectTimeout).toBe(true);
+
+        // Act - クリーンアップ実行
+        manager.cleanup();
+
+        // Assert - 再接続タイマーがクリアされる
+        expect(mockAPIs.timer.clearTimeout).toHaveBeenCalled();
+        expect(manager.getDebugInfo().hasReconnectTimeout).toBe(false);
+      });
+
+      test('クリーンアップ後は自動再接続が動作しない', () => {
+        // Arrange
+        manager.connect('test-game-123');
+        mockWebSocket.onopen();
+        mockWebSocket.onclose(); // 切断して再接続タイマーを設定
+
+        const initialConnectCalls = mockAPIs.websocket.create.mock.calls.length;
+
+        // Act - クリーンアップしてから3秒進める
+        manager.cleanup();
+        vi.advanceTimersByTime(5000); // 5秒進めても再接続しない
+
+        // Assert - クリーンアップ後なので再接続は実行されない
+        expect(mockAPIs.websocket.create).toHaveBeenCalledTimes(initialConnectCalls);
+      });
+    });
+
+    describe('複雑な再接続シナリオテスト', () => {
+      test('接続→切断→自動再接続→再度切断→手動再接続の複合パターン', () => {
+        // Arrange - 初回接続
+        manager.connect('test-game-123');
+        mockWebSocket.onopen();
+
+        const initialConnectCalls = mockAPIs.websocket.create.mock.calls.length;
+
+        // Act 1 - 1回目の切断と自動再接続
+        mockWebSocket.onclose();
+        vi.advanceTimersByTime(3000);
+        expect(mockAPIs.websocket.create).toHaveBeenCalledTimes(initialConnectCalls + 1);
+
+        // Act 2 - 2回目の切断（自動再接続待機中に手動再接続）
+        mockWebSocket.onclose();
+        expect(manager.getDebugInfo().hasReconnectTimeout).toBe(true);
+
+        manager.reconnect(); // 手動再接続
+
+        // Assert - 手動再接続が実行される
+        expect(mockAPIs.websocket.create).toHaveBeenCalledTimes(initialConnectCalls + 2);
+      });
+
+      test('高頻度での切断・再接続でもタイマー管理が正しく動作', () => {
+        // Arrange
+        manager.connect('test-game-123');
+        mockWebSocket.onopen();
+
+        // Act - 高頻度での切断・手動再接続を繰り返す
+        for (let i = 0; i < 10; i++) {
+          mockWebSocket.onclose();
+          manager.reconnect();
+        }
+
+        // Assert - デバッグ情報で状態が正しいことを確認
+        const debugInfo = manager.getDebugInfo();
+        expect(debugInfo.gameId).toBe('test-game-123');
+        expect(debugInfo.hasReconnectTimeout).toBe(false);
+
+        // 最終的にクリーンアップでもエラーが発生しない
+        expect(() => {
+          manager.cleanup();
+        }).not.toThrow();
+      });
+    });
+
+    describe('デバッグ情報での確認', () => {
+      test('getDebugInfoで再接続タイマーの状態が正しく反映される', () => {
+        // Arrange - 初期状態
+        let debugInfo = manager.getDebugInfo();
+        expect(debugInfo.hasReconnectTimeout).toBe(false);
+
+        // Act - 接続・切断
+        manager.connect('test-game-123');
+        mockWebSocket.onopen();
+        mockWebSocket.onclose();
+
+        // Assert - 切断後は再接続タイマーが設定される
+        debugInfo = manager.getDebugInfo();
+        expect(debugInfo.hasReconnectTimeout).toBe(true);
+
+        // Act - クリーンアップ
+        manager.cleanup();
+
+        // Assert - クリーンアップ後はタイマーがクリアされる
+        debugInfo = manager.getDebugInfo();
+        expect(debugInfo.hasReconnectTimeout).toBe(false);
+      });
+    });
+
+    describe('エラーハンドリングテスト', () => {
+      test('再接続時のエラー動作確認', () => {
+        // Arrange
+        const mockOnError = vi.fn();
+        manager.connect('test-game-123', {
+          onError: mockOnError
+        });
+        mockWebSocket.onopen();
+
+        // 再接続時にWebSocket作成でエラーが発生することをシミュレート
+        mockAPIs.websocket.create.mockImplementation(() => {
+          throw new Error('Connection failed');
+        });
+
+        // Act - 切断して自動再接続を実行
+        mockWebSocket.onclose();
+
+        // Assert - 現在の実装では再接続時のエラーは外部に伝播する
+        // これは改善の余地があるが、現在の動作として記録
+        expect(() => {
+          vi.advanceTimersByTime(3000);
+        }).toThrow('Connection failed');
       });
     });
   });

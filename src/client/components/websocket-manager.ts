@@ -54,6 +54,12 @@ interface GlobalWithWebSocketManager extends Window {
       gameId = id;
       callbacks = { ...callbacks, ...callbackHandlers };
 
+      // 既存の再接続タイマーをクリア（重複防止）
+      if (reconnectTimeoutId) {
+        apis.timer.clearTimeout(reconnectTimeoutId);
+        reconnectTimeoutId = null;
+      }
+
       // 既存の接続をクリーンアップ
       if (ws) {
         apis.websocket.close(ws);
@@ -95,6 +101,7 @@ interface GlobalWithWebSocketManager extends Window {
 
         // 3秒後に再接続
         reconnectTimeoutId = apis.timer.setTimeout(() => {
+          reconnectTimeoutId = null;
           if (gameId) {
             connect(gameId, callbacks);
           }
@@ -217,6 +224,12 @@ interface GlobalWithWebSocketManager extends Window {
      * 手動で再接続を実行
      */
     function reconnect() {
+      // 既存の自動再接続をキャンセル
+      if (reconnectTimeoutId) {
+        apis.timer.clearTimeout(reconnectTimeoutId);
+        reconnectTimeoutId = null;
+      }
+
       if (gameId) {
         connect(gameId, callbacks);
       }
