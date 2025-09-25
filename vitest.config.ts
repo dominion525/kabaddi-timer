@@ -2,8 +2,8 @@ import { defineWorkersConfig } from '@cloudflare/vitest-pool-workers/config';
 
 export default defineWorkersConfig({
   test: {
-    include: ['src/durable-objects/**/*.test.ts'],
-    exclude: ['**/node_modules/**', '**/dist/**', '**/client/**', '**/routes/**'],
+    include: ['src/durable-objects/**/*.test.ts', 'src/test/**/*.test.ts'],
+    exclude: ['**/node_modules/**', '**/dist/**', '**/routes/**'],
     poolOptions: {
       workers: {
         singleWorker: true,

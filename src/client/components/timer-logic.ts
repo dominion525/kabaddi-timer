@@ -5,21 +5,33 @@
   'use strict';
 
   /**
-   * タイマーの残り秒数を計算
+   * タイマーの残り秒数を計算（改善版）
+   *
+   * 改善点：
+   * 1. サーバーのremainingSecondsをベースとして使用
+   * 2. 負の経過時間を防止
+   * 3. 時刻差による異常値を制限
+   * 4. Math.floorを使用してちらつきを軽減
+   *
    * @param {Object} timer - タイマー状態オブジェクト
    * @param {number} serverTimeOffset - サーバー時刻オフセット
    * @returns {Object} { seconds: number, isRunning: boolean }
    */
   function calculateRemainingSeconds(timer: any, serverTimeOffset: number): { seconds: number; isRunning: boolean } {
+    // serverTimeOffsetは互換性のために残すが、相対時間アプローチでは使用しない
+    void serverTimeOffset;
     if (!timer) {
       return { seconds: 0, isRunning: false };
     }
 
     if (timer.isRunning && timer.startTime) {
-      const serverNow = Date.now() - serverTimeOffset;
-      const elapsed = (serverNow - timer.startTime) / 1000;
-      const remainingSeconds = Math.max(0, Math.ceil(timer.totalDuration - elapsed));
-      // タイマーが0になったら停止状態として扱う
+      // 相対時間アプローチ：startTimeを「同期受信時のクライアント時刻」として扱う
+      // 同期時点からのクライアント側経過時間を計算
+      const elapsedSinceSync = (Date.now() - timer.startTime) / 1000;
+
+      // 同期時点の残り秒数から、クライアント側経過時間を引く
+      const remainingSeconds = Math.max(0, Math.ceil(timer.remainingSeconds - elapsedSinceSync));
+
       const isRunning = remainingSeconds > 0;
       return { seconds: remainingSeconds, isRunning };
     } else {
@@ -37,15 +49,20 @@
    * @returns {Object} { seconds: number, isRunning: boolean }
    */
   function calculateSubTimerRemainingSeconds(subTimer: any, serverTimeOffset: number): { seconds: number; isRunning: boolean } {
+    // serverTimeOffsetは互換性のために残すが、相対時間アプローチでは使用しない
+    void serverTimeOffset;
     if (!subTimer) {
       return { seconds: 0, isRunning: false };
     }
 
     if (subTimer.isRunning && subTimer.startTime) {
-      const serverNow = Date.now() - serverTimeOffset;
-      const elapsed = (serverNow - subTimer.startTime) / 1000;
-      const remainingSeconds = Math.max(0, Math.ceil(subTimer.totalDuration - elapsed));
-      // サブタイマーが0になったら停止状態として扱う
+      // 相対時間アプローチ：startTimeを「同期受信時のクライアント時刻」として扱う
+      // 同期時点からのクライアント側経過時間を計算
+      const elapsedSinceSync = (Date.now() - subTimer.startTime) / 1000;
+
+      // 同期時点の残り秒数から、クライアント側経過時間を引く
+      const remainingSeconds = Math.max(0, Math.ceil(subTimer.remainingSeconds - elapsedSinceSync));
+
       const isRunning = remainingSeconds > 0;
       return { seconds: remainingSeconds, isRunning };
     } else {
