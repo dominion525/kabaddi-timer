@@ -5,7 +5,8 @@
   "main": "src/index.ts",
   "scripts": {
     "dev": "npm run build:client:dev && wrangler dev",
-    "build:client:dev": "tsc -p tsconfig.client.json",
+    "build:websocket": "tsc -p tsconfig.websocket.json",
+    "build:client:dev": "npm run build:websocket && tsc -p tsconfig.client.json",
     "build:client:prod": "esbuild src/client/bundle.ts --bundle --minify --target=es2020 --outfile=public/js/bundle.min.js",
     "build:client": "npm run build:client:dev",
     "build:worker": "tsc",

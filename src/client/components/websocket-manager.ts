@@ -12,14 +12,7 @@ import type {
   ActionMessage
 } from './websocket-manager.types';
 
-interface GlobalWithWebSocketManager extends Window {
-  createWebSocketManager?: (apis: WebSocketAPIs, constants: WebSocketConstants) => WebSocketManager;
-}
-
-(function(global: GlobalWithWebSocketManager) {
-  'use strict';
-
-  /**
+/**
    * WebSocket接続管理ファクトリー
    * 依存性注入でBrowserAPIsとConstants を受け取る
    * @param apis - ブラウザAPI抽象化オブジェクト
@@ -294,7 +287,5 @@ interface GlobalWithWebSocketManager extends Window {
     };
   }
 
-  // グローバルに公開
-  global.createWebSocketManager = createWebSocketManager;
-
-})(window as GlobalWithWebSocketManager);
+// ES6モジュールとしてエクスポート
+export { createWebSocketManager };

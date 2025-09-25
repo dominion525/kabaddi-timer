@@ -7,17 +7,7 @@ import type {
   WebSocketConstants,
   WebSocketManager
 } from '../../client/components/websocket-manager.types';
-
-// テスト対象のファクトリー関数をインポート
-// グローバル関数として定義されているため、windowオブジェクトから取得
-declare global {
-  interface Window {
-    createWebSocketManager?: (
-      apis: WebSocketAPIs,
-      constants: WebSocketConstants
-    ) => WebSocketManager;
-  }
-}
+import { createWebSocketManager } from '../../client/components/websocket-manager';
 
 // テスト用のモック作成ヘルパー関数
 function createMockWebSocket() {
@@ -85,7 +75,6 @@ describe('WebSocketManager - フェーズ1: 基本機能テスト', () => {
   let mockAPIs: WebSocketAPIs;
   let mockConstants: WebSocketConstants;
   let mockWebSocket: WebSocket;
-  let createWebSocketManager: (apis: WebSocketAPIs, constants: WebSocketConstants) => WebSocketManager;
 
   beforeEach(async () => {
     // モック初期化
@@ -97,10 +86,7 @@ describe('WebSocketManager - フェーズ1: 基本機能テスト', () => {
     vi.mocked(mockAPIs.websocket.create).mockReturnValue(mockWebSocket);
     vi.mocked(mockAPIs.websocket.getReadyState).mockReturnValue(WebSocket.OPEN);
 
-    // WebSocketManagerの動的インポート（グローバル関数として追加される）
-    await import('../../client/components/websocket-manager');
-
-    createWebSocketManager = window.createWebSocketManager!;
+    // ES6モジュールとして直接インポート済み
     expect(createWebSocketManager).toBeDefined();
   });
 
