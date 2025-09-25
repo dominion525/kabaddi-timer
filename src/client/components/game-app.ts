@@ -169,9 +169,17 @@ function gameApp(gameId: string) {
             console.log('Received game state:', message.data);
             this.gameState = message.data;
 
-            // ローカルのチーム名入力をサーバーの値で同期
-            this.teamANameInput = this.gameState.teamA.name;
-            this.teamBNameInput = this.gameState.teamB.name;
+            // ローカルのチーム名入力をサーバーの値で同期（フォーカス中の要素は除く）
+            const activeElement = document.activeElement as HTMLInputElement;
+            const isTeamAFocused = activeElement && activeElement.matches('input[x-model="teamANameInput"]');
+            const isTeamBFocused = activeElement && activeElement.matches('input[x-model="teamBNameInput"]');
+
+            if (!isTeamAFocused) {
+              this.teamANameInput = this.gameState.teamA.name;
+            }
+            if (!isTeamBFocused) {
+              this.teamBNameInput = this.gameState.teamB.name;
+            }
 
             // タイマーが停止している場合、直接値を更新
             if (this.gameState.timer && !this.gameState.timer.isRunning) {
