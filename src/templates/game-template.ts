@@ -46,8 +46,6 @@ export function gameTemplate(gameId: string, env?: any): string {
   <script src="/js/client/components/constants.js"></script>
   <script src="/js/client/components/action-creators.js"></script>
   <script src="/js/client/components/score-logic.js"></script>
-  <script src="/js/client/components/ui-state.js"></script>
-  <script src="/js/client/components/input-fields.js"></script>
   <script src="/js/client/components/timer-logic.js"></script>
   <script src="/js/client/components/game-app.js"></script>`;
   }
