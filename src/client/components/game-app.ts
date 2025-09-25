@@ -167,11 +167,45 @@ function gameApp(gameId: string) {
 
           if (message.type === MESSAGE_TYPES.GAME_STATE) {
             console.log('Received game state:', message.data);
-            this.gameState = message.data;
 
-            // ローカルのチーム名入力をサーバーの値で同期
-            this.teamANameInput = this.gameState.teamA.name;
-            this.teamBNameInput = this.gameState.teamB.name;
+            // ゲーム状態を設定（タイマーは後で調整）
+            this.gameState = message.data;
+            const clientTime = Date.now();
+
+            // タイマーが実行中の場合、相対時間計算のためstartTimeをクライアント時刻に置換
+            if (this.gameState.timer && this.gameState.timer.isRunning && this.gameState.timer.startTime) {
+              console.log('Adjusting timer startTime for relative calculation:', {
+                originalStartTime: this.gameState.timer.startTime,
+                remainingSeconds: this.gameState.timer.remainingSeconds,
+                clientTime: clientTime
+              });
+              // startTimeを「同期受信時のクライアント時刻」に置き換えて相対時間計算を有効にする
+              (this.gameState.timer as any).startTime = clientTime;
+            }
+
+            // サブタイマーも同様の処理
+            const subTimer = (this.gameState as any).subTimer;
+            if (subTimer && subTimer.isRunning && subTimer.startTime) {
+              console.log('Adjusting subTimer startTime for relative calculation:', {
+                originalStartTime: subTimer.startTime,
+                remainingSeconds: subTimer.remainingSeconds,
+                clientTime: clientTime
+              });
+              // startTimeを「同期受信時のクライアント時刻」に置き換えて相対時間計算を有効にする
+              subTimer.startTime = clientTime;
+            }
+
+            // ローカルのチーム名入力をサーバーの値で同期（フォーカス中の要素は除く）
+            const activeElement = document.activeElement as HTMLInputElement;
+            const isTeamAFocused = activeElement && activeElement.matches('input[x-model="teamANameInput"]');
+            const isTeamBFocused = activeElement && activeElement.matches('input[x-model="teamBNameInput"]');
+
+            if (!isTeamAFocused) {
+              this.teamANameInput = this.gameState.teamA.name;
+            }
+            if (!isTeamBFocused) {
+              this.teamBNameInput = this.gameState.teamB.name;
+            }
 
             // タイマーが停止している場合、直接値を更新
             if (this.gameState.timer && !this.gameState.timer.isRunning) {
