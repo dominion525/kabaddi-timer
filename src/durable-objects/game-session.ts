@@ -2,12 +2,11 @@
 import { GameState, GameAction, GameMessage, WebSocketMessage, TimeSyncData, MESSAGE_TYPES, ACTION_TYPES } from '../types/game';
 
 export class GameSession {
-  private state: DurableObjectState;
-  private connections: Set<WebSocket> = new Set();
+  private ctx: DurableObjectState;
   private gameState: GameState;
 
-  constructor(state: DurableObjectState) {
-    this.state = state;
+  constructor(ctx: DurableObjectState) {
+    this.ctx = ctx;
     this.gameState = this.getDefaultGameState();
   }
 
@@ -48,7 +47,10 @@ export class GameSession {
       const webSocketPair = new WebSocketPair();
       const [client, server] = Object.values(webSocketPair);
 
-      await this.handleSession(server);
+      // Hibernatable WebSocket API を使用
+      this.ctx.acceptWebSocket(server);
+
+      await this.loadGameState();
 
       return new Response(null, {
         status: 101,
@@ -59,62 +61,61 @@ export class GameSession {
     return new Response('Not found', { status: 404 });
   }
 
-  async handleSession(webSocket: WebSocket): Promise<void> {
-    webSocket.accept();
-    this.connections.add(webSocket);
+  async webSocketMessage(ws: WebSocket, message: string | ArrayBuffer): Promise<void> {
+    try {
+      const messageStr = typeof message === 'string' ? message : new TextDecoder().decode(message);
+      console.log('Received raw message:', messageStr);
 
-    await this.loadGameState();
+      // 初回メッセージ受信時の初期化処理
+      if (!this.isStateLoaded) {
+        await this.loadGameState();
 
-    // ゲーム状態を送信（gameStateは常に利用可能）
-    this.sendToClient(webSocket, {
-      type: MESSAGE_TYPES.GAME_STATE,
-      data: this.gameState,
-      timestamp: Date.now()
-    });
-
-    // 初期時刻同期を送信
-    this.sendToClient(webSocket, {
-      type: MESSAGE_TYPES.TIME_SYNC,
-      data: { serverTime: Date.now() },
-      timestamp: Date.now()
-    });
-
-    // 定期的な時刻同期アラームを設定（60秒後）
-    if (this.connections.size === 1) {
-      // 最初の接続時のみアラームを設定
-      await this.state.storage.setAlarm(Date.now() + 60000);
-    }
-
-    webSocket.addEventListener('message', async (event) => {
-      try {
-        console.log('Received raw message:', event.data);
-        const message: WebSocketMessage = JSON.parse(event.data as string);
-        console.log('Parsed message:', message);
-
-        if (!message.action) {
-          throw new Error('Missing action field');
-        }
-
-        await this.handleAction(message.action);
-      } catch (error) {
-        console.error('Message processing error:', error);
-        console.error('Raw data:', event.data);
-        this.sendToClient(webSocket, {
-          type: MESSAGE_TYPES.ERROR,
-          data: `Invalid message format: ${error instanceof Error ? error.message : String(error)}`,
+        // ゲーム状態を送信
+        this.sendToClient(ws, {
+          type: MESSAGE_TYPES.GAME_STATE,
+          data: this.gameState,
           timestamp: Date.now()
         });
+
+        // 初期時刻同期を送信
+        this.sendToClient(ws, {
+          type: MESSAGE_TYPES.TIME_SYNC,
+          data: { serverTime: Date.now() },
+          timestamp: Date.now()
+        });
+
+        // 定期的な時刻同期アラームを設定（60秒後）
+        if (this.ctx.getWebSockets().length === 1) {
+          await this.ctx.storage.setAlarm(Date.now() + 60000);
+        }
       }
-    });
 
-    webSocket.addEventListener('close', () => {
-      this.safelyDeleteConnection(webSocket);
-    });
+      const parsedMessage: WebSocketMessage = JSON.parse(messageStr);
+      console.log('Parsed message:', parsedMessage);
 
-    webSocket.addEventListener('error', (event) => {
-      console.warn('WebSocket error:', event);
-      this.safelyDeleteConnection(webSocket);
-    });
+      if (!parsedMessage.action) {
+        throw new Error('Missing action field');
+      }
+
+      await this.handleAction(parsedMessage.action);
+    } catch (error) {
+      console.error('Message processing error:', error);
+      console.error('Raw data:', message);
+      ws.send(JSON.stringify({
+        type: MESSAGE_TYPES.ERROR,
+        data: { error: error instanceof Error ? error.message : 'Unknown error occurred during message processing' },
+        timestamp: Date.now()
+      }));
+    }
+  }
+
+  async webSocketClose(_ws: WebSocket, code: number, reason: string, wasClean: boolean): Promise<void> {
+    console.log('WebSocket connection closed', { code, reason, wasClean });
+    // Hibernatable WebSocket APIでは接続管理はCloudflareが行うため、特別な処理は不要
+  }
+
+  async webSocketError(_ws: WebSocket, error: unknown): Promise<void> {
+    console.error('WebSocket error:', error);
   }
 
   private isStateLoaded = false;
@@ -125,7 +126,7 @@ export class GameSession {
     }
 
     try {
-      const stored = await this.state.storage.get<any>('gameState');
+      const stored = await this.ctx.storage.get<any>('gameState');
 
       if (stored) {
         // データ検証を実行
@@ -244,7 +245,7 @@ export class GameSession {
           this.updateSubTimerRemainingTime();
         }
 
-        await this.state.storage.put('gameState', this.gameState);
+        await this.ctx.storage.put('gameState', this.gameState);
         console.log(`Game state saved successfully (attempt ${attempt + 1})`);
         return; // 成功した場合は即座に終了
 
@@ -393,12 +394,12 @@ export class GameSession {
         timestamp: Date.now()
       };
 
-      // リクエスト元にのみ送信
-      for (const connection of this.connections) {
+      // すべての接続に送信
+      for (const connection of this.ctx.getWebSockets()) {
         try {
           connection.send(JSON.stringify(syncMessage));
         } catch (error) {
-          this.connections.delete(connection);
+          console.warn('Failed to send sync message:', error);
         }
       }
       return true;
@@ -447,20 +448,12 @@ export class GameSession {
     };
 
     const messageString = JSON.stringify(message);
-    const failedConnections: WebSocket[] = [];
-
-    for (const connection of this.connections) {
+    for (const connection of this.ctx.getWebSockets()) {
       try {
         connection.send(messageString);
       } catch (error) {
         console.warn('Failed to broadcast state to connection:', error);
-        failedConnections.push(connection);
       }
-    }
-
-    // 失敗したコネクションを削除
-    for (const connection of failedConnections) {
-      await this.safelyDeleteConnection(connection);
     }
   }
 
@@ -469,25 +462,9 @@ export class GameSession {
       webSocket.send(JSON.stringify(message));
     } catch (error) {
       console.warn('Failed to send message to client:', error);
-      this.connections.delete(webSocket);
     }
   }
 
-  private async safelyDeleteConnection(webSocket: WebSocket): Promise<void> {
-    try {
-      this.connections.delete(webSocket);
-      console.log('WebSocket connection removed, remaining connections:', this.connections.size);
-
-      // 最後のコネクションが削除された場合の処理
-      if (this.connections.size === 0) {
-        console.log('No active connections remaining, preparing for hibernation');
-        // 最終的な状態を保存
-        await this.saveGameState();
-      }
-    } catch (error) {
-      console.error('Error during connection cleanup:', error);
-    }
-  }
 
   private updateRemainingTime(): void {
     if (this.gameState.timer.startTime && this.gameState.timer.isRunning) {
@@ -678,29 +655,21 @@ export class GameSession {
     };
 
     const messageString = JSON.stringify(message);
-    const failedConnections: WebSocket[] = [];
-
-    for (const connection of this.connections) {
+    for (const connection of this.ctx.getWebSockets()) {
       try {
         connection.send(messageString);
       } catch (error) {
         console.warn('Failed to broadcast time sync to connection:', error);
-        failedConnections.push(connection);
       }
-    }
-
-    // 失敗したコネクションを削除
-    for (const connection of failedConnections) {
-      await this.safelyDeleteConnection(connection);
     }
   }
 
   async alarm(): Promise<void> {
     // 接続が残っている場合のみ時刻同期を実行
-    if (this.connections.size > 0) {
+    if (this.ctx.getWebSockets().length > 0) {
       await this.broadcastTimeSync();
       // 次のアラームを設定（60秒後）
-      await this.state.storage.setAlarm(Date.now() + 60000);
+      await this.ctx.storage.setAlarm(Date.now() + 60000);
     }
   }
 }
