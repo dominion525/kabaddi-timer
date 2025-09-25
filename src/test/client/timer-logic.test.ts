@@ -25,7 +25,7 @@ describe('TimerLogic', () => {
       expect(result).toEqual({ seconds: 0, isRunning: false });
     });
 
-    it('タイマーが停止中の場合、remainingSeconds をそのまま返す', () => {
+    it('タイマーが停止中の場合、remainingSeconds をMath.ceilで切り上げて返す', () => {
       const timer = {
         isRunning: false,
         remainingSeconds: 300.5,
@@ -34,7 +34,7 @@ describe('TimerLogic', () => {
       };
 
       const result = TimerLogic.calculateRemainingSeconds(timer, 0);
-      expect(result).toEqual({ seconds: 300, isRunning: false });
+      expect(result).toEqual({ seconds: 301, isRunning: false });
     });
 
     it('タイマーが動作中の場合、経過時間を計算して残り秒数を返す', () => {
@@ -71,7 +71,7 @@ describe('TimerLogic', () => {
       expect(result).toEqual({ seconds: 0, isRunning: false });
     });
 
-    it('サーバー時刻オフセットを考慮して計算する', () => {
+    it('相対時間アプローチで経過時間を計算する（serverTimeOffsetは無視）', () => {
       const mockNow = 1000000;
       vi.spyOn(Date, 'now').mockReturnValue(mockNow);
 
@@ -79,19 +79,19 @@ describe('TimerLogic', () => {
         isRunning: true,
         remainingSeconds: 900,
         totalDuration: 900,
-        startTime: mockNow - 100000 // サーバー時刻で100秒前に開始
+        startTime: mockNow - 100000 // 100秒前に開始
       };
 
-      // サーバーがクライアントより50秒進んでいる場合
+      // serverTimeOffsetは相対時間アプローチでは無視される
       const serverTimeOffset = -50000;
       const result = TimerLogic.calculateRemainingSeconds(timer, serverTimeOffset);
 
-      // 実際の経過時間: 100 + 50 = 150秒
-      // 残り時間: 900 - 150 = 750秒
-      expect(result).toEqual({ seconds: 750, isRunning: true });
+      // 相対時間アプローチ：クライアント時刻ベースで100秒経過
+      // 残り時間: 900 - 100 = 800秒
+      expect(result).toEqual({ seconds: 800, isRunning: true });
     });
 
-    it('startTime がないが isRunning が true の場合、remainingSeconds を返す', () => {
+    it('startTime がないが isRunning が true の場合、remainingSeconds をMath.ceilで切り上げて返す', () => {
       const timer = {
         isRunning: true,
         remainingSeconds: 600.7,
@@ -100,7 +100,7 @@ describe('TimerLogic', () => {
       };
 
       const result = TimerLogic.calculateRemainingSeconds(timer, 0);
-      expect(result).toEqual({ seconds: 600, isRunning: true });
+      expect(result).toEqual({ seconds: 601, isRunning: true });
     });
   });
 

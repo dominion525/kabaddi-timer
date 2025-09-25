@@ -6,7 +6,6 @@ import './components/browser-apis';
 import './components/constants';
 import './components/action-creators';
 import './components/score-logic';
-import './components/websocket-manager';
 import './components/timer-logic';
 import './components/ui-state';
 import './components/input-fields';

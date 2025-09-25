@@ -2,18 +2,25 @@
 // WebSocket通信の確立、管理、メッセージハンドリングを担当
 // 責務の分離により接続管理を独立化
 
-(function(global: any) {
-  'use strict';
+import type {
+  WebSocketAPIs,
+  WebSocketConstants,
+  WebSocketCallbacks,
+  WebSocketManager,
+  WebSocketMessage,
+  TimeSyncData,
+  ActionMessage
+} from './websocket-manager.types';
 
-  /**
+/**
    * WebSocket接続管理ファクトリー
    * 依存性注入でBrowserAPIsとConstants を受け取る
    * @param apis - ブラウザAPI抽象化オブジェクト
    * @param constants - 定数管理オブジェクト
    * @returns WebSocket管理オブジェクト
    */
-  function createWebSocketManager(apis: any, constants: any) {
-    const { MESSAGE_TYPES, WEBSOCKET_STATES } = constants;
+  function createWebSocketManager(apis: WebSocketAPIs, constants: WebSocketConstants): WebSocketManager {
+    const { MESSAGE_TYPES, WEBSOCKET_STATES, ACTIONS } = constants;
     let ws: WebSocket | null = null;
     let connected = false;
     let serverTimeOffset = 0;
@@ -22,13 +29,13 @@
     let gameId: string | null = null;
 
     // コールバック関数群
-    let callbacks = {
+    let callbacks: WebSocketCallbacks = {
       onConnected: () => {},
       onDisconnected: () => {},
-      onGameStateReceived: (_data: any) => {},
-      onTimeSyncReceived: (_data: any) => {},
-      onError: (_type: string, _error?: any) => {},
-      onActionSent: (_action: any) => {}
+      onGameStateReceived: (_data) => {},
+      onTimeSyncReceived: (_data) => {},
+      onError: (_type: string, _error) => {},
+      onActionSent: (_action) => {}
     };
 
     /**
@@ -36,9 +43,15 @@
      * @param id - ゲームID
      * @param callbackHandlers - イベントハンドラー
      */
-    function connect(id: string, callbackHandlers: any = {}) {
+    function connect(id: string, callbackHandlers: WebSocketCallbacks = {}) {
       gameId = id;
       callbacks = { ...callbacks, ...callbackHandlers };
+
+      // 既存の再接続タイマーをクリア（重複防止）
+      if (reconnectTimeoutId) {
+        apis.timer.clearTimeout(reconnectTimeoutId);
+        reconnectTimeoutId = null;
+      }
 
       // 既存の接続をクリーンアップ
       if (ws) {
@@ -81,6 +94,7 @@
 
         // 3秒後に再接続
         reconnectTimeoutId = apis.timer.setTimeout(() => {
+          reconnectTimeoutId = null;
           if (gameId) {
             connect(gameId, callbacks);
           }
@@ -101,7 +115,7 @@
      * メッセージハンドリング
      * @param message - 受信メッセージ
      */
-    function handleMessage(message: any) {
+    function handleMessage(message: WebSocketMessage) {
       if (message.type === MESSAGE_TYPES.GAME_STATE) {
         apis.console.log('Received game state:', message.data);
         callbacks.onGameStateReceived?.(message.data);
@@ -117,7 +131,7 @@
      * 時刻同期処理
      * @param data - 時刻同期データ
      */
-    function handleTimeSync(data: any) {
+    function handleTimeSync(data: TimeSyncData) {
       const clientTime = apis.timer.now();
       const serverTime = data.serverTime;
       const rtt = data.clientRequestTime ?
@@ -140,7 +154,7 @@
      * @param action - 送信するアクション
      * @returns 送信成功可否
      */
-    function sendAction(action: any): boolean {
+    function sendAction(action: ActionMessage): boolean {
       if (ws && apis.websocket.getReadyState(ws) === WEBSOCKET_STATES.OPEN) {
         try {
           apis.websocket.send(ws, JSON.stringify({ action }));
@@ -163,7 +177,7 @@
      */
     function sendTimeSync() {
       sendAction({
-        type: constants.ACTIONS.TIME_SYNC_REQUEST,
+        type: ACTIONS.TIME_SYNC_REQUEST,
         clientRequestTime: apis.timer.now()
       });
     }
@@ -203,6 +217,12 @@
      * 手動で再接続を実行
      */
     function reconnect() {
+      // 既存の自動再接続をキャンセル
+      if (reconnectTimeoutId) {
+        apis.timer.clearTimeout(reconnectTimeoutId);
+        reconnectTimeoutId = null;
+      }
+
       if (gameId) {
         connect(gameId, callbacks);
       }
@@ -267,7 +287,5 @@
     };
   }
 
-  // グローバルに公開
-  global.createWebSocketManager = createWebSocketManager;
-
-})(window);
+// グローバル関数として利用可能にする
+(window as any).createWebSocketManager = createWebSocketManager;
