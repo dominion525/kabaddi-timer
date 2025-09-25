@@ -19,7 +19,7 @@
       </div>
 
       <!-- メインスコア表示 -->
-      <div class="flex-1 grid grid-cols-3 gap-0" :class="showStatusBar ? 'pb-16' : 'pb-0'" style="grid-template-rows: 0.7fr 0.6fr; max-height: 45vh;">
+      <div class="flex-1 grid grid-cols-3 gap-0 pb-16" style="grid-template-rows: 0.7fr 0.6fr; max-height: 45vh;">
         <!-- 上段：左側チーム -->
         <div class="text-white flex flex-col score-area" :class="getDisplayLeftTeamId() === 'teamA' ? 'bg-red-600' : 'bg-blue-600'">
           <div class="flex-1 flex items-center justify-center py-0 px-1">
