@@ -45,6 +45,12 @@ src/revision.json
 ehthumbs.db
 Thumbs.db
 
+# Coverage reports
+coverage/
+coverage-*/
+*.lcov
+.nyc_output/
+
 # Logs
 logs/
 *.log
