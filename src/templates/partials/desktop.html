@@ -22,7 +22,7 @@
       </div>
 
       <!-- メインスコア表示 -->
-      <div class="flex-1 grid grid-cols-3 gap-0" :class="showStatusBar ? 'pb-16' : 'pb-0'" style="grid-template-rows: 1fr 1.5fr;">
+      <div class="flex-1 grid grid-cols-3 gap-0 pb-16" style="grid-template-rows: 1fr 1.5fr;">
         <!-- 上段：左側チーム -->
         <div class="text-white flex flex-col" :class="getTeamStyleClasses(getDisplayLeftTeamId()).bgColor">
           <div class="flex-1 flex items-center justify-center py-1 px-4">
@@ -63,9 +63,9 @@
         </div>
 
         <!-- 下段：メインタイマー（3列全体を使用） -->
-        <div class="col-span-3 bg-gray-800 text-white flex flex-col items-center justify-center px-8">
-          <div style="font-size: 15rem; line-height: 0.8;" class="font-bold font-mono" x-text="formattedTimer"></div>
-          <div class="text-xl opacity-75">
+        <div class="col-span-3 bg-gray-800 text-white flex flex-col items-center justify-center px-4 pb-4 pt-2">
+          <div style="font-size: 13.5rem; line-height: 0.7;" class="font-bold font-mono" x-text="formattedTimer"></div>
+          <div class="text-xl opacity-75 mt-4">
             <span x-show="timerRunning" class="text-green-400">● 動作中</span>
             <span x-show="!timerRunning" class="text-gray-400">● 停止</span>
           </div>
