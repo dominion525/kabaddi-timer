@@ -11,7 +11,7 @@
    * 1. サーバーのremainingSecondsをベースとして使用
    * 2. 負の経過時間を防止
    * 3. 時刻差による異常値を制限
-   * 4. Math.floorを使用してちらつきを軽減
+   * 4. 小数点2桁切り捨て + Math.ceil（10ms未満の端数を無視）でちらつきを防止
    *
    * @param {Object} timer - タイマー状態オブジェクト
    * @param {number} serverTimeOffset - サーバー時刻オフセット
@@ -30,13 +30,17 @@
       const elapsedSinceSync = (Date.now() - timer.startTime) / 1000;
 
       // 同期時点の残り秒数から、クライアント側経過時間を引く
-      const remainingSeconds = Math.max(0, Math.ceil(timer.remainingSeconds - elapsedSinceSync));
+      // 10ミリ秒未満の端数は切り捨ててちらつきを防止
+      const rawSeconds = timer.remainingSeconds - elapsedSinceSync;
+      const truncated = Math.floor(rawSeconds * 100) / 100;
+      const remainingSeconds = Math.max(0, Math.ceil(truncated));
 
       const isRunning = remainingSeconds > 0;
       return { seconds: remainingSeconds, isRunning };
     } else {
+      const truncated = Math.floor(timer.remainingSeconds * 100) / 100;
       return {
-        seconds: Math.ceil(timer.remainingSeconds),
+        seconds: Math.ceil(truncated),
         isRunning: timer.isRunning
       };
     }
@@ -61,13 +65,17 @@
       const elapsedSinceSync = (Date.now() - subTimer.startTime) / 1000;
 
       // 同期時点の残り秒数から、クライアント側経過時間を引く
-      const remainingSeconds = Math.max(0, Math.ceil(subTimer.remainingSeconds - elapsedSinceSync));
+      // 10ミリ秒未満の端数は切り捨ててちらつきを防止
+      const rawSeconds = subTimer.remainingSeconds - elapsedSinceSync;
+      const truncated = Math.floor(rawSeconds * 100) / 100;
+      const remainingSeconds = Math.max(0, Math.ceil(truncated));
 
       const isRunning = remainingSeconds > 0;
       return { seconds: remainingSeconds, isRunning };
     } else {
+      const truncated = Math.floor(subTimer.remainingSeconds * 100) / 100;
       return {
-        seconds: Math.ceil(subTimer.remainingSeconds),
+        seconds: Math.ceil(truncated),
         isRunning: subTimer.isRunning
       };
     }
