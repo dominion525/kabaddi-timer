@@ -26,6 +26,14 @@ function gameApp(gameId: string) {
         pausedAt: null,
         remainingSeconds: DEFAULT_VALUES.timer.defaultDuration
       },
+      subTimer: {
+        totalDuration: DEFAULT_VALUES.subTimer.defaultDuration,
+        startTime: null,
+        isRunning: false,
+        isPaused: false,
+        pausedAt: null,
+        remainingSeconds: DEFAULT_VALUES.subTimer.defaultDuration
+      },
       serverTime: 0,
       lastUpdated: 0
     },
@@ -54,6 +62,8 @@ function gameApp(gameId: string) {
     timeSyncIntervalId: null as number | null,
     reconnectTimeoutId: null as number | null,
     lastSyncRequest: 0,
+    lastActivityTime: 0,
+    idleTimeoutId: null as number | null,
     timerInputMinutes: DEFAULT_VALUES.timer.presetMinutes.medium,
     timerInputSeconds: 0,
     teamANameInput: DEFAULT_VALUES.teamNames.teamA,
@@ -148,18 +158,8 @@ function gameApp(gameId: string) {
         // 接続成功時にゲーム状態取得を要求（即座に初回同期）
         this.sendAction(ACTIONS.GET_GAME_STATE);
 
-        // 既存の定期同期をクリア
-        if (this.timeSyncIntervalId) {
-          clearInterval(this.timeSyncIntervalId);
-          this.timeSyncIntervalId = null;
-        }
-
-        // 15-30秒のランダム間隔で定期同期を開始
-        const randomInterval = 15000 + Math.random() * 15000; // 15-30秒
-        console.log(`Starting periodic time sync with interval: ${Math.round(randomInterval / 1000)}s`);
-        this.timeSyncIntervalId = setInterval(() => {
-          this.sendAction(ACTIONS.GET_GAME_STATE);
-        }, randomInterval) as any;
+        // アイドル時同期タイマーを開始
+        this.resetIdleTimer();
       };
 
       this.ws.onmessage = (event: MessageEvent) => {
@@ -243,6 +243,9 @@ function gameApp(gameId: string) {
             }
 
             this.updateTimerDisplay();
+
+            // メッセージ受信時にアイドルタイマーをリセット
+            this.resetIdleTimer();
           }
 
 
@@ -289,6 +292,9 @@ function gameApp(gameId: string) {
 
           this.ws.send(JSON.stringify({ action }));
           console.log('Sent action:', action);
+
+          // アクション送信時にアイドルタイマーをリセット
+          this.resetIdleTimer();
         } catch (error) {
           console.error('Failed to send action:', error);
         }
@@ -537,6 +543,32 @@ function gameApp(gameId: string) {
       this.updateTimeDisplay();
     },
 
+    // タイマー動作中のアイドル時同期タイマー管理
+    resetIdleTimer() {
+      // アクティビティ時刻を記録
+      this.lastActivityTime = Date.now();
+
+      // 既存のアイドルタイマーをクリア
+      if (this.idleTimeoutId) {
+        clearTimeout(this.idleTimeoutId);
+        this.idleTimeoutId = null;
+      }
+
+      // タイマー動作中のみアイドル同期を設定
+      if (this.gameState?.timer?.isRunning || this.gameState?.subTimer?.isRunning) {
+        // 5-10秒後に同期（10秒ハイバネーション閾値をカバー）
+        const idleDelay = 5000 + Math.random() * 5000;
+        console.log(`Timer running - setting idle sync after ${Math.round(idleDelay / 1000)}s`);
+
+        this.idleTimeoutId = setTimeout(() => {
+          this.sendAction(ACTIONS.GET_GAME_STATE);
+          this.resetIdleTimer(); // 再度チェック
+        }, idleDelay) as any;
+      } else {
+        console.log('Timer stopped - no idle sync needed (hibernation allowed)');
+      }
+    },
+
     // コートチェンジ関連のヘルパーメソッド
 
     /**
@@ -655,6 +687,10 @@ function gameApp(gameId: string) {
       if (this.timeSyncIntervalId) {
         clearInterval(this.timeSyncIntervalId);
         this.timeSyncIntervalId = null;
+      }
+      if (this.idleTimeoutId) {
+        clearTimeout(this.idleTimeoutId);
+        this.idleTimeoutId = null;
       }
 
       // 再接続タイマーをクリア
