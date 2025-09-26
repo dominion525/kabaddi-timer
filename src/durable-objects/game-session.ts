@@ -64,7 +64,6 @@ export class GameSession {
   async webSocketMessage(ws: WebSocket, message: string | ArrayBuffer): Promise<void> {
     try {
       const messageStr = typeof message === 'string' ? message : new TextDecoder().decode(message);
-      console.log('Received raw message:', messageStr);
 
       // 初回メッセージ受信時の初期化処理
       if (!this.isStateLoaded) {
@@ -91,7 +90,6 @@ export class GameSession {
       }
 
       const parsedMessage: WebSocketMessage = JSON.parse(messageStr);
-      console.log('Parsed message:', parsedMessage);
 
       if (!parsedMessage.action) {
         throw new Error('Missing action field');
@@ -100,7 +98,6 @@ export class GameSession {
       await this.handleAction(parsedMessage.action);
     } catch (error) {
       console.error('Message processing error:', error);
-      console.error('Raw data:', message);
       ws.send(JSON.stringify({
         type: MESSAGE_TYPES.ERROR,
         data: { error: error instanceof Error ? error.message : 'Unknown error occurred during message processing' },
@@ -109,8 +106,7 @@ export class GameSession {
     }
   }
 
-  async webSocketClose(_ws: WebSocket, code: number, reason: string, wasClean: boolean): Promise<void> {
-    console.log('WebSocket connection closed', { code, reason, wasClean });
+  async webSocketClose(_ws: WebSocket, _code: number, _reason: string, _wasClean: boolean): Promise<void> {
     // Hibernatable WebSocket APIでは接続管理はCloudflareが行うため、特別な処理は不要
   }
 
@@ -125,6 +121,8 @@ export class GameSession {
       return;
     }
 
+    let needsSave = false;
+
     try {
       const stored = await this.ctx.storage.get<any>('gameState');
 
@@ -132,25 +130,28 @@ export class GameSession {
         // データ検証を実行
         if (this.validateGameState(stored)) {
           this.gameState = stored;
-          console.log('Valid game state loaded from storage');
         } else {
           // 検証失敗の場合は修復を試行
           console.warn('Invalid game state detected, attempting repair');
           this.gameState = this.repairGameState(stored);
-          console.log('Game state repaired successfully');
+          needsSave = true; // 修復後は保存が必要
         }
       } else {
         // 初回アクセス時はデフォルト状態を使用（既に初期化済み）
-        console.log('No stored state found, using default state');
+        needsSave = true; // 新規作成の場合は保存が必要
       }
     } catch (error) {
       // ストレージアクセスエラーの場合はデフォルト状態で継続（既に初期化済み）
       console.error('Failed to load game state from storage:', error);
+      needsSave = true; // エラー時も保存してストレージの状態を修復
     }
 
     this.isStateLoaded = true;
-    // 初期化完了後に即座に保存
-    await this.saveGameState();
+    
+    // 必要な場合のみ保存実行
+    if (needsSave) {
+      await this.saveGameState();
+    }
   }
 
   private validateGameState(state: any): state is GameState {
@@ -246,7 +247,6 @@ export class GameSession {
         }
 
         await this.ctx.storage.put('gameState', this.gameState);
-        console.log(`Game state saved successfully (attempt ${attempt + 1})`);
         return; // 成功した場合は即座に終了
 
       } catch (error) {
@@ -436,8 +436,6 @@ export class GameSession {
   }
 
   private async broadcastState(): Promise<void> {
-    await this.loadGameState(); // 状態の存在を保証
-
     // サーバー時刻を更新
     this.gameState.serverTime = Date.now();
 
