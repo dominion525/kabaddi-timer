@@ -8,7 +8,6 @@ import type {
   WebSocketCallbacks,
   WebSocketManager,
   WebSocketMessage,
-  TimeSyncData,
   ActionMessage
 } from './websocket-manager.types';
 
@@ -119,35 +118,12 @@ import type {
       if (message.type === MESSAGE_TYPES.GAME_STATE) {
         apis.console.log('Received game state:', message.data);
         callbacks.onGameStateReceived?.(message.data);
-      } else if (message.type === MESSAGE_TYPES.TIME_SYNC) {
-        handleTimeSync(message.data);
       } else if (message.type === MESSAGE_TYPES.ERROR) {
         apis.console.error('Server error:', message.data);
         callbacks.onError?.('Server error', message.data);
       }
     }
 
-    /**
-     * 時刻同期処理
-     * @param data - 時刻同期データ
-     */
-    function handleTimeSync(data: TimeSyncData) {
-      const clientTime = apis.timer.now();
-      const serverTime = data.serverTime;
-      const rtt = data.clientRequestTime ?
-        (clientTime - data.clientRequestTime) : 0;
-
-      serverTimeOffset = serverTime - clientTime + (rtt / 2);
-
-      apis.console.log('Time sync: offset =', serverTimeOffset, 'ms, RTT =', rtt, 'ms');
-
-      callbacks.onTimeSyncReceived?.({
-        offset: serverTimeOffset,
-        rtt: rtt,
-        serverTime: serverTime,
-        clientTime: clientTime
-      });
-    }
 
     /**
      * アクションを送信

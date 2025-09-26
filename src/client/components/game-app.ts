@@ -221,23 +221,6 @@ function gameApp(gameId: string) {
             this.updateTimerDisplay();
           }
 
-          else if (message.type === MESSAGE_TYPES.TIME_SYNC) {
-            const clientTime = Date.now();
-            const serverTime = message.data.serverTime;
-            const rtt = message.data.clientRequestTime ?
-              (clientTime - message.data.clientRequestTime) : 0;
-            this.serverTimeOffset = serverTime - clientTime + (rtt / 2);
-
-            // 時刻同期状態を更新
-            this.lastRTT = rtt;
-            this.lastSyncTime = new Date();
-            this.updateTimeSyncStatus();
-            
-            // 時刻表示を更新
-            this.updateTimeDisplay();
-
-            console.log('Time sync: offset =', this.serverTimeOffset, 'ms, RTT =', rtt, 'ms, status =', this.timeSyncStatus);
-          }
 
           else if (message.type === MESSAGE_TYPES.ERROR) {
             console.error('Server error:', message.data);

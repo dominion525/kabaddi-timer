@@ -75,18 +75,6 @@ export class GameSession {
           data: this.gameState,
           timestamp: Date.now()
         });
-
-        // 初期時刻同期を送信
-        this.sendToClient(ws, {
-          type: MESSAGE_TYPES.TIME_SYNC,
-          data: { serverTime: Date.now() },
-          timestamp: Date.now()
-        });
-
-        // 定期的な時刻同期アラームを設定（60秒後）
-        if (this.ctx.getWebSockets().length === 1) {
-          await this.ctx.storage.setAlarm(Date.now() + 60000);
-        }
       }
 
       const parsedMessage: WebSocketMessage = JSON.parse(messageStr);
@@ -380,40 +368,10 @@ export class GameSession {
     }
   }
 
-  private async handleTimeSyncRequest(action: GameAction): Promise<boolean> {
-    if (action.type === 'TIME_SYNC_REQUEST') {
-      // 時刻同期レスポンスを送信（状態は変更しない）
-      const syncData: TimeSyncData = {
-        serverTime: Date.now(),
-        clientRequestTime: action.clientRequestTime
-      };
-
-      const syncMessage: GameMessage = {
-        type: MESSAGE_TYPES.TIME_SYNC,
-        data: syncData,
-        timestamp: Date.now()
-      };
-
-      // すべての接続に送信
-      for (const connection of this.ctx.getWebSockets()) {
-        try {
-          connection.send(JSON.stringify(syncMessage));
-        } catch (error) {
-          console.warn('Failed to send sync message:', error);
-        }
-      }
-      return true;
-    }
-    return false;
-  }
 
   private async handleAction(action: GameAction): Promise<void> {
     await this.loadGameState(); // 必要に応じて状態を初期化
 
-    // 時刻同期リクエストは状態変更を伴わないため先に処理
-    if (await this.handleTimeSyncRequest(action)) {
-      return;
-    }
 
     // タイマー関連アクションは状態保存・ブロードキャストを内部で行う
     if (await this.handleTimerActions(action)) {
@@ -481,7 +439,6 @@ export class GameSession {
   private async saveAndBroadcast(): Promise<void> {
     await this.saveGameState();
     await this.broadcastState();
-    await this.broadcastTimeSync();
   }
 
   private async startTimer(): Promise<void> {
@@ -641,33 +598,7 @@ export class GameSession {
     }
   }
 
-  private async broadcastTimeSync(): Promise<void> {
-    const syncData: TimeSyncData = {
-      serverTime: Date.now()
-    };
+  
 
-    const message: GameMessage = {
-      type: MESSAGE_TYPES.TIME_SYNC,
-      data: syncData,
-      timestamp: Date.now()
-    };
-
-    const messageString = JSON.stringify(message);
-    for (const connection of this.ctx.getWebSockets()) {
-      try {
-        connection.send(messageString);
-      } catch (error) {
-        console.warn('Failed to broadcast time sync to connection:', error);
-      }
-    }
-  }
-
-  async alarm(): Promise<void> {
-    // 接続が残っている場合のみ時刻同期を実行
-    if (this.ctx.getWebSockets().length > 0) {
-      await this.broadcastTimeSync();
-      // 次のアラームを設定（60秒後）
-      await this.ctx.storage.setAlarm(Date.now() + 60000);
-    }
-  }
+  
 }
