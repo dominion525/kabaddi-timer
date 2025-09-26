@@ -111,15 +111,6 @@ function gameApp(gameId: string) {
       };
       mediaQuery.addListener(handleMediaChange);
 
-      // 定期的な時刻同期リクエスト（60秒ごと）
-      this.timeSyncIntervalId = setInterval(() => {
-        if (this.ws && this.ws.readyState === WebSocket.OPEN) {
-          this.sendAction({
-            ...ACTIONS.TIME_SYNC_REQUEST,
-            clientRequestTime: Date.now()
-          });
-        }
-      }, 60000) as any;
 
       // Lucide アイコンを初期化
       if (typeof (window as any).lucide !== 'undefined') {
@@ -154,11 +145,8 @@ function gameApp(gameId: string) {
         this.connected = true;
         this.connectionStatus = 'connected';
         console.log('WebSocket connected');
-        // 接続成功時に初期時刻同期を要求
-        this.sendAction({
-          ...ACTIONS.TIME_SYNC_REQUEST,
-          clientRequestTime: Date.now()
-        });
+        // 接続成功時にゲーム状態取得を要求
+        this.sendAction(ACTIONS.GET_GAME_STATE);
       };
 
       this.ws.onmessage = (event: MessageEvent) => {
@@ -500,17 +488,6 @@ function gameApp(gameId: string) {
     },
 
     // 手動で時刻同期を要求
-    requestTimeSync() {
-      // 時刻表示を即座に更新
-      this.updateTimeDisplay();
-      
-      if (this.ws && this.ws.readyState === WebSocket.OPEN) {
-        this.sendAction({
-          ...ACTIONS.TIME_SYNC_REQUEST,
-          clientRequestTime: Date.now()
-        });
-      }
-    },
 
     // コートチェンジ関連のヘルパーメソッド
 

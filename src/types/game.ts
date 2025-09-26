@@ -45,6 +45,7 @@ export type GameAction =
   | { type: 'SUB_TIMER_START' }
   | { type: 'SUB_TIMER_PAUSE' }
   | { type: 'SUB_TIMER_RESET' }
+  | { type: 'GET_GAME_STATE' }
   | { type: 'DO_OR_DIE_UPDATE'; team: 'teamA' | 'teamB'; delta: number }
   | { type: 'DO_OR_DIE_RESET' }
   | { type: 'COURT_CHANGE' }
@@ -68,6 +69,7 @@ export const ACTION_TYPES = {
   SUB_TIMER_START: 'SUB_TIMER_START',
   SUB_TIMER_PAUSE: 'SUB_TIMER_PAUSE',
   SUB_TIMER_RESET: 'SUB_TIMER_RESET',
+  GET_GAME_STATE: 'GET_GAME_STATE',
   DO_OR_DIE_UPDATE: 'DO_OR_DIE_UPDATE',
   DO_OR_DIE_RESET: 'DO_OR_DIE_RESET',
   COURT_CHANGE: 'COURT_CHANGE',

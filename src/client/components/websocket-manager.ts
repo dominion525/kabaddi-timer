@@ -19,7 +19,7 @@ import type {
    * @returns WebSocket管理オブジェクト
    */
   function createWebSocketManager(apis: WebSocketAPIs, constants: WebSocketConstants): WebSocketManager {
-    const { MESSAGE_TYPES, WEBSOCKET_STATES, ACTIONS } = constants;
+    const { MESSAGE_TYPES, WEBSOCKET_STATES } = constants;
     let ws: WebSocket | null = null;
     let connected = false;
     let serverTimeOffset = 0;
@@ -32,7 +32,6 @@ import type {
       onConnected: () => {},
       onDisconnected: () => {},
       onGameStateReceived: (_data) => {},
-      onTimeSyncReceived: (_data) => {},
       onError: (_type: string, _error) => {},
       onActionSent: (_action) => {}
     };
@@ -66,8 +65,6 @@ import type {
         connected = true;
         apis.console.log('WebSocket connected');
         callbacks.onConnected?.();
-        // 接続成功時に初期時刻同期を要求
-        sendTimeSync();
       };
 
       ws!.onmessage = (event: MessageEvent) => {
@@ -148,15 +145,6 @@ import type {
       }
     }
 
-    /**
-     * 時刻同期リクエストを送信
-     */
-    function sendTimeSync() {
-      sendAction({
-        type: ACTIONS.TIME_SYNC_REQUEST,
-        clientRequestTime: apis.timer.now()
-      });
-    }
 
     /**
      * 定期的な時刻同期を開始
@@ -166,11 +154,8 @@ import type {
         apis.timer.clearInterval(timeSyncIntervalId);
       }
 
-      timeSyncIntervalId = apis.timer.setInterval(() => {
-        if (isConnected()) {
-          sendTimeSync();
-        }
-      }, 60000); // 60秒ごと
+      // 定期的な状態同期は不要（ゲーム状態更新時に更新される）
+      timeSyncIntervalId = null;
     }
 
     /**

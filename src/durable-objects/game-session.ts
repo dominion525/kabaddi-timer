@@ -319,6 +319,11 @@ export class GameSession {
       case ACTION_TYPES.SET_TEAM_NAME:
         this.setTeamName(action.team, action.name);
         break;
+
+      case ACTION_TYPES.GET_GAME_STATE:
+        // 状態を変更せず、現在の状態をブロードキャスト
+        await this.broadcastState();
+        return; // 状態変更がないため、saveAndBroadcastは呼ばない
     }
   }
 
