@@ -160,15 +160,17 @@ function gameApp(gameId: string) {
             this.gameState = message.data;
             const clientTime = Date.now();
 
-            // 時刻同期計算（全ての通信で計算）
-            if (message.timestamp) {
-              // RTT計算（簡易的な推定）
-              const rtt = clientTime - message.timestamp;
-              this.lastRTT = Math.max(0, rtt); // 負値を避ける
+            // 時刻同期計算（GET_GAME_STATEレスポンスで正確に計算）
+            if (this.lastSyncRequest > 0) {
+              // 正確なRTT計算（リクエスト送信から応答受信まで）
+              const rtt = clientTime - this.lastSyncRequest;
+              this.lastRTT = Math.max(0, rtt);
 
-              // サーバー時刻オフセット計算
+              // サーバー時刻オフセット計算（片道遅延で補正）
               if (this.gameState.serverTime) {
-                this.serverTimeOffset = this.gameState.serverTime - clientTime;
+                const halfRtt = rtt / 2;
+                const estimatedServerReceiveTime = clientTime - halfRtt;
+                this.serverTimeOffset = this.gameState.serverTime - estimatedServerReceiveTime;
               }
 
               // 同期時刻を更新
@@ -176,6 +178,9 @@ function gameApp(gameId: string) {
 
               // 同期状態を更新
               this.updateTimeSyncStatus();
+
+              // 同期リクエスト時刻をリセット
+              this.lastSyncRequest = 0;
             }
 
             // タイマーが実行中の場合、相対時間計算のためstartTimeをクライアント時刻に置換
@@ -264,6 +269,11 @@ function gameApp(gameId: string) {
     sendAction(action: any) {
       if (this.ws && this.ws.readyState === WebSocket.OPEN) {
         try {
+          // GET_GAME_STATEアクション送信時に時刻を記録（RTT計算用）
+          if (action.type === 'GET_GAME_STATE') {
+            this.lastSyncRequest = Date.now();
+          }
+
           this.ws.send(JSON.stringify({ action }));
           console.log('Sent action:', action);
         } catch (error) {
