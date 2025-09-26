@@ -160,6 +160,24 @@ function gameApp(gameId: string) {
             this.gameState = message.data;
             const clientTime = Date.now();
 
+            // 時刻同期計算（全ての通信で計算）
+            if (message.timestamp) {
+              // RTT計算（簡易的な推定）
+              const rtt = clientTime - message.timestamp;
+              this.lastRTT = Math.max(0, rtt); // 負値を避ける
+
+              // サーバー時刻オフセット計算
+              if (this.gameState.serverTime) {
+                this.serverTimeOffset = this.gameState.serverTime - clientTime;
+              }
+
+              // 同期時刻を更新
+              this.lastSyncTime = new Date();
+
+              // 同期状態を更新
+              this.updateTimeSyncStatus();
+            }
+
             // タイマーが実行中の場合、相対時間計算のためstartTimeをクライアント時刻に置換
             if (this.gameState.timer && this.gameState.timer.isRunning && this.gameState.timer.startTime) {
               console.log('Adjusting timer startTime for relative calculation:', {
