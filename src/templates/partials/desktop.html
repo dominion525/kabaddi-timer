@@ -75,14 +75,51 @@
       <!-- 接続状態とコントロールボタン -->
       <div x-show="showStatusBar" class="bg-gray-800 text-white p-2 flex justify-between items-center fixed bottom-0 left-0 right-0 z-50">
         <div class="flex items-center space-x-4">
-          <div @click="connected ? openTimeSyncModal() : null" :class="connected ? 'cursor-pointer hover:bg-gray-700 px-2 py-1 rounded transition-colors' : ''">
-            <span x-show="connectionStatus === 'connected' && timeSyncStatus === 'good'" class="text-green-400">● 接続中</span>
-            <span x-show="connectionStatus === 'connected' && timeSyncStatus === 'warning'" class="text-yellow-400">● 接続中 (同期注意)</span>
-            <span x-show="connectionStatus === 'connected' && timeSyncStatus === 'error'" class="text-orange-400">● 接続中 (同期問題)</span>
-            <span x-show="connectionStatus === 'connected' && timeSyncStatus === 'unknown'" class="text-blue-400">● 接続中 (同期中...)</span>
-            <span x-show="connectionStatus === 'connecting'" class="text-yellow-400">● 接続中...</span>
-            <span x-show="connectionStatus === 'reconnecting'" class="text-orange-400 animate-pulse">● 再接続中...</span>
-            <span x-show="connectionStatus === 'disconnected'" class="text-red-400">● 切断</span>
+          <div @click="connected ? openTimeSyncModal() : null"
+               :class="connected ? 'cursor-pointer hover:bg-gray-700 px-2 py-1 rounded transition-all duration-300' : ''"
+               class="transition-all duration-200">
+            <span x-show="connectionStatus === 'connected' && timeSyncStatus === 'good'" class="text-green-400">
+              <span :class="[
+                sendingData ? 'text-yellow-300' : '',
+                receivingData ? 'text-orange-400' : ''
+              ]" class="transition-colors duration-150">●</span> 接続中
+            </span>
+            <span x-show="connectionStatus === 'connected' && timeSyncStatus === 'warning'" class="text-yellow-400">
+              <span :class="[
+                sendingData ? 'text-yellow-300' : '',
+                receivingData ? 'text-orange-400' : ''
+              ]" class="transition-colors duration-150">●</span> 接続中 (同期注意)
+            </span>
+            <span x-show="connectionStatus === 'connected' && timeSyncStatus === 'error'" class="text-orange-400">
+              <span :class="[
+                sendingData ? 'text-yellow-300' : '',
+                receivingData ? 'text-orange-400' : ''
+              ]" class="transition-colors duration-150">●</span> 接続中 (同期問題)
+            </span>
+            <span x-show="connectionStatus === 'connected' && timeSyncStatus === 'unknown'" class="text-blue-400">
+              <span :class="[
+                sendingData ? 'text-yellow-300' : '',
+                receivingData ? 'text-orange-400' : ''
+              ]" class="transition-colors duration-150">●</span> 接続中 (同期中...)
+            </span>
+            <span x-show="connectionStatus === 'connecting'" class="text-yellow-400">
+              <span :class="[
+                sendingData ? 'text-yellow-300' : '',
+                receivingData ? 'text-orange-400' : ''
+              ]" class="transition-colors duration-150">●</span> 接続中...
+            </span>
+            <span x-show="connectionStatus === 'reconnecting'" class="text-orange-400 animate-pulse">
+              <span :class="[
+                sendingData ? 'text-yellow-300' : '',
+                receivingData ? 'text-orange-400' : ''
+              ]" class="transition-colors duration-150">●</span> 再接続中...
+            </span>
+            <span x-show="connectionStatus === 'disconnected'" class="text-red-400">
+              <span :class="[
+                sendingData ? 'text-yellow-300' : '',
+                receivingData ? 'text-orange-400' : ''
+              ]" class="transition-colors duration-150">●</span> 切断
+            </span>
           </div>
           <div class="flex items-center space-x-2 text-gray-300">
             <button @click="openQRModal()" class="hover:text-white transition-colors cursor-pointer flex items-center gap-1">

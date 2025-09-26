@@ -64,6 +64,11 @@ function gameApp(gameId: string) {
     lastSyncRequest: 0,
     lastActivityTime: 0,
     idleTimeoutId: null as number | null,
+    // 通信アクティビティ表示用フラグ
+    sendingData: false,
+    receivingData: false,
+    sendingAnimationTimeout: null as number | null,
+    receivingAnimationTimeout: null as number | null,
     timerInputMinutes: DEFAULT_VALUES.timer.presetMinutes.medium,
     timerInputSeconds: 0,
     teamANameInput: DEFAULT_VALUES.teamNames.teamA,
@@ -78,6 +83,8 @@ function gameApp(gameId: string) {
     displayFlipped: false,
 
     init() {
+      console.log('📌 File version: 2024-09-27-v2 with debug logs and cache fix');
+
       // localStorageからsimpleModeを読み込み
       const savedSimpleMode = localStorage.getItem(STORAGE_KEYS.simpleMode);
       if (savedSimpleMode !== null) {
@@ -244,6 +251,14 @@ function gameApp(gameId: string) {
 
             this.updateTimerDisplay();
 
+            // 受信アニメーション（ゲーム状態更新時）
+            console.log('🟡 About to call triggerReceivingAnimation, function exists:', typeof this.triggerReceivingAnimation);
+            if (typeof this.triggerReceivingAnimation === 'function') {
+              this.triggerReceivingAnimation();
+            } else {
+              console.error('🔴 triggerReceivingAnimation is not a function!', this.triggerReceivingAnimation);
+            }
+
             // メッセージ受信時にアイドルタイマーをリセット
             this.resetIdleTimer();
           }
@@ -288,6 +303,14 @@ function gameApp(gameId: string) {
           // GET_GAME_STATEアクション送信時に時刻を記録（RTT計算用）
           if (action.type === 'GET_GAME_STATE') {
             this.lastSyncRequest = Date.now();
+          }
+
+          // すべての送信でアニメーション表示
+          console.log('🟡 About to call triggerSendingAnimation, function exists:', typeof this.triggerSendingAnimation);
+          if (typeof this.triggerSendingAnimation === 'function') {
+            this.triggerSendingAnimation();
+          } else {
+            console.error('🔴 triggerSendingAnimation is not a function!', this.triggerSendingAnimation);
           }
 
           this.ws.send(JSON.stringify({ action }));
@@ -569,6 +592,54 @@ function gameApp(gameId: string) {
       }
     },
 
+    // 通信アクティビティアニメーション
+
+    /**
+     * 送信アニメーション（パルスエフェクト）を開始
+     */
+    triggerSendingAnimation() {
+      console.log('🔵 Sending animation triggered');
+
+      // 既存のアニメーションタイマーをクリア
+      if (this.sendingAnimationTimeout) {
+        clearTimeout(this.sendingAnimationTimeout);
+        this.sendingAnimationTimeout = null;
+      }
+
+      // フラグを設定（0.3秒間）
+      this.sendingData = true;
+      console.log('🔵 sendingData = true');
+
+      this.sendingAnimationTimeout = setTimeout(() => {
+        this.sendingData = false;
+        console.log('🔵 sendingData = false (timeout)');
+        this.sendingAnimationTimeout = null;
+      }, 300) as any;
+    },
+
+    /**
+     * 受信アニメーション（フラッシュエフェクト）を開始
+     */
+    triggerReceivingAnimation() {
+      console.log('🟢 Receiving animation triggered');
+
+      // 既存のアニメーションタイマーをクリア
+      if (this.receivingAnimationTimeout) {
+        clearTimeout(this.receivingAnimationTimeout);
+        this.receivingAnimationTimeout = null;
+      }
+
+      // フラグを設定（0.2秒間）
+      this.receivingData = true;
+      console.log('🟢 receivingData = true');
+
+      this.receivingAnimationTimeout = setTimeout(() => {
+        this.receivingData = false;
+        console.log('🟢 receivingData = false (timeout)');
+        this.receivingAnimationTimeout = null;
+      }, 200) as any;
+    },
+
     // コートチェンジ関連のヘルパーメソッド
 
     /**
@@ -691,6 +762,14 @@ function gameApp(gameId: string) {
       if (this.idleTimeoutId) {
         clearTimeout(this.idleTimeoutId);
         this.idleTimeoutId = null;
+      }
+      if (this.sendingAnimationTimeout) {
+        clearTimeout(this.sendingAnimationTimeout);
+        this.sendingAnimationTimeout = null;
+      }
+      if (this.receivingAnimationTimeout) {
+        clearTimeout(this.receivingAnimationTimeout);
+        this.receivingAnimationTimeout = null;
       }
 
       // 再接続タイマーをクリア
