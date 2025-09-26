@@ -145,8 +145,21 @@ function gameApp(gameId: string) {
         this.connected = true;
         this.connectionStatus = 'connected';
         console.log('WebSocket connected');
-        // 接続成功時にゲーム状態取得を要求
+        // 接続成功時にゲーム状態取得を要求（即座に初回同期）
         this.sendAction(ACTIONS.GET_GAME_STATE);
+
+        // 既存の定期同期をクリア
+        if (this.timeSyncIntervalId) {
+          clearInterval(this.timeSyncIntervalId);
+          this.timeSyncIntervalId = null;
+        }
+
+        // 15-30秒のランダム間隔で定期同期を開始
+        const randomInterval = 15000 + Math.random() * 15000; // 15-30秒
+        console.log(`Starting periodic time sync with interval: ${Math.round(randomInterval / 1000)}s`);
+        this.timeSyncIntervalId = setInterval(() => {
+          this.sendAction(ACTIONS.GET_GAME_STATE);
+        }, randomInterval) as any;
       };
 
       this.ws.onmessage = (event: MessageEvent) => {
