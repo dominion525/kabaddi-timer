@@ -516,6 +516,13 @@ function gameApp(gameId: string) {
     },
 
     // 手動で時刻同期を要求
+    requestTimeSync() {
+      // GET_GAME_STATEを送信して時刻同期を実行
+      this.sendAction(ACTIONS.GET_GAME_STATE);
+
+      // 時刻表示を即座に更新
+      this.updateTimeDisplay();
+    },
 
     // コートチェンジ関連のヘルパーメソッド
 
