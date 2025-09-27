@@ -26,6 +26,14 @@ function gameApp(gameId: string) {
         pausedAt: null,
         remainingSeconds: DEFAULT_VALUES.timer.defaultDuration
       },
+      subTimer: {
+        totalDuration: DEFAULT_VALUES.subTimer.defaultDuration,
+        startTime: null,
+        isRunning: false,
+        isPaused: false,
+        pausedAt: null,
+        remainingSeconds: DEFAULT_VALUES.subTimer.defaultDuration
+      },
       serverTime: 0,
       lastUpdated: 0
     },
@@ -54,6 +62,13 @@ function gameApp(gameId: string) {
     timeSyncIntervalId: null as number | null,
     reconnectTimeoutId: null as number | null,
     lastSyncRequest: 0,
+    lastActivityTime: 0,
+    idleTimeoutId: null as number | null,
+    // 通信アクティビティ表示用フラグ
+    sendingData: false,
+    receivingData: false,
+    sendingAnimationTimeout: null as number | null,
+    receivingAnimationTimeout: null as number | null,
     timerInputMinutes: DEFAULT_VALUES.timer.presetMinutes.medium,
     timerInputSeconds: 0,
     teamANameInput: DEFAULT_VALUES.teamNames.teamA,
@@ -66,6 +81,8 @@ function gameApp(gameId: string) {
     gameIdText: '',
     // ローカル表示反転状態（審判向けスマホ表示用）
     displayFlipped: false,
+    // WebSocketプロトコル検出結果
+    detectedProtocol: '未検出' as string,
 
     init() {
       // localStorageからsimpleModeを読み込み
@@ -111,15 +128,6 @@ function gameApp(gameId: string) {
       };
       mediaQuery.addListener(handleMediaChange);
 
-      // 定期的な時刻同期リクエスト（60秒ごと）
-      this.timeSyncIntervalId = setInterval(() => {
-        if (this.ws && this.ws.readyState === WebSocket.OPEN) {
-          this.sendAction({
-            ...ACTIONS.TIME_SYNC_REQUEST,
-            clientRequestTime: Date.now()
-          });
-        }
-      }, 60000) as any;
 
       // Lucide アイコンを初期化
       if (typeof (window as any).lucide !== 'undefined') {
@@ -153,12 +161,17 @@ function gameApp(gameId: string) {
       this.ws.onopen = () => {
         this.connected = true;
         this.connectionStatus = 'connected';
-        console.log('WebSocket connected');
-        // 接続成功時に初期時刻同期を要求
-        this.sendAction({
-          ...ACTIONS.TIME_SYNC_REQUEST,
-          clientRequestTime: Date.now()
-        });
+
+        // プロトコル検出と接続ログを統合
+        setTimeout(() => {
+          this.logWebSocketConnection();
+        }, 100);
+        
+        // 接続成功時にゲーム状態取得を要求（即座に初回同期）
+        this.sendAction(ACTIONS.GET_GAME_STATE);
+
+        // アイドル時同期タイマーを開始
+        this.resetIdleTimer();
       };
 
       this.ws.onmessage = (event: MessageEvent) => {
@@ -171,6 +184,29 @@ function gameApp(gameId: string) {
             // ゲーム状態を設定（タイマーは後で調整）
             this.gameState = message.data;
             const clientTime = Date.now();
+
+            // 時刻同期計算（GET_GAME_STATEレスポンスで正確に計算）
+            if (this.lastSyncRequest > 0) {
+              // 正確なRTT計算（リクエスト送信から応答受信まで）
+              const rtt = clientTime - this.lastSyncRequest;
+              this.lastRTT = Math.max(0, rtt);
+
+              // サーバー時刻オフセット計算（片道遅延で補正）
+              if (this.gameState.serverTime) {
+                const halfRtt = rtt / 2;
+                const estimatedServerReceiveTime = clientTime - halfRtt;
+                this.serverTimeOffset = this.gameState.serverTime - estimatedServerReceiveTime;
+              }
+
+              // 同期時刻を更新
+              this.lastSyncTime = new Date();
+
+              // 同期状態を更新
+              this.updateTimeSyncStatus();
+
+              // 同期リクエスト時刻をリセット
+              this.lastSyncRequest = 0;
+            }
 
             // タイマーが実行中の場合、相対時間計算のためstartTimeをクライアント時刻に置換
             if (this.gameState.timer && this.gameState.timer.isRunning && this.gameState.timer.startTime) {
@@ -219,25 +255,14 @@ function gameApp(gameId: string) {
             }
 
             this.updateTimerDisplay();
+
+            // 受信アニメーション（ゲーム状態更新時）
+            this.triggerReceivingAnimation();
+
+            // メッセージ受信時にアイドルタイマーをリセット
+            this.resetIdleTimer();
           }
 
-          else if (message.type === MESSAGE_TYPES.TIME_SYNC) {
-            const clientTime = Date.now();
-            const serverTime = message.data.serverTime;
-            const rtt = message.data.clientRequestTime ?
-              (clientTime - message.data.clientRequestTime) : 0;
-            this.serverTimeOffset = serverTime - clientTime + (rtt / 2);
-
-            // 時刻同期状態を更新
-            this.lastRTT = rtt;
-            this.lastSyncTime = new Date();
-            this.updateTimeSyncStatus();
-            
-            // 時刻表示を更新
-            this.updateTimeDisplay();
-
-            console.log('Time sync: offset =', this.serverTimeOffset, 'ms, RTT =', rtt, 'ms, status =', this.timeSyncStatus);
-          }
 
           else if (message.type === MESSAGE_TYPES.ERROR) {
             console.error('Server error:', message.data);
@@ -272,11 +297,74 @@ function gameApp(gameId: string) {
       };
     },
 
+    logWebSocketConnection() {
+      try {
+        // プロトコル検出（WebSocket自体は直接検出不可）
+        const navEntries = performance.getEntriesByType('navigation') as PerformanceNavigationTiming[];
+        let pageProtocol = '';
+        if (navEntries.length > 0 && navEntries[0].nextHopProtocol) {
+          pageProtocol = navEntries[0].nextHopProtocol;
+        }
+        
+        // 静的リソースのプロトコル検出
+        const resources = performance.getEntriesByType('resource') as PerformanceResourceTiming[];
+        const protocols = new Set<string>();
+        let jsResourceProtocol = '';
+        
+        resources.forEach(resource => {
+          if (resource.nextHopProtocol) {
+            protocols.add(resource.nextHopProtocol);
+            
+            // JavaScriptファイルのプロトコルを特定
+            if (resource.name.includes('.js') && !jsResourceProtocol) {
+              jsResourceProtocol = resource.nextHopProtocol;
+            }
+          }
+        });
+        
+        // 環境全体の評価とプロトコル情報の保存
+        const hasHttp3 = pageProtocol === 'h3' || jsResourceProtocol === 'h3' || protocols.has('h3');
+        const hasHttp2 = pageProtocol === 'h2' || jsResourceProtocol === 'h2' || protocols.has('h2');
+        
+        if (hasHttp3) {
+          this.detectedProtocol = 'HTTP/3 (QUIC)';
+        } else if (hasHttp2) {
+          this.detectedProtocol = 'HTTP/2';
+        } else if (protocols.size > 0) {
+          this.detectedProtocol = Array.from(protocols).join(', ');
+        } else {
+          this.detectedProtocol = '検出不可';
+        }
+        
+      } catch (error) {
+        this.detectedProtocol = '検出エラー';
+      }
+    },
+
+    // 時刻をゼロパディングでフォーマット
+    formatTime(date: Date): string {
+      const hours = String(date.getHours()).padStart(2, '0');
+      const minutes = String(date.getMinutes()).padStart(2, '0');
+      const seconds = String(date.getSeconds()).padStart(2, '0');
+      return `${hours}:${minutes}:${seconds}`;
+    },
+
     sendAction(action: any) {
       if (this.ws && this.ws.readyState === WebSocket.OPEN) {
         try {
+          // GET_GAME_STATEアクション送信時に時刻を記録（RTT計算用）
+          if (action.type === 'GET_GAME_STATE') {
+            this.lastSyncRequest = Date.now();
+          }
+
+          // すべての送信でアニメーション表示
+          this.triggerSendingAnimation();
+
           this.ws.send(JSON.stringify({ action }));
           console.log('Sent action:', action);
+
+          // アクション送信時にアイドルタイマーをリセット
+          this.resetIdleTimer();
         } catch (error) {
           console.error('Failed to send action:', error);
         }
@@ -507,8 +595,8 @@ function gameApp(gameId: string) {
       const now = new Date();
       const serverNow = new Date(now.getTime() + this.serverTimeOffset);
 
-      this.currentClientTime = now.toLocaleTimeString() + '.' + String(now.getMilliseconds()).padStart(3, '0');
-      this.currentServerTime = serverNow.toLocaleTimeString() + '.' + String(serverNow.getMilliseconds()).padStart(3, '0');
+      this.currentClientTime = this.formatTime(now) + '.' + String(now.getMilliseconds()).padStart(3, '0');
+      this.currentServerTime = this.formatTime(serverNow) + '.' + String(serverNow.getMilliseconds()).padStart(3, '0');
     },
 
     // 時刻同期モーダルを閉じる
@@ -518,15 +606,77 @@ function gameApp(gameId: string) {
 
     // 手動で時刻同期を要求
     requestTimeSync() {
+      // GET_GAME_STATEを送信して時刻同期を実行
+      this.sendAction(ACTIONS.GET_GAME_STATE);
+
       // 時刻表示を即座に更新
       this.updateTimeDisplay();
-      
-      if (this.ws && this.ws.readyState === WebSocket.OPEN) {
-        this.sendAction({
-          ...ACTIONS.TIME_SYNC_REQUEST,
-          clientRequestTime: Date.now()
-        });
+    },
+
+    // タイマー動作中のアイドル時同期タイマー管理
+    resetIdleTimer() {
+      // アクティビティ時刻を記録
+      this.lastActivityTime = Date.now();
+
+      // 既存のアイドルタイマーをクリア
+      if (this.idleTimeoutId) {
+        clearTimeout(this.idleTimeoutId);
+        this.idleTimeoutId = null;
       }
+
+      // タイマー動作中のみアイドル同期を設定
+      if (this.gameState?.timer?.isRunning || this.gameState?.subTimer?.isRunning) {
+        // 5-10秒後に同期（10秒ハイバネーション閾値をカバー）
+        const idleDelay = 5000 + Math.random() * 5000;
+        console.log(`Timer running - setting idle sync after ${Math.round(idleDelay / 1000)}s`);
+
+        this.idleTimeoutId = setTimeout(() => {
+          this.sendAction(ACTIONS.GET_GAME_STATE);
+          this.resetIdleTimer(); // 再度チェック
+        }, idleDelay) as any;
+      } else {
+        console.log('Timer stopped - no idle sync needed (hibernation allowed)');
+      }
+    },
+
+    // 通信アクティビティアニメーション
+
+    /**
+     * 送信アニメーション（パルスエフェクト）を開始
+     */
+    triggerSendingAnimation() {
+      // 既存のアニメーションタイマーをクリア
+      if (this.sendingAnimationTimeout) {
+        clearTimeout(this.sendingAnimationTimeout);
+        this.sendingAnimationTimeout = null;
+      }
+
+      // フラグを設定（0.3秒間）
+      this.sendingData = true;
+
+      this.sendingAnimationTimeout = setTimeout(() => {
+        this.sendingData = false;
+        this.sendingAnimationTimeout = null;
+      }, 300) as any;
+    },
+
+    /**
+     * 受信アニメーション（フラッシュエフェクト）を開始
+     */
+    triggerReceivingAnimation() {
+      // 既存のアニメーションタイマーをクリア
+      if (this.receivingAnimationTimeout) {
+        clearTimeout(this.receivingAnimationTimeout);
+        this.receivingAnimationTimeout = null;
+      }
+
+      // フラグを設定（0.2秒間）
+      this.receivingData = true;
+
+      this.receivingAnimationTimeout = setTimeout(() => {
+        this.receivingData = false;
+        this.receivingAnimationTimeout = null;
+      }, 200) as any;
     },
 
     // コートチェンジ関連のヘルパーメソッド
@@ -647,6 +797,18 @@ function gameApp(gameId: string) {
       if (this.timeSyncIntervalId) {
         clearInterval(this.timeSyncIntervalId);
         this.timeSyncIntervalId = null;
+      }
+      if (this.idleTimeoutId) {
+        clearTimeout(this.idleTimeoutId);
+        this.idleTimeoutId = null;
+      }
+      if (this.sendingAnimationTimeout) {
+        clearTimeout(this.sendingAnimationTimeout);
+        this.sendingAnimationTimeout = null;
+      }
+      if (this.receivingAnimationTimeout) {
+        clearTimeout(this.receivingAnimationTimeout);
+        this.receivingAnimationTimeout = null;
       }
 
       // 再接続タイマーをクリア

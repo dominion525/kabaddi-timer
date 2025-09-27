@@ -45,7 +45,7 @@ export type GameAction =
   | { type: 'SUB_TIMER_START' }
   | { type: 'SUB_TIMER_PAUSE' }
   | { type: 'SUB_TIMER_RESET' }
-  | { type: 'TIME_SYNC_REQUEST'; clientRequestTime?: number }
+  | { type: 'GET_GAME_STATE' }
   | { type: 'DO_OR_DIE_UPDATE'; team: 'teamA' | 'teamB'; delta: number }
   | { type: 'DO_OR_DIE_RESET' }
   | { type: 'COURT_CHANGE' }
@@ -55,7 +55,6 @@ export const MESSAGE_TYPES = {
   GAME_STATE: 'game_state',
   ACTION: 'action',
   ERROR: 'error',
-  TIME_SYNC: 'time_sync'
 } as const;
 export const ACTION_TYPES = {
   SCORE_UPDATE: 'SCORE_UPDATE',
@@ -70,7 +69,7 @@ export const ACTION_TYPES = {
   SUB_TIMER_START: 'SUB_TIMER_START',
   SUB_TIMER_PAUSE: 'SUB_TIMER_PAUSE',
   SUB_TIMER_RESET: 'SUB_TIMER_RESET',
-  TIME_SYNC_REQUEST: 'TIME_SYNC_REQUEST',
+  GET_GAME_STATE: 'GET_GAME_STATE',
   DO_OR_DIE_UPDATE: 'DO_OR_DIE_UPDATE',
   DO_OR_DIE_RESET: 'DO_OR_DIE_RESET',
   COURT_CHANGE: 'COURT_CHANGE',
@@ -78,15 +77,11 @@ export const ACTION_TYPES = {
 } as const;
 
 export interface GameMessage {
-  type: 'game_state' | 'action' | 'error' | 'time_sync';
-  data: GameState | GameAction | string | TimeSyncData;
+  type: 'game_state' | 'action' | 'error';
+  data: GameState | GameAction | string;
   timestamp: number;
 }
 
-export interface TimeSyncData {
-  serverTime: number;
-  clientRequestTime?: number;
-}
 
 export interface WebSocketMessage {
   action: GameAction;

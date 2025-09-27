@@ -125,8 +125,8 @@
     // 全体操作
     RESET_ALL: { type: 'RESET_ALL' },
 
-    // 同期操作
-    TIME_SYNC_REQUEST: { type: 'TIME_SYNC_REQUEST' }
+    // 状態取得操作
+    GET_GAME_STATE: { type: 'GET_GAME_STATE' }
   };
 
   /**

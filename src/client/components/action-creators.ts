@@ -254,11 +254,11 @@
       },
 
       /**
-       * 時刻同期リクエストアクション
-       * @returns {Object} TIME_SYNC_REQUEST アクション
+       * ゲーム状態取得リクエストアクション
+       * @returns {Object} GET_GAME_STATE アクション
        */
-      timeSyncRequest() {
-        return createBaseAction(ACTIONS.TIME_SYNC_REQUEST);
+      getGameState() {
+        return createBaseAction(ACTIONS.GET_GAME_STATE);
       }
     };
 

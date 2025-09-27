@@ -48,7 +48,6 @@ export interface WebSocketAPIs {
 export interface WebSocketConstants {
   MESSAGE_TYPES: {
     GAME_STATE: string;
-    TIME_SYNC: string;
     ERROR: string;
   };
 
@@ -57,7 +56,7 @@ export interface WebSocketConstants {
   };
 
   ACTIONS: {
-    TIME_SYNC_REQUEST: string;
+    GET_GAME_STATE: string;
   };
 }
 
@@ -69,23 +68,6 @@ export interface WebSocketMessage {
   data?: any;
 }
 
-/**
- * 時刻同期データ型定義
- */
-export interface TimeSyncData {
-  serverTime: number;
-  clientRequestTime?: number;
-}
-
-/**
- * 時刻同期結果型定義
- */
-export interface TimeSyncResult {
-  offset: number;
-  rtt: number;
-  serverTime: number;
-  clientTime: number;
-}
 
 /**
  * アクションメッセージ型定義
@@ -109,7 +91,6 @@ export interface WebSocketCallbacks {
   onConnected?: () => void;
   onDisconnected?: () => void;
   onGameStateReceived?: (data: GameState) => void;
-  onTimeSyncReceived?: (data: TimeSyncResult) => void;
   onError?: (type: string, error?: WebSocketError) => void;
   onActionSent?: (action: ActionMessage) => void;
 }

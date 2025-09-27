@@ -8,7 +8,6 @@ import type {
   WebSocketCallbacks,
   WebSocketManager,
   WebSocketMessage,
-  TimeSyncData,
   ActionMessage
 } from './websocket-manager.types';
 
@@ -20,7 +19,7 @@ import type {
    * @returns WebSocket管理オブジェクト
    */
   function createWebSocketManager(apis: WebSocketAPIs, constants: WebSocketConstants): WebSocketManager {
-    const { MESSAGE_TYPES, WEBSOCKET_STATES, ACTIONS } = constants;
+    const { MESSAGE_TYPES, WEBSOCKET_STATES } = constants;
     let ws: WebSocket | null = null;
     let connected = false;
     let serverTimeOffset = 0;
@@ -33,7 +32,6 @@ import type {
       onConnected: () => {},
       onDisconnected: () => {},
       onGameStateReceived: (_data) => {},
-      onTimeSyncReceived: (_data) => {},
       onError: (_type: string, _error) => {},
       onActionSent: (_action) => {}
     };
@@ -67,8 +65,6 @@ import type {
         connected = true;
         apis.console.log('WebSocket connected');
         callbacks.onConnected?.();
-        // 接続成功時に初期時刻同期を要求
-        sendTimeSync();
       };
 
       ws!.onmessage = (event: MessageEvent) => {
@@ -119,35 +115,12 @@ import type {
       if (message.type === MESSAGE_TYPES.GAME_STATE) {
         apis.console.log('Received game state:', message.data);
         callbacks.onGameStateReceived?.(message.data);
-      } else if (message.type === MESSAGE_TYPES.TIME_SYNC) {
-        handleTimeSync(message.data);
       } else if (message.type === MESSAGE_TYPES.ERROR) {
         apis.console.error('Server error:', message.data);
         callbacks.onError?.('Server error', message.data);
       }
     }
 
-    /**
-     * 時刻同期処理
-     * @param data - 時刻同期データ
-     */
-    function handleTimeSync(data: TimeSyncData) {
-      const clientTime = apis.timer.now();
-      const serverTime = data.serverTime;
-      const rtt = data.clientRequestTime ?
-        (clientTime - data.clientRequestTime) : 0;
-
-      serverTimeOffset = serverTime - clientTime + (rtt / 2);
-
-      apis.console.log('Time sync: offset =', serverTimeOffset, 'ms, RTT =', rtt, 'ms');
-
-      callbacks.onTimeSyncReceived?.({
-        offset: serverTimeOffset,
-        rtt: rtt,
-        serverTime: serverTime,
-        clientTime: clientTime
-      });
-    }
 
     /**
      * アクションを送信
@@ -172,15 +145,6 @@ import type {
       }
     }
 
-    /**
-     * 時刻同期リクエストを送信
-     */
-    function sendTimeSync() {
-      sendAction({
-        type: ACTIONS.TIME_SYNC_REQUEST,
-        clientRequestTime: apis.timer.now()
-      });
-    }
 
     /**
      * 定期的な時刻同期を開始
@@ -190,11 +154,8 @@ import type {
         apis.timer.clearInterval(timeSyncIntervalId);
       }
 
-      timeSyncIntervalId = apis.timer.setInterval(() => {
-        if (isConnected()) {
-          sendTimeSync();
-        }
-      }, 60000); // 60秒ごと
+      // 定期的な状態同期は不要（ゲーム状態更新時に更新される）
+      timeSyncIntervalId = null;
     }
 
     /**
