@@ -197,7 +197,13 @@
         <!-- 最終同期時刻 -->
         <div class="flex justify-center items-center p-2 bg-gray-50 rounded text-sm">
           <span class="text-gray-600 mr-2">最終同期:</span>
-          <span class="font-mono font-medium text-xs" x-text="lastSyncTime ? lastSyncTime.toLocaleTimeString() : '未同期'"></span>
+          <span class="font-mono font-medium text-xs" x-text="lastSyncTime ? formatTime(lastSyncTime) : '未同期'"></span>
+        </div>
+
+        <!-- プロトコル情報 -->
+        <div class="flex justify-center items-center p-2 bg-gray-50 rounded text-sm">
+          <span class="text-gray-600 mr-2">プロトコル:</span>
+          <span class="font-mono font-medium text-xs" x-text="detectedProtocol"></span>
         </div>
 
         <!-- 警告メッセージ -->

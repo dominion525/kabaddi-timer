@@ -81,10 +81,10 @@ function gameApp(gameId: string) {
     gameIdText: '',
     // ローカル表示反転状態（審判向けスマホ表示用）
     displayFlipped: false,
+    // WebSocketプロトコル検出結果
+    detectedProtocol: '未検出' as string,
 
     init() {
-      console.log('📌 File version: 2024-09-27-v2 with debug logs and cache fix');
-
       // localStorageからsimpleModeを読み込み
       const savedSimpleMode = localStorage.getItem(STORAGE_KEYS.simpleMode);
       if (savedSimpleMode !== null) {
@@ -161,7 +161,12 @@ function gameApp(gameId: string) {
       this.ws.onopen = () => {
         this.connected = true;
         this.connectionStatus = 'connected';
-        console.log('WebSocket connected');
+
+        // プロトコル検出と接続ログを統合
+        setTimeout(() => {
+          this.logWebSocketConnection();
+        }, 100);
+        
         // 接続成功時にゲーム状態取得を要求（即座に初回同期）
         this.sendAction(ACTIONS.GET_GAME_STATE);
 
@@ -252,12 +257,7 @@ function gameApp(gameId: string) {
             this.updateTimerDisplay();
 
             // 受信アニメーション（ゲーム状態更新時）
-            console.log('🟡 About to call triggerReceivingAnimation, function exists:', typeof this.triggerReceivingAnimation);
-            if (typeof this.triggerReceivingAnimation === 'function') {
-              this.triggerReceivingAnimation();
-            } else {
-              console.error('🔴 triggerReceivingAnimation is not a function!', this.triggerReceivingAnimation);
-            }
+            this.triggerReceivingAnimation();
 
             // メッセージ受信時にアイドルタイマーをリセット
             this.resetIdleTimer();
@@ -297,6 +297,58 @@ function gameApp(gameId: string) {
       };
     },
 
+    logWebSocketConnection() {
+      try {
+        // プロトコル検出（WebSocket自体は直接検出不可）
+        const navEntries = performance.getEntriesByType('navigation') as PerformanceNavigationTiming[];
+        let pageProtocol = '';
+        if (navEntries.length > 0 && navEntries[0].nextHopProtocol) {
+          pageProtocol = navEntries[0].nextHopProtocol;
+        }
+        
+        // 静的リソースのプロトコル検出
+        const resources = performance.getEntriesByType('resource') as PerformanceResourceTiming[];
+        const protocols = new Set<string>();
+        let jsResourceProtocol = '';
+        
+        resources.forEach(resource => {
+          if (resource.nextHopProtocol) {
+            protocols.add(resource.nextHopProtocol);
+            
+            // JavaScriptファイルのプロトコルを特定
+            if (resource.name.includes('.js') && !jsResourceProtocol) {
+              jsResourceProtocol = resource.nextHopProtocol;
+            }
+          }
+        });
+        
+        // 環境全体の評価とプロトコル情報の保存
+        const hasHttp3 = pageProtocol === 'h3' || jsResourceProtocol === 'h3' || protocols.has('h3');
+        const hasHttp2 = pageProtocol === 'h2' || jsResourceProtocol === 'h2' || protocols.has('h2');
+        
+        if (hasHttp3) {
+          this.detectedProtocol = 'HTTP/3 (QUIC)';
+        } else if (hasHttp2) {
+          this.detectedProtocol = 'HTTP/2';
+        } else if (protocols.size > 0) {
+          this.detectedProtocol = Array.from(protocols).join(', ');
+        } else {
+          this.detectedProtocol = '検出不可';
+        }
+        
+      } catch (error) {
+        this.detectedProtocol = '検出エラー';
+      }
+    },
+
+    // 時刻をゼロパディングでフォーマット
+    formatTime(date: Date): string {
+      const hours = String(date.getHours()).padStart(2, '0');
+      const minutes = String(date.getMinutes()).padStart(2, '0');
+      const seconds = String(date.getSeconds()).padStart(2, '0');
+      return `${hours}:${minutes}:${seconds}`;
+    },
+
     sendAction(action: any) {
       if (this.ws && this.ws.readyState === WebSocket.OPEN) {
         try {
@@ -306,12 +358,7 @@ function gameApp(gameId: string) {
           }
 
           // すべての送信でアニメーション表示
-          console.log('🟡 About to call triggerSendingAnimation, function exists:', typeof this.triggerSendingAnimation);
-          if (typeof this.triggerSendingAnimation === 'function') {
-            this.triggerSendingAnimation();
-          } else {
-            console.error('🔴 triggerSendingAnimation is not a function!', this.triggerSendingAnimation);
-          }
+          this.triggerSendingAnimation();
 
           this.ws.send(JSON.stringify({ action }));
           console.log('Sent action:', action);
@@ -548,8 +595,8 @@ function gameApp(gameId: string) {
       const now = new Date();
       const serverNow = new Date(now.getTime() + this.serverTimeOffset);
 
-      this.currentClientTime = now.toLocaleTimeString() + '.' + String(now.getMilliseconds()).padStart(3, '0');
-      this.currentServerTime = serverNow.toLocaleTimeString() + '.' + String(serverNow.getMilliseconds()).padStart(3, '0');
+      this.currentClientTime = this.formatTime(now) + '.' + String(now.getMilliseconds()).padStart(3, '0');
+      this.currentServerTime = this.formatTime(serverNow) + '.' + String(serverNow.getMilliseconds()).padStart(3, '0');
     },
 
     // 時刻同期モーダルを閉じる
@@ -598,8 +645,6 @@ function gameApp(gameId: string) {
      * 送信アニメーション（パルスエフェクト）を開始
      */
     triggerSendingAnimation() {
-      console.log('🔵 Sending animation triggered');
-
       // 既存のアニメーションタイマーをクリア
       if (this.sendingAnimationTimeout) {
         clearTimeout(this.sendingAnimationTimeout);
@@ -608,11 +653,9 @@ function gameApp(gameId: string) {
 
       // フラグを設定（0.3秒間）
       this.sendingData = true;
-      console.log('🔵 sendingData = true');
 
       this.sendingAnimationTimeout = setTimeout(() => {
         this.sendingData = false;
-        console.log('🔵 sendingData = false (timeout)');
         this.sendingAnimationTimeout = null;
       }, 300) as any;
     },
@@ -621,8 +664,6 @@ function gameApp(gameId: string) {
      * 受信アニメーション（フラッシュエフェクト）を開始
      */
     triggerReceivingAnimation() {
-      console.log('🟢 Receiving animation triggered');
-
       // 既存のアニメーションタイマーをクリア
       if (this.receivingAnimationTimeout) {
         clearTimeout(this.receivingAnimationTimeout);
@@ -631,11 +672,9 @@ function gameApp(gameId: string) {
 
       // フラグを設定（0.2秒間）
       this.receivingData = true;
-      console.log('🟢 receivingData = true');
 
       this.receivingAnimationTimeout = setTimeout(() => {
         this.receivingData = false;
-        console.log('🟢 receivingData = false (timeout)');
         this.receivingAnimationTimeout = null;
       }, 200) as any;
     },
