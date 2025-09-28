@@ -1,5 +1,5 @@
 import { render } from 'preact';
-import { HelloWorld } from './components/HelloWorld';
+import { App } from './components/App';
 
 // DOMが読み込まれてから実行
 if (document.readyState !== 'loading') {
@@ -12,5 +12,10 @@ function init() {
   const app = document.getElementById('app');
   const gameId = app?.dataset.gameId || 'test';
 
-  render(<HelloWorld gameId={gameId} />, app!);
+  render(<App gameId={gameId} />, app!);
+
+  // Lucide アイコンを初期化
+  if (typeof (window as any).lucide !== 'undefined') {
+    (window as any).lucide.createIcons();
+  }
 }

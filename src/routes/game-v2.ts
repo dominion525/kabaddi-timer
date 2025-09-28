@@ -30,7 +30,29 @@ gameV2Router.get('/game-v2/:gameId', async (c) => {
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Game V2 - ${gameId}</title>
+
+  <!-- PWA Manifest -->
+  <link rel="manifest" href="/manifest.json">
+
+  <!-- PWA Meta Tags -->
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black">
+  <meta name="apple-mobile-web-app-title" content="Kabaddi Timer">
+  <meta name="application-name" content="Kabaddi Timer">
+  <meta name="theme-color" content="#000000">
+  <meta name="description" content="カバディ用リアルタイムタイマー・スコアボード">
+
+  <!-- App Icons -->
+  <link rel="apple-touch-icon" href="/images/kabaddi-timer-app-icon-192.png">
+  <link rel="apple-touch-icon" sizes="192x192" href="/images/kabaddi-timer-app-icon-192.png">
+
+  <!-- Favicon -->
+  <link rel="icon" href="/images/favicon.ico" type="image/x-icon">
+  <link rel="shortcut icon" href="/images/favicon.ico" type="image/x-icon">
+
   <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
 </head>
 <body>
   <div id="app" data-game-id="${gameId}"></div>
