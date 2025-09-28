@@ -94,9 +94,9 @@ export function StatusBar({
             <span className="font-semibold">QR</span>
           </button>
           <span className="text-gray-500">|</span>
-          <button onClick={onHomeClick} className="hover:text-white transition-colors cursor-pointer flex items-center">
+          <a href="/" className="hover:text-white transition-colors cursor-pointer flex items-center">
             <i data-lucide="home" className="md:w-4 md:h-4 w-3 h-3"></i>
-          </button>
+          </a>
           <span className="text-gray-500">|</span>
           <button onClick={onCreditsClick} className="hover:text-white transition-colors cursor-pointer flex items-center">
             <i data-lucide="hammer" className="md:w-4 md:h-4 w-3 h-3"></i>
