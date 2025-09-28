@@ -81,8 +81,6 @@ function gameApp(gameId: string) {
     gameIdText: '',
     // ローカル表示反転状態（審判向けスマホ表示用）
     displayFlipped: false,
-    // WebSocketプロトコル検出結果
-    detectedProtocol: '未検出' as string,
 
     init() {
       // localStorageからsimpleModeを読み込み
@@ -162,11 +160,6 @@ function gameApp(gameId: string) {
         this.connected = true;
         this.connectionStatus = 'connected';
 
-        // プロトコル検出と接続ログを統合
-        setTimeout(() => {
-          this.logWebSocketConnection();
-        }, 100);
-        
         // 接続成功時にゲーム状態取得を要求（即座に初回同期）
         this.sendAction(ACTIONS.GET_GAME_STATE);
 
@@ -297,49 +290,6 @@ function gameApp(gameId: string) {
       };
     },
 
-    logWebSocketConnection() {
-      try {
-        // プロトコル検出（WebSocket自体は直接検出不可）
-        const navEntries = performance.getEntriesByType('navigation') as PerformanceNavigationTiming[];
-        let pageProtocol = '';
-        if (navEntries.length > 0 && navEntries[0].nextHopProtocol) {
-          pageProtocol = navEntries[0].nextHopProtocol;
-        }
-        
-        // 静的リソースのプロトコル検出
-        const resources = performance.getEntriesByType('resource') as PerformanceResourceTiming[];
-        const protocols = new Set<string>();
-        let jsResourceProtocol = '';
-        
-        resources.forEach(resource => {
-          if (resource.nextHopProtocol) {
-            protocols.add(resource.nextHopProtocol);
-            
-            // JavaScriptファイルのプロトコルを特定
-            if (resource.name.includes('.js') && !jsResourceProtocol) {
-              jsResourceProtocol = resource.nextHopProtocol;
-            }
-          }
-        });
-        
-        // 環境全体の評価とプロトコル情報の保存
-        const hasHttp3 = pageProtocol === 'h3' || jsResourceProtocol === 'h3' || protocols.has('h3');
-        const hasHttp2 = pageProtocol === 'h2' || jsResourceProtocol === 'h2' || protocols.has('h2');
-        
-        if (hasHttp3) {
-          this.detectedProtocol = 'HTTP/3 (QUIC)';
-        } else if (hasHttp2) {
-          this.detectedProtocol = 'HTTP/2';
-        } else if (protocols.size > 0) {
-          this.detectedProtocol = Array.from(protocols).join(', ');
-        } else {
-          this.detectedProtocol = '検出不可';
-        }
-        
-      } catch (error) {
-        this.detectedProtocol = '検出エラー';
-      }
-    },
 
     // 時刻をゼロパディングでフォーマット
     formatTime(date: Date): string {
