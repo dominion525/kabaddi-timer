@@ -58,6 +58,7 @@ gameV2Router.get('/game-v2/:gameId', async (c) => {
 
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+  <script src="https://unpkg.com/qrious@4.0.2/dist/qrious.min.js"></script>
 </head>
 <body>
   <div id="app" data-game-id="${gameId}"></div>

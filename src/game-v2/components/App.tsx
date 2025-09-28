@@ -5,6 +5,7 @@ import { SubTimer } from './Timer/SubTimer';
 import { StatusBar } from './StatusBar';
 import { VersusIndicator } from './VersusIndicator';
 import { CreditsModal } from './CreditsModal';
+import { QRModal } from './QRModal';
 
 interface Props {
   gameId: string;
@@ -13,6 +14,7 @@ interface Props {
 export function App({ gameId }: Props) {
   // モーダルの状態管理
   const [showCreditsModal, setShowCreditsModal] = useState(false);
+  const [showQRModal, setShowQRModal] = useState(false);
 
   const handleOpenCreditsModal = () => {
     setShowCreditsModal(true);
@@ -20,6 +22,14 @@ export function App({ gameId }: Props) {
 
   const handleCloseCreditsModal = () => {
     setShowCreditsModal(false);
+  };
+
+  const handleOpenQRModal = () => {
+    setShowQRModal(true);
+  };
+
+  const handleCloseQRModal = () => {
+    setShowQRModal(false);
   };
 
   // ダミーデータ
@@ -80,7 +90,7 @@ export function App({ gameId }: Props) {
         </div>
 
         {/* ステータスバー */}
-        <StatusBar gameId={gameId} onCreditsClick={handleOpenCreditsModal} />
+        <StatusBar gameId={gameId} onCreditsClick={handleOpenCreditsModal} onQRClick={handleOpenQRModal} />
       </div>
 
       {/* モバイル表示用 (md未満) */}
@@ -124,13 +134,20 @@ export function App({ gameId }: Props) {
         </div>
 
         {/* ステータスバー */}
-        <StatusBar gameId={gameId} onCreditsClick={handleOpenCreditsModal} />
+        <StatusBar gameId={gameId} onCreditsClick={handleOpenCreditsModal} onQRClick={handleOpenQRModal} />
       </div>
 
       {/* クレジットモーダル */}
       <CreditsModal
         isOpen={showCreditsModal}
         onClose={handleCloseCreditsModal}
+      />
+
+      {/* QRモーダル */}
+      <QRModal
+        isOpen={showQRModal}
+        onClose={handleCloseQRModal}
+        gameId={gameId}
       />
     </>
   );
