@@ -7,8 +7,8 @@ export function SubTimer({ seconds, isRunning }: Props) {
   return (
     <div className="text-center">
       <div
-        className="font-bold font-mono text-yellow-400"
-        style={{ fontSize: '12rem', lineHeight: 1 }}
+        className="font-bold font-mono text-yellow-400 md:text-[12rem] text-[4rem]"
+        style={{ lineHeight: 1 }}
       >
         {seconds}
       </div>

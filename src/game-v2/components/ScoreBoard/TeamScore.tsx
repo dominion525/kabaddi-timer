@@ -30,10 +30,10 @@ export function TeamScore({ team }: Props) {
 
   return (
     <div className={`text-white flex flex-col ${getBackgroundColor(team.color)}`}>
-      <div className="flex-1 flex items-center justify-center py-1 px-4">
+      <div className="flex-1 flex items-center justify-center md:py-1 md:px-4 py-0 px-1">
         <div
-          className="font-bold font-mono text-white"
-          style={{ fontSize: '12rem', lineHeight: 1 }}
+          className="font-bold font-mono text-white md:text-[12rem] text-[4rem]"
+          style={{ lineHeight: 1 }}
         >
           {team.score}
         </div>

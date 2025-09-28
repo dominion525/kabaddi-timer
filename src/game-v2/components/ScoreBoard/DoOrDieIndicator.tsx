@@ -17,11 +17,11 @@ export function DoOrDieIndicator({ count, teamColor }: Props) {
   };
 
   return (
-    <div className="h-8 flex space-x-2 px-6 mb-2">
+    <div className="md:h-8 h-6 flex md:space-x-2 space-x-1 md:px-6 px-2 md:mb-2 pb-3">
       {[1, 2, 3].map((i) => (
         <div
           key={i}
-          className={`flex-1 transition-colors duration-200 rounded ${
+          className={`flex-1 transition-colors duration-200 md:rounded rounded-sm ${
             count >= i ? 'bg-yellow-400' : getInactiveColor(teamColor)
           }`}
         />

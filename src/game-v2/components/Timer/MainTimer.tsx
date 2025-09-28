@@ -15,12 +15,11 @@ export function MainTimer({ minutes, seconds, isRunning }: Props) {
   return (
     <div className="text-center">
       <div
-        className="font-bold font-mono text-white"
-        style={{ fontSize: '13.5rem', lineHeight: 0.7 }}
+        className="font-bold font-mono text-white md:text-[13.5rem] text-[6rem] md:leading-[0.7] leading-[0.6]"
       >
         {formatTime(minutes, seconds)}
       </div>
-      <div className="text-xl opacity-75 mt-4">
+      <div className="md:text-xl text-sm opacity-75 md:mt-4 mt-2">
         {isRunning ? (
           <span className="text-green-400">● 動作中</span>
         ) : (
