@@ -51,6 +51,11 @@ gameV2Router.get('/game-v2/:gameId', async (c) => {
   <link rel="icon" href="/images/favicon.ico" type="image/x-icon">
   <link rel="shortcut icon" href="/images/favicon.ico" type="image/x-icon">
 
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DotGothic16&display=swap" rel="stylesheet">
+
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
 </head>

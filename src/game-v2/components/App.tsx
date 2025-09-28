@@ -1,14 +1,27 @@
+import { useState } from 'preact/hooks';
 import { ScoreBoard } from './ScoreBoard';
 import { MainTimer } from './Timer/MainTimer';
 import { SubTimer } from './Timer/SubTimer';
 import { StatusBar } from './StatusBar';
 import { VersusIndicator } from './VersusIndicator';
+import { CreditsModal } from './CreditsModal';
 
 interface Props {
   gameId: string;
 }
 
 export function App({ gameId }: Props) {
+  // モーダルの状態管理
+  const [showCreditsModal, setShowCreditsModal] = useState(false);
+
+  const handleOpenCreditsModal = () => {
+    setShowCreditsModal(true);
+  };
+
+  const handleCloseCreditsModal = () => {
+    setShowCreditsModal(false);
+  };
+
   // ダミーデータ
   const teamA = {
     name: 'チームA',
@@ -67,7 +80,7 @@ export function App({ gameId }: Props) {
         </div>
 
         {/* ステータスバー */}
-        <StatusBar gameId={gameId} />
+        <StatusBar gameId={gameId} onCreditsClick={handleOpenCreditsModal} />
       </div>
 
       {/* モバイル表示用 (md未満) */}
@@ -111,8 +124,14 @@ export function App({ gameId }: Props) {
         </div>
 
         {/* ステータスバー */}
-        <StatusBar gameId={gameId} />
+        <StatusBar gameId={gameId} onCreditsClick={handleOpenCreditsModal} />
       </div>
+
+      {/* クレジットモーダル */}
+      <CreditsModal
+        isOpen={showCreditsModal}
+        onClose={handleCloseCreditsModal}
+      />
     </>
   );
 }
