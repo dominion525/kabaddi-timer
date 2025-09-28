@@ -337,7 +337,7 @@ function gameApp(gameId: string) {
 
     resetTeamScore(team: 'teamA' | 'teamB') {
       this.sendAction({
-        type: ACTIONS.RESET_TEAM_SCORE,
+        ...ACTIONS.RESET_TEAM_SCORE,
         team: team
       });
     },
