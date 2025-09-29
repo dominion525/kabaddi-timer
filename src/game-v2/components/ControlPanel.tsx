@@ -417,7 +417,167 @@ export function ControlPanel({ isOpen, onClose }: Props) {
               }`}
               style={{ backgroundColor: '#7F7F7F' }}
             >
-              <div>シンプルモードのコンテンツ（実装予定）</div>
+              {/* タイマー制御 */}
+              <div className="bg-gray-50 p-2 rounded-lg">
+                <div className="flex gap-1">
+                  {/* メインタイマー */}
+                  <div className="flex gap-1 flex-1">
+                    <button className="bg-green-500 hover:bg-green-600 text-white py-2 px-1 rounded text-xs font-bold transition-colors flex-1">
+                      開始
+                    </button>
+                    <button className="bg-yellow-500 hover:bg-yellow-600 text-white py-2 px-1 rounded text-xs font-bold transition-colors flex-1">
+                      停止
+                    </button>
+                    <button className="bg-red-500 hover:bg-red-600 text-white py-2 px-1 rounded text-xs font-bold transition-colors flex-1 whitespace-nowrap">
+                      リセット
+                    </button>
+                  </div>
+
+                  {/* セパレーター */}
+                  <div className="w-px bg-gray-300 mx-1"></div>
+
+                  {/* サブタイマー */}
+                  <div className="flex gap-1 flex-1">
+                    <button className="bg-green-500 hover:bg-green-600 text-white py-2 px-1 rounded text-xs font-bold transition-colors flex-1">
+                      30秒<br />開始
+                    </button>
+                    <button className="bg-yellow-500 hover:bg-yellow-600 text-white py-2 px-1 rounded text-xs font-bold transition-colors flex-1">
+                      30秒<br />停止
+                    </button>
+                    <button className="bg-red-500 hover:bg-red-600 text-white py-2 px-1 rounded text-xs font-bold transition-colors flex-1">
+                      30秒<br />リセット
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {/* チーム操作グリッド */}
+              <div className="bg-gradient-to-r from-red-50 via-gray-50 to-blue-50 p-2 rounded-lg border border-gray-200 relative">
+                {/* 中央セパレーター */}
+                <div className="absolute inset-y-2 left-1/2 w-px bg-gray-300 transform -translate-x-px"></div>
+
+                {/* ヘッダー行 */}
+                <div className="mb-2 relative z-10">
+                  {/* カテゴリー行 */}
+                  <div className="flex justify-between gap-x-3">
+                    <div className="flex-1 grid grid-cols-2 gap-x-1">
+                      <div className="text-center">
+                        <div className="text-xs text-red-600">得点</div>
+                      </div>
+                      <div className="text-center">
+                        <div className="text-xs text-orange-600">Do or Die</div>
+                      </div>
+                    </div>
+                    <div className="flex-1 grid grid-cols-2 gap-x-1">
+                      <div className="text-center">
+                        <div className="text-xs text-orange-600">Do or Die</div>
+                      </div>
+                      <div className="text-center">
+                        <div className="text-xs text-blue-600">得点</div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* ボタングリッド */}
+                <div className="flex justify-between gap-x-3 relative z-10">
+                  {/* 左側 */}
+                  <div className="flex-1 space-y-1">
+                    {/* +1ボタン行 */}
+                    <div className="grid grid-cols-2 gap-x-1">
+                      <button className="h-8 bg-red-500 hover:bg-red-600 text-white rounded text-xs font-bold transition-colors active:scale-95">
+                        +1
+                      </button>
+                      <button className="h-8 bg-orange-400 hover:bg-orange-500 text-white rounded text-xs font-bold transition-colors active:scale-95">
+                        +1
+                      </button>
+                    </div>
+                    {/* -1ボタン行 */}
+                    <div className="grid grid-cols-2 gap-x-1">
+                      <button className="h-8 bg-red-300 hover:bg-red-400 text-red-800 rounded text-xs font-bold transition-colors active:scale-95">
+                        -1
+                      </button>
+                      <button className="h-8 bg-orange-200 hover:bg-orange-300 text-orange-800 rounded text-xs font-bold transition-colors active:scale-95">
+                        -1
+                      </button>
+                    </div>
+                    {/* リセットボタン行 */}
+                    <div className="grid grid-cols-2 gap-x-1">
+                      <button className="h-8 bg-gray-500 hover:bg-gray-600 text-white rounded text-xs font-bold transition-colors active:scale-95">
+                        スコア<br />リセット
+                      </button>
+                      <button className="h-8 bg-gray-400 hover:bg-gray-500 text-white rounded text-xs font-bold transition-colors active:scale-95">
+                        リセット
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* 右側表示チーム */}
+                  <div className="flex-1 space-y-1">
+                    {/* +1ボタン行 */}
+                    <div className="grid grid-cols-2 gap-x-1">
+                      <button className="h-8 bg-orange-400 hover:bg-orange-500 text-white rounded text-xs font-bold transition-colors active:scale-95">
+                        +1
+                      </button>
+                      <button className="h-8 bg-blue-500 hover:bg-blue-600 text-white rounded text-xs font-bold transition-colors active:scale-95">
+                        +1
+                      </button>
+                    </div>
+                    {/* -1ボタン行 */}
+                    <div className="grid grid-cols-2 gap-x-1">
+                      <button className="h-8 bg-orange-200 hover:bg-orange-300 text-orange-800 rounded text-xs font-bold transition-colors active:scale-95">
+                        -1
+                      </button>
+                      <button className="h-8 bg-blue-300 hover:bg-blue-400 text-blue-800 rounded text-xs font-bold transition-colors active:scale-95">
+                        -1
+                      </button>
+                    </div>
+                    {/* リセットボタン行 */}
+                    <div className="grid grid-cols-2 gap-x-1">
+                      <button className="h-8 bg-gray-400 hover:bg-gray-500 text-white rounded text-xs font-bold transition-colors active:scale-95">
+                        リセット
+                      </button>
+                      <button className="h-8 bg-gray-500 hover:bg-gray-600 text-white rounded text-xs font-bold transition-colors active:scale-95">
+                        スコア<br />リセット
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* タイマープリセット */}
+              <div className="bg-blue-50 p-2 rounded-lg border border-blue-200">
+                <div className="flex gap-1">
+                  {/* 左側プリセット */}
+                  <div className="flex gap-1 flex-1">
+                    <button className="bg-blue-500 hover:bg-blue-600 text-white py-2 px-1 rounded text-xs font-bold transition-colors flex-1">
+                      20分
+                    </button>
+                    <button className="bg-blue-500 hover:bg-blue-600 text-white py-2 px-1 rounded text-xs font-bold transition-colors flex-1">
+                      15分
+                    </button>
+                    <button className="bg-blue-500 hover:bg-blue-600 text-white py-2 px-1 rounded text-xs font-bold transition-colors flex-1">
+                      3分
+                    </button>
+                  </div>
+
+                  {/* セパレーター */}
+                  <div className="w-px bg-blue-300 mx-1"></div>
+
+                  {/* 右側操作ボタン */}
+                  <div className="flex gap-1 flex-1">
+                    <button className="bg-green-500 hover:bg-green-600 text-white py-2 px-1 rounded text-xs font-bold transition-colors flex-1">
+                      +1秒
+                    </button>
+                    <button className="bg-red-500 hover:bg-red-600 text-white py-2 px-1 rounded text-xs font-bold transition-colors flex-1">
+                      -1秒
+                    </button>
+                    <button className="bg-gray-400 hover:bg-gray-500 text-white py-2 px-1 rounded text-xs font-bold transition-colors flex-1">
+                      コート<br />チェンジ
+                    </button>
+                  </div>
+                </div>
+              </div>
             </div>
           )}
         </div>
