@@ -7,6 +7,8 @@ interface Props {
   scoreUpdate: (team: 'teamA' | 'teamB', points: number) => void;
   resetTeamScore: (team: 'teamA' | 'teamB') => void;
   resetAllScores: () => void;
+  doOrDieUpdate: (team: 'teamA' | 'teamB', delta: number) => void;
+  doOrDieReset: () => void;
 }
 
 export function ControlPanel({
@@ -14,7 +16,9 @@ export function ControlPanel({
   onClose,
   scoreUpdate,
   resetTeamScore,
-  resetAllScores
+  resetAllScores,
+  doOrDieUpdate,
+  doOrDieReset
 }: Props) {
   const [isVisible, setIsVisible] = useState(false);
   const [isAnimating, setIsAnimating] = useState(false);
@@ -268,7 +272,9 @@ export function ControlPanel({
                       className="aspect-square bg-red-600 hover:bg-red-700 text-white rounded-lg font-bold transition-colors active:scale-95">
                       +1
                     </button>
-                    <button className="aspect-square bg-orange-400 hover:bg-orange-500 text-white rounded-lg font-bold transition-colors active:scale-95">
+                    <button
+                      onClick={() => doOrDieUpdate('teamA', 1)}
+                      className="aspect-square bg-orange-400 hover:bg-orange-500 text-white rounded-lg font-bold transition-colors active:scale-95">
                       +1
                     </button>
                   </div>
@@ -279,7 +285,9 @@ export function ControlPanel({
                       className="aspect-square bg-red-100 hover:bg-red-200 text-red-600 rounded-lg font-bold transition-colors active:scale-95">
                       -1
                     </button>
-                    <button className="aspect-square bg-orange-200 hover:bg-orange-300 text-orange-800 rounded-lg font-bold transition-colors active:scale-95">
+                    <button
+                      onClick={() => doOrDieUpdate('teamA', -1)}
+                      className="aspect-square bg-orange-200 hover:bg-orange-300 text-orange-800 rounded-lg font-bold transition-colors active:scale-95">
                       -1
                     </button>
                   </div>
@@ -290,7 +298,9 @@ export function ControlPanel({
                       className="h-12 bg-gray-500 hover:bg-gray-600 text-white rounded-lg font-bold text-xs transition-colors active:scale-95">
                       スコア<br />リセット
                     </button>
-                    <button className="h-12 bg-gray-400 hover:bg-gray-500 text-white rounded-lg font-bold text-xs transition-colors active:scale-95">
+                    <button
+                      onClick={() => doOrDieUpdate('teamA', -3)}
+                      className="h-12 bg-gray-400 hover:bg-gray-500 text-white rounded-lg font-bold text-xs transition-colors active:scale-95">
                       リセット
                     </button>
                   </div>
@@ -300,7 +310,9 @@ export function ControlPanel({
                 <div className="flex-1 space-y-3">
                   {/* +1ボタン行 */}
                   <div className="grid grid-cols-2 gap-x-2">
-                    <button className="aspect-square bg-orange-400 hover:bg-orange-500 text-white rounded-lg font-bold transition-colors active:scale-95">
+                    <button
+                      onClick={() => doOrDieUpdate('teamB', 1)}
+                      className="aspect-square bg-orange-400 hover:bg-orange-500 text-white rounded-lg font-bold transition-colors active:scale-95">
                       +1
                     </button>
                     <button
@@ -311,7 +323,9 @@ export function ControlPanel({
                   </div>
                   {/* -1ボタン行 */}
                   <div className="grid grid-cols-2 gap-x-2">
-                    <button className="aspect-square bg-orange-200 hover:bg-orange-300 text-orange-800 rounded-lg font-bold transition-colors active:scale-95">
+                    <button
+                      onClick={() => doOrDieUpdate('teamB', -1)}
+                      className="aspect-square bg-orange-200 hover:bg-orange-300 text-orange-800 rounded-lg font-bold transition-colors active:scale-95">
                       -1
                     </button>
                     <button
@@ -322,7 +336,9 @@ export function ControlPanel({
                   </div>
                   {/* リセットボタン行 */}
                   <div className="grid grid-cols-2 gap-x-2">
-                    <button className="h-12 bg-gray-400 hover:bg-gray-500 text-white rounded-lg font-bold text-xs transition-colors active:scale-95">
+                    <button
+                      onClick={() => doOrDieUpdate('teamB', -3)}
+                      className="h-12 bg-gray-400 hover:bg-gray-500 text-white rounded-lg font-bold text-xs transition-colors active:scale-95">
                       リセット
                     </button>
                     <button
@@ -599,7 +615,9 @@ export function ControlPanel({
                         className="h-12 bg-red-500 hover:bg-red-600 text-white rounded-lg font-bold text-base transition-colors active:scale-95">
                         +1
                       </button>
-                      <button className="h-12 bg-orange-400 hover:bg-orange-500 text-white rounded-lg font-bold text-base transition-colors active:scale-95">
+                      <button
+                        onClick={() => doOrDieUpdate('teamA', 1)}
+                        className="h-12 bg-orange-400 hover:bg-orange-500 text-white rounded-lg font-bold text-base transition-colors active:scale-95">
                         +1
                       </button>
                     </div>
@@ -610,7 +628,9 @@ export function ControlPanel({
                         className="h-12 bg-red-300 hover:bg-red-400 text-red-800 rounded-lg font-bold text-base transition-colors active:scale-95">
                         -1
                       </button>
-                      <button className="h-12 bg-orange-200 hover:bg-orange-300 text-orange-800 rounded-lg font-bold text-base transition-colors active:scale-95">
+                      <button
+                        onClick={() => doOrDieUpdate('teamA', -1)}
+                        className="h-12 bg-orange-200 hover:bg-orange-300 text-orange-800 rounded-lg font-bold text-base transition-colors active:scale-95">
                         -1
                       </button>
                     </div>
@@ -621,7 +641,9 @@ export function ControlPanel({
                         className="h-12 bg-gray-500 hover:bg-gray-600 text-white rounded-lg font-bold text-xs transition-colors active:scale-95">
                         スコア<br />リセット
                       </button>
-                      <button className="h-12 bg-gray-400 hover:bg-gray-500 text-white rounded-lg font-bold text-xs transition-colors active:scale-95">
+                      <button
+                        onClick={() => doOrDieUpdate('teamA', -3)}
+                        className="h-12 bg-gray-400 hover:bg-gray-500 text-white rounded-lg font-bold text-xs transition-colors active:scale-95">
                         リセット
                       </button>
                     </div>
@@ -631,7 +653,9 @@ export function ControlPanel({
                   <div className="flex-1 space-y-2">
                     {/* +1ボタン行 */}
                     <div className="grid grid-cols-2 gap-x-1">
-                      <button className="h-12 bg-orange-400 hover:bg-orange-500 text-white rounded-lg font-bold text-base transition-colors active:scale-95">
+                      <button
+                        onClick={() => doOrDieUpdate('teamB', 1)}
+                        className="h-12 bg-orange-400 hover:bg-orange-500 text-white rounded-lg font-bold text-base transition-colors active:scale-95">
                         +1
                       </button>
                       <button
@@ -642,7 +666,9 @@ export function ControlPanel({
                     </div>
                     {/* -1ボタン行 */}
                     <div className="grid grid-cols-2 gap-x-1">
-                      <button className="h-12 bg-orange-200 hover:bg-orange-300 text-orange-800 rounded-lg font-bold text-base transition-colors active:scale-95">
+                      <button
+                        onClick={() => doOrDieUpdate('teamB', -1)}
+                        className="h-12 bg-orange-200 hover:bg-orange-300 text-orange-800 rounded-lg font-bold text-base transition-colors active:scale-95">
                         -1
                       </button>
                       <button
@@ -653,7 +679,9 @@ export function ControlPanel({
                     </div>
                     {/* リセットボタン行 */}
                     <div className="grid grid-cols-2 gap-x-1">
-                      <button className="h-12 bg-gray-400 hover:bg-gray-500 text-white rounded-lg font-bold text-xs transition-colors active:scale-95">
+                      <button
+                        onClick={() => doOrDieUpdate('teamB', -3)}
+                        className="h-12 bg-gray-400 hover:bg-gray-500 text-white rounded-lg font-bold text-xs transition-colors active:scale-95">
                         リセット
                       </button>
                       <button
@@ -764,7 +792,9 @@ export function ControlPanel({
                         className="h-8 bg-red-500 hover:bg-red-600 text-white rounded text-xs font-bold transition-colors active:scale-95">
                         +1
                       </button>
-                      <button className="h-8 bg-orange-400 hover:bg-orange-500 text-white rounded text-xs font-bold transition-colors active:scale-95">
+                      <button
+                        onClick={() => doOrDieUpdate('teamA', 1)}
+                        className="h-8 bg-orange-400 hover:bg-orange-500 text-white rounded text-xs font-bold transition-colors active:scale-95">
                         +1
                       </button>
                     </div>
@@ -775,7 +805,9 @@ export function ControlPanel({
                         className="h-8 bg-red-300 hover:bg-red-400 text-red-800 rounded text-xs font-bold transition-colors active:scale-95">
                         -1
                       </button>
-                      <button className="h-8 bg-orange-200 hover:bg-orange-300 text-orange-800 rounded text-xs font-bold transition-colors active:scale-95">
+                      <button
+                        onClick={() => doOrDieUpdate('teamA', -1)}
+                        className="h-8 bg-orange-200 hover:bg-orange-300 text-orange-800 rounded text-xs font-bold transition-colors active:scale-95">
                         -1
                       </button>
                     </div>
@@ -786,7 +818,9 @@ export function ControlPanel({
                         className="h-8 bg-gray-500 hover:bg-gray-600 text-white rounded text-xs font-bold transition-colors active:scale-95">
                         スコア<br />リセット
                       </button>
-                      <button className="h-8 bg-gray-400 hover:bg-gray-500 text-white rounded text-xs font-bold transition-colors active:scale-95">
+                      <button
+                        onClick={() => doOrDieUpdate('teamA', -3)}
+                        className="h-8 bg-gray-400 hover:bg-gray-500 text-white rounded text-xs font-bold transition-colors active:scale-95">
                         リセット
                       </button>
                     </div>
@@ -796,7 +830,9 @@ export function ControlPanel({
                   <div className="flex-1 space-y-1">
                     {/* +1ボタン行 */}
                     <div className="grid grid-cols-2 gap-x-1">
-                      <button className="h-8 bg-orange-400 hover:bg-orange-500 text-white rounded text-xs font-bold transition-colors active:scale-95">
+                      <button
+                        onClick={() => doOrDieUpdate('teamB', 1)}
+                        className="h-8 bg-orange-400 hover:bg-orange-500 text-white rounded text-xs font-bold transition-colors active:scale-95">
                         +1
                       </button>
                       <button
@@ -807,7 +843,9 @@ export function ControlPanel({
                     </div>
                     {/* -1ボタン行 */}
                     <div className="grid grid-cols-2 gap-x-1">
-                      <button className="h-8 bg-orange-200 hover:bg-orange-300 text-orange-800 rounded text-xs font-bold transition-colors active:scale-95">
+                      <button
+                        onClick={() => doOrDieUpdate('teamB', -1)}
+                        className="h-8 bg-orange-200 hover:bg-orange-300 text-orange-800 rounded text-xs font-bold transition-colors active:scale-95">
                         -1
                       </button>
                       <button
@@ -818,7 +856,9 @@ export function ControlPanel({
                     </div>
                     {/* リセットボタン行 */}
                     <div className="grid grid-cols-2 gap-x-1">
-                      <button className="h-8 bg-gray-400 hover:bg-gray-500 text-white rounded text-xs font-bold transition-colors active:scale-95">
+                      <button
+                        onClick={() => doOrDieUpdate('teamB', -3)}
+                        className="h-8 bg-gray-400 hover:bg-gray-500 text-white rounded text-xs font-bold transition-colors active:scale-95">
                         リセット
                       </button>
                       <button

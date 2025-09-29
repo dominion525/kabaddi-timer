@@ -24,6 +24,8 @@ interface UseGameStateResult {
   scoreUpdate: (team: 'teamA' | 'teamB', points: number) => void;
   resetTeamScore: (team: 'teamA' | 'teamB') => void;
   resetAllScores: () => void;
+  doOrDieUpdate: (team: 'teamA' | 'teamB', delta: number) => void;
+  doOrDieReset: () => void;
   reconnect: () => void;
   requestTimeSync: () => void;
 }
@@ -213,6 +215,20 @@ export function useGameState({ gameId }: UseGameStateOptions): UseGameStateResul
     });
   }, [sendActionWithTimeSync]);
 
+  const doOrDieUpdate = useCallback((team: 'teamA' | 'teamB', delta: number) => {
+    sendAction({
+      type: 'DO_OR_DIE_UPDATE',
+      team,
+      delta,
+    });
+  }, [sendAction]);
+
+  const doOrDieReset = useCallback(() => {
+    sendAction({
+      type: 'DO_OR_DIE_RESET',
+    });
+  }, [sendAction]);
+
   return {
     gameState,
     isConnected,
@@ -229,6 +245,8 @@ export function useGameState({ gameId }: UseGameStateOptions): UseGameStateResul
     scoreUpdate,
     resetTeamScore,
     resetAllScores,
+    doOrDieUpdate,
+    doOrDieReset,
     reconnect,
     requestTimeSync,
   };

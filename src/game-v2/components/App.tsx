@@ -33,6 +33,8 @@ export function App({ gameId }: Props) {
     scoreUpdate,
     resetTeamScore,
     resetAllScores,
+    doOrDieUpdate,
+    doOrDieReset,
     reconnect,
     requestTimeSync
   } = useGameState({ gameId });
@@ -222,6 +224,8 @@ export function App({ gameId }: Props) {
         scoreUpdate={scoreUpdate}
         resetTeamScore={resetTeamScore}
         resetAllScores={resetAllScores}
+        doOrDieUpdate={doOrDieUpdate}
+        doOrDieReset={doOrDieReset}
       />
     </>
   );
