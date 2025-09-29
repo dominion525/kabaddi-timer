@@ -7,6 +7,7 @@ interface Props {
   onQRClick?: () => void;
   onHomeClick?: () => void;
   onCreditsClick?: () => void;
+  onTimeSyncClick?: () => void;
   onControlPanelClick?: () => void;
   controlPanelButtonText?: string;
 }
@@ -20,6 +21,7 @@ export function StatusBar({
   onQRClick,
   onHomeClick,
   onCreditsClick,
+  onTimeSyncClick,
   onControlPanelClick,
   controlPanelButtonText = 'コントロール'
 }: Props) {
@@ -82,7 +84,14 @@ export function StatusBar({
   return (
     <div className="bg-gray-800 text-white md:p-2 p-3 flex justify-between items-center fixed bottom-0 left-0 right-0 z-50">
       <div className="flex items-center md:space-x-4 space-x-3">
-        <div className="cursor-pointer hover:bg-gray-700 px-2 py-1 rounded transition-all duration-300">
+        <div
+          className={`px-2 py-1 rounded transition-all duration-300 ${
+            connectionStatus === 'connected' && onTimeSyncClick
+              ? 'cursor-pointer hover:bg-gray-700'
+              : ''
+          }`}
+          onClick={connectionStatus === 'connected' && onTimeSyncClick ? onTimeSyncClick : undefined}
+        >
           {getConnectionDisplay()}
         </div>
         <div className="flex items-center md:space-x-2 space-x-1.5 text-gray-300 md:text-base text-xs">

@@ -6,6 +6,7 @@ import { StatusBar } from './StatusBar';
 import { VersusIndicator } from './VersusIndicator';
 import { CreditsModal } from './CreditsModal';
 import { QRModal } from './QRModal';
+import { TimeSyncModal } from './TimeSyncModal';
 
 interface Props {
   gameId: string;
@@ -15,6 +16,7 @@ export function App({ gameId }: Props) {
   // モーダルの状態管理
   const [showCreditsModal, setShowCreditsModal] = useState(false);
   const [showQRModal, setShowQRModal] = useState(false);
+  const [showTimeSyncModal, setShowTimeSyncModal] = useState(false);
 
   const handleOpenCreditsModal = () => {
     setShowCreditsModal(true);
@@ -30,6 +32,14 @@ export function App({ gameId }: Props) {
 
   const handleCloseQRModal = () => {
     setShowQRModal(false);
+  };
+
+  const handleOpenTimeSyncModal = () => {
+    setShowTimeSyncModal(true);
+  };
+
+  const handleCloseTimeSyncModal = () => {
+    setShowTimeSyncModal(false);
   };
 
   // ダミーデータ
@@ -90,7 +100,7 @@ export function App({ gameId }: Props) {
         </div>
 
         {/* ステータスバー */}
-        <StatusBar gameId={gameId} onCreditsClick={handleOpenCreditsModal} onQRClick={handleOpenQRModal} />
+        <StatusBar gameId={gameId} onCreditsClick={handleOpenCreditsModal} onQRClick={handleOpenQRModal} onTimeSyncClick={handleOpenTimeSyncModal} />
       </div>
 
       {/* モバイル表示用 (md未満) */}
@@ -134,7 +144,7 @@ export function App({ gameId }: Props) {
         </div>
 
         {/* ステータスバー */}
-        <StatusBar gameId={gameId} onCreditsClick={handleOpenCreditsModal} onQRClick={handleOpenQRModal} />
+        <StatusBar gameId={gameId} onCreditsClick={handleOpenCreditsModal} onQRClick={handleOpenQRModal} onTimeSyncClick={handleOpenTimeSyncModal} />
       </div>
 
       {/* クレジットモーダル */}
@@ -148,6 +158,12 @@ export function App({ gameId }: Props) {
         isOpen={showQRModal}
         onClose={handleCloseQRModal}
         gameId={gameId}
+      />
+
+      {/* 時刻同期モーダル */}
+      <TimeSyncModal
+        isOpen={showTimeSyncModal}
+        onClose={handleCloseTimeSyncModal}
       />
     </>
   );
