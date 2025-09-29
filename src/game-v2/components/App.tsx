@@ -114,7 +114,7 @@ export function App({ gameId }: Props) {
       </div>
 
       {/* モバイル表示用 (md未満) */}
-      <div className="md:hidden min-h-screen flex flex-col bg-gray-900 touch-manipulation">
+      <div className="md:hidden h-screen flex flex-col bg-gray-900 touch-manipulation overflow-hidden fixed inset-0">
         {/* ヘッダー */}
         <div className="text-white">
           <div className="grid w-full" style={{ gridTemplateColumns: '2fr 1fr 2fr' }}>
