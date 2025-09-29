@@ -17,7 +17,7 @@ export function DoOrDieIndicator({ count, teamColor }: Props) {
   };
 
   return (
-    <div className="md:h-8 h-6 flex md:space-x-2 space-x-1 md:px-6 px-2 md:mb-2 pb-3">
+    <div className="md:h-8 h-6 flex md:space-x-2 space-x-1 md:px-4 px-2 md:mb-2 md:pb-0 pb-3">
       {[1, 2, 3].map((i) => (
         <div
           key={i}

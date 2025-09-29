@@ -4,9 +4,18 @@ import { JSX } from 'preact';
 interface Props {
   isOpen: boolean;
   onClose: () => void;
+  scoreUpdate: (team: 'teamA' | 'teamB', points: number) => void;
+  resetTeamScore: (team: 'teamA' | 'teamB') => void;
+  resetAllScores: () => void;
 }
 
-export function ControlPanel({ isOpen, onClose }: Props) {
+export function ControlPanel({
+  isOpen,
+  onClose,
+  scoreUpdate,
+  resetTeamScore,
+  resetAllScores
+}: Props) {
   const [isVisible, setIsVisible] = useState(false);
   const [isAnimating, setIsAnimating] = useState(false);
   const [simpleMode, setSimpleMode] = useState(false);
@@ -59,7 +68,6 @@ export function ControlPanel({ isOpen, onClose }: Props) {
     };
   }, []);
 
-
   return (
     <>
       {/* デスクトップ版オーバーレイ背景 */}
@@ -69,7 +77,7 @@ export function ControlPanel({ isOpen, onClose }: Props) {
             isAnimating ? 'opacity-50' : 'opacity-0'
           }`}
           onClick={handleBackgroundClick}
-        ></div>
+        />
       )}
 
       {/* デスクトップ版コントロールパネル */}
@@ -255,7 +263,9 @@ export function ControlPanel({ isOpen, onClose }: Props) {
                 <div className="flex-1 space-y-3">
                   {/* +1ボタン行 */}
                   <div className="grid grid-cols-2 gap-x-2">
-                    <button className="aspect-square bg-red-600 hover:bg-red-700 text-white rounded-lg font-bold transition-colors active:scale-95">
+                    <button
+                      onClick={() => scoreUpdate('teamA', 1)}
+                      className="aspect-square bg-red-600 hover:bg-red-700 text-white rounded-lg font-bold transition-colors active:scale-95">
                       +1
                     </button>
                     <button className="aspect-square bg-orange-400 hover:bg-orange-500 text-white rounded-lg font-bold transition-colors active:scale-95">
@@ -264,7 +274,9 @@ export function ControlPanel({ isOpen, onClose }: Props) {
                   </div>
                   {/* -1ボタン行 */}
                   <div className="grid grid-cols-2 gap-x-2">
-                    <button className="aspect-square bg-red-100 hover:bg-red-200 text-red-600 rounded-lg font-bold transition-colors active:scale-95">
+                    <button
+                      onClick={() => scoreUpdate('teamA', -1)}
+                      className="aspect-square bg-red-100 hover:bg-red-200 text-red-600 rounded-lg font-bold transition-colors active:scale-95">
                       -1
                     </button>
                     <button className="aspect-square bg-orange-200 hover:bg-orange-300 text-orange-800 rounded-lg font-bold transition-colors active:scale-95">
@@ -273,7 +285,9 @@ export function ControlPanel({ isOpen, onClose }: Props) {
                   </div>
                   {/* リセットボタン行 */}
                   <div className="grid grid-cols-2 gap-x-2">
-                    <button className="h-12 bg-gray-500 hover:bg-gray-600 text-white rounded-lg font-bold text-xs transition-colors active:scale-95">
+                    <button
+                      onClick={() => resetTeamScore('teamA')}
+                      className="h-12 bg-gray-500 hover:bg-gray-600 text-white rounded-lg font-bold text-xs transition-colors active:scale-95">
                       スコア<br />リセット
                     </button>
                     <button className="h-12 bg-gray-400 hover:bg-gray-500 text-white rounded-lg font-bold text-xs transition-colors active:scale-95">
@@ -289,7 +303,9 @@ export function ControlPanel({ isOpen, onClose }: Props) {
                     <button className="aspect-square bg-orange-400 hover:bg-orange-500 text-white rounded-lg font-bold transition-colors active:scale-95">
                       +1
                     </button>
-                    <button className="aspect-square bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-bold transition-colors active:scale-95">
+                    <button
+                      onClick={() => scoreUpdate('teamB', 1)}
+                      className="aspect-square bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-bold transition-colors active:scale-95">
                       +1
                     </button>
                   </div>
@@ -298,7 +314,9 @@ export function ControlPanel({ isOpen, onClose }: Props) {
                     <button className="aspect-square bg-orange-200 hover:bg-orange-300 text-orange-800 rounded-lg font-bold transition-colors active:scale-95">
                       -1
                     </button>
-                    <button className="aspect-square bg-blue-100 hover:bg-blue-200 text-blue-600 rounded-lg font-bold transition-colors active:scale-95">
+                    <button
+                      onClick={() => scoreUpdate('teamB', -1)}
+                      className="aspect-square bg-blue-100 hover:bg-blue-200 text-blue-600 rounded-lg font-bold transition-colors active:scale-95">
                       -1
                     </button>
                   </div>
@@ -307,7 +325,9 @@ export function ControlPanel({ isOpen, onClose }: Props) {
                     <button className="h-12 bg-gray-400 hover:bg-gray-500 text-white rounded-lg font-bold text-xs transition-colors active:scale-95">
                       リセット
                     </button>
-                    <button className="h-12 bg-gray-500 hover:bg-gray-600 text-white rounded-lg font-bold text-xs transition-colors active:scale-95">
+                    <button
+                      onClick={() => resetTeamScore('teamB')}
+                      className="h-12 bg-gray-500 hover:bg-gray-600 text-white rounded-lg font-bold text-xs transition-colors active:scale-95">
                       スコア<br />リセット
                     </button>
                   </div>
@@ -322,7 +342,8 @@ export function ControlPanel({ isOpen, onClose }: Props) {
                 <button className="bg-orange-500 hover:bg-orange-600 text-white px-3 py-1 rounded-lg font-bold text-lg transition-colors">
                   コートチェンジ
                 </button>
-                <button className="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded-lg font-bold text-lg transition-colors">
+                <button
+                  className="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded-lg font-bold text-lg transition-colors">
                   全リセット
                 </button>
               </div>
@@ -341,7 +362,7 @@ export function ControlPanel({ isOpen, onClose }: Props) {
             isAnimating ? 'opacity-50' : 'opacity-0'
           }`}
           onClick={handleBackgroundClick}
-        ></div>
+        />
       )}
 
       {/* モバイル版コントロールパネル */}
@@ -405,7 +426,6 @@ export function ControlPanel({ isOpen, onClose }: Props) {
           {/* コンテンツエリア - 通常モード */}
           {!simpleMode && (
             <div className="flex-1 p-3 overflow-y-auto space-y-3" style={{ backgroundColor: '#7F7F7F' }}>
-
               {/* チーム名設定 */}
               <div className="bg-gray-50 p-3 rounded-lg">
                 <h3 className="font-bold text-base mb-3">チーム名設定</h3>
@@ -574,7 +594,9 @@ export function ControlPanel({ isOpen, onClose }: Props) {
                   <div className="flex-1 space-y-2">
                     {/* +1ボタン行 */}
                     <div className="grid grid-cols-2 gap-x-1">
-                      <button className="h-12 bg-red-500 hover:bg-red-600 text-white rounded-lg font-bold text-base transition-colors active:scale-95">
+                      <button
+                        onClick={() => scoreUpdate('teamA', 1)}
+                        className="h-12 bg-red-500 hover:bg-red-600 text-white rounded-lg font-bold text-base transition-colors active:scale-95">
                         +1
                       </button>
                       <button className="h-12 bg-orange-400 hover:bg-orange-500 text-white rounded-lg font-bold text-base transition-colors active:scale-95">
@@ -583,7 +605,9 @@ export function ControlPanel({ isOpen, onClose }: Props) {
                     </div>
                     {/* -1ボタン行 */}
                     <div className="grid grid-cols-2 gap-x-1">
-                      <button className="h-12 bg-red-300 hover:bg-red-400 text-red-800 rounded-lg font-bold text-base transition-colors active:scale-95">
+                      <button
+                        onClick={() => scoreUpdate('teamA', -1)}
+                        className="h-12 bg-red-300 hover:bg-red-400 text-red-800 rounded-lg font-bold text-base transition-colors active:scale-95">
                         -1
                       </button>
                       <button className="h-12 bg-orange-200 hover:bg-orange-300 text-orange-800 rounded-lg font-bold text-base transition-colors active:scale-95">
@@ -592,7 +616,9 @@ export function ControlPanel({ isOpen, onClose }: Props) {
                     </div>
                     {/* リセットボタン行 */}
                     <div className="grid grid-cols-2 gap-x-1">
-                      <button className="h-12 bg-gray-500 hover:bg-gray-600 text-white rounded-lg font-bold text-xs transition-colors active:scale-95">
+                      <button
+                        onClick={() => resetTeamScore('teamA')}
+                        className="h-12 bg-gray-500 hover:bg-gray-600 text-white rounded-lg font-bold text-xs transition-colors active:scale-95">
                         スコア<br />リセット
                       </button>
                       <button className="h-12 bg-gray-400 hover:bg-gray-500 text-white rounded-lg font-bold text-xs transition-colors active:scale-95">
@@ -608,7 +634,9 @@ export function ControlPanel({ isOpen, onClose }: Props) {
                       <button className="h-12 bg-orange-400 hover:bg-orange-500 text-white rounded-lg font-bold text-base transition-colors active:scale-95">
                         +1
                       </button>
-                      <button className="h-12 bg-blue-500 hover:bg-blue-600 text-white rounded-lg font-bold text-base transition-colors active:scale-95">
+                      <button
+                        onClick={() => scoreUpdate('teamB', 1)}
+                        className="h-12 bg-blue-500 hover:bg-blue-600 text-white rounded-lg font-bold text-base transition-colors active:scale-95">
                         +1
                       </button>
                     </div>
@@ -617,7 +645,9 @@ export function ControlPanel({ isOpen, onClose }: Props) {
                       <button className="h-12 bg-orange-200 hover:bg-orange-300 text-orange-800 rounded-lg font-bold text-base transition-colors active:scale-95">
                         -1
                       </button>
-                      <button className="h-12 bg-blue-300 hover:bg-blue-400 text-blue-800 rounded-lg font-bold text-base transition-colors active:scale-95">
+                      <button
+                        onClick={() => scoreUpdate('teamB', -1)}
+                        className="h-12 bg-blue-300 hover:bg-blue-400 text-blue-800 rounded-lg font-bold text-base transition-colors active:scale-95">
                         -1
                       </button>
                     </div>
@@ -626,7 +656,9 @@ export function ControlPanel({ isOpen, onClose }: Props) {
                       <button className="h-12 bg-gray-400 hover:bg-gray-500 text-white rounded-lg font-bold text-xs transition-colors active:scale-95">
                         リセット
                       </button>
-                      <button className="h-12 bg-gray-500 hover:bg-gray-600 text-white rounded-lg font-bold text-xs transition-colors active:scale-95">
+                      <button
+                        onClick={() => resetTeamScore('teamB')}
+                        className="h-12 bg-gray-500 hover:bg-gray-600 text-white rounded-lg font-bold text-xs transition-colors active:scale-95">
                         スコア<br />リセット
                       </button>
                     </div>
@@ -641,7 +673,8 @@ export function ControlPanel({ isOpen, onClose }: Props) {
                   <button className="bg-orange-500 hover:bg-orange-600 text-white px-4 py-1 rounded-lg font-bold text-base transition-colors">
                     コートチェンジ
                   </button>
-                  <button className="bg-red-600 hover:bg-red-700 text-white px-4 py-1 rounded-lg font-bold text-base transition-colors">
+                  <button
+                    className="bg-red-600 hover:bg-red-700 text-white px-4 py-1 rounded-lg font-bold text-base transition-colors">
                     全リセット
                   </button>
                 </div>
@@ -726,7 +759,9 @@ export function ControlPanel({ isOpen, onClose }: Props) {
                   <div className="flex-1 space-y-1">
                     {/* +1ボタン行 */}
                     <div className="grid grid-cols-2 gap-x-1">
-                      <button className="h-8 bg-red-500 hover:bg-red-600 text-white rounded text-xs font-bold transition-colors active:scale-95">
+                      <button
+                        onClick={() => scoreUpdate('teamA', 1)}
+                        className="h-8 bg-red-500 hover:bg-red-600 text-white rounded text-xs font-bold transition-colors active:scale-95">
                         +1
                       </button>
                       <button className="h-8 bg-orange-400 hover:bg-orange-500 text-white rounded text-xs font-bold transition-colors active:scale-95">
@@ -735,7 +770,9 @@ export function ControlPanel({ isOpen, onClose }: Props) {
                     </div>
                     {/* -1ボタン行 */}
                     <div className="grid grid-cols-2 gap-x-1">
-                      <button className="h-8 bg-red-300 hover:bg-red-400 text-red-800 rounded text-xs font-bold transition-colors active:scale-95">
+                      <button
+                        onClick={() => scoreUpdate('teamA', -1)}
+                        className="h-8 bg-red-300 hover:bg-red-400 text-red-800 rounded text-xs font-bold transition-colors active:scale-95">
                         -1
                       </button>
                       <button className="h-8 bg-orange-200 hover:bg-orange-300 text-orange-800 rounded text-xs font-bold transition-colors active:scale-95">
@@ -744,7 +781,9 @@ export function ControlPanel({ isOpen, onClose }: Props) {
                     </div>
                     {/* リセットボタン行 */}
                     <div className="grid grid-cols-2 gap-x-1">
-                      <button className="h-8 bg-gray-500 hover:bg-gray-600 text-white rounded text-xs font-bold transition-colors active:scale-95">
+                      <button
+                        onClick={() => resetTeamScore('teamA')}
+                        className="h-8 bg-gray-500 hover:bg-gray-600 text-white rounded text-xs font-bold transition-colors active:scale-95">
                         スコア<br />リセット
                       </button>
                       <button className="h-8 bg-gray-400 hover:bg-gray-500 text-white rounded text-xs font-bold transition-colors active:scale-95">
@@ -760,7 +799,9 @@ export function ControlPanel({ isOpen, onClose }: Props) {
                       <button className="h-8 bg-orange-400 hover:bg-orange-500 text-white rounded text-xs font-bold transition-colors active:scale-95">
                         +1
                       </button>
-                      <button className="h-8 bg-blue-500 hover:bg-blue-600 text-white rounded text-xs font-bold transition-colors active:scale-95">
+                      <button
+                        onClick={() => scoreUpdate('teamB', 1)}
+                        className="h-8 bg-blue-500 hover:bg-blue-600 text-white rounded text-xs font-bold transition-colors active:scale-95">
                         +1
                       </button>
                     </div>
@@ -769,7 +810,9 @@ export function ControlPanel({ isOpen, onClose }: Props) {
                       <button className="h-8 bg-orange-200 hover:bg-orange-300 text-orange-800 rounded text-xs font-bold transition-colors active:scale-95">
                         -1
                       </button>
-                      <button className="h-8 bg-blue-300 hover:bg-blue-400 text-blue-800 rounded text-xs font-bold transition-colors active:scale-95">
+                      <button
+                        onClick={() => scoreUpdate('teamB', -1)}
+                        className="h-8 bg-blue-300 hover:bg-blue-400 text-blue-800 rounded text-xs font-bold transition-colors active:scale-95">
                         -1
                       </button>
                     </div>
@@ -778,7 +821,9 @@ export function ControlPanel({ isOpen, onClose }: Props) {
                       <button className="h-8 bg-gray-400 hover:bg-gray-500 text-white rounded text-xs font-bold transition-colors active:scale-95">
                         リセット
                       </button>
-                      <button className="h-8 bg-gray-500 hover:bg-gray-600 text-white rounded text-xs font-bold transition-colors active:scale-95">
+                      <button
+                        onClick={() => resetTeamScore('teamB')}
+                        className="h-8 bg-gray-500 hover:bg-gray-600 text-white rounded text-xs font-bold transition-colors active:scale-95">
                         スコア<br />リセット
                       </button>
                     </div>

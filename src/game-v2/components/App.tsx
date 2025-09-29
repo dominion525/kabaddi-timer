@@ -8,12 +8,16 @@ import { CreditsModal } from './CreditsModal';
 import { QRModal } from './QRModal';
 import { TimeSyncModal } from './TimeSyncModal';
 import { ControlPanel } from './ControlPanel';
+import { useGameState } from '../hooks/useGameState';
 
 interface Props {
   gameId: string;
 }
 
 export function App({ gameId }: Props) {
+  // ゲーム状態とWebSocket通信
+  const { gameState, isConnected, scoreUpdate, resetTeamScore, resetAllScores } = useGameState({ gameId });
+
   // モーダルの状態管理
   const [showCreditsModal, setShowCreditsModal] = useState(false);
   const [showQRModal, setShowQRModal] = useState(false);
@@ -52,20 +56,15 @@ export function App({ gameId }: Props) {
     setShowControlPanel(false);
   };
 
-  // ダミーデータ
-  const teamA = {
-    name: 'チームA',
-    score: 10,
-    doOrDieCount: 2,
-    color: 'red'
-  };
+  // ゲーム状態が読み込まれるまでは初期状態を表示
+  if (!gameState) {
+    return <div className="h-screen bg-gray-900 flex items-center justify-center text-white">
+      読み込み中...
+    </div>;
+  }
 
-  const teamB = {
-    name: 'チームB',
-    score: 8,
-    doOrDieCount: 1,
-    color: 'blue'
-  };
+  const teamA = { ...gameState.teamA, color: 'red' };
+  const teamB = { ...gameState.teamB, color: 'blue' };
 
   return (
     <>
@@ -94,7 +93,7 @@ export function App({ gameId }: Props) {
 
           {/* 上段：サブタイマー */}
           <div className="bg-gray-800 text-white flex flex-col items-center justify-center py-1 px-4">
-            <SubTimer seconds={30} isRunning={false} />
+            <SubTimer seconds={gameState.subTimer?.remainingSeconds || 30} isRunning={gameState.subTimer?.isRunning || false} />
           </div>
 
           {/* 上段：右側チーム */}
@@ -105,7 +104,11 @@ export function App({ gameId }: Props) {
 
           {/* 下段：メインタイマー（3列全体を使用） */}
           <div className="col-span-3 bg-gray-800 text-white flex flex-col items-center justify-center px-4 pb-4 pt-2">
-            <MainTimer minutes={60} seconds={0} isRunning={false} />
+            <MainTimer
+              minutes={Math.floor(gameState.timer.remainingSeconds / 60)}
+              seconds={gameState.timer.remainingSeconds % 60}
+              isRunning={gameState.timer.isRunning}
+            />
           </div>
         </div>
 
@@ -138,7 +141,7 @@ export function App({ gameId }: Props) {
 
           {/* 上段：サブタイマー */}
           <div className="bg-gray-800 text-white flex flex-col items-center justify-center py-0.5 px-1">
-            <SubTimer seconds={30} isRunning={false} />
+            <SubTimer seconds={gameState.subTimer?.remainingSeconds || 30} isRunning={gameState.subTimer?.isRunning || false} />
           </div>
 
           {/* 上段：右側チーム */}
@@ -149,7 +152,11 @@ export function App({ gameId }: Props) {
 
           {/* 下段：メインタイマー（3列全体を使用） */}
           <div className="col-span-3 bg-gray-800 text-white flex flex-col items-center justify-center px-1 pt-8 pb-2">
-            <MainTimer minutes={60} seconds={0} isRunning={false} />
+            <MainTimer
+              minutes={Math.floor(gameState.timer.remainingSeconds / 60)}
+              seconds={gameState.timer.remainingSeconds % 60}
+              isRunning={gameState.timer.isRunning}
+            />
           </div>
         </div>
 
@@ -180,6 +187,9 @@ export function App({ gameId }: Props) {
       <ControlPanel
         isOpen={showControlPanel}
         onClose={handleCloseControlPanel}
+        scoreUpdate={scoreUpdate}
+        resetTeamScore={resetTeamScore}
+        resetAllScores={resetAllScores}
       />
     </>
   );
