@@ -7,6 +7,7 @@ import { VersusIndicator } from './VersusIndicator';
 import { CreditsModal } from './CreditsModal';
 import { QRModal } from './QRModal';
 import { TimeSyncModal } from './TimeSyncModal';
+import { ControlPanel } from './ControlPanel';
 
 interface Props {
   gameId: string;
@@ -17,6 +18,7 @@ export function App({ gameId }: Props) {
   const [showCreditsModal, setShowCreditsModal] = useState(false);
   const [showQRModal, setShowQRModal] = useState(false);
   const [showTimeSyncModal, setShowTimeSyncModal] = useState(false);
+  const [showControlPanel, setShowControlPanel] = useState(false);
 
   const handleOpenCreditsModal = () => {
     setShowCreditsModal(true);
@@ -40,6 +42,14 @@ export function App({ gameId }: Props) {
 
   const handleCloseTimeSyncModal = () => {
     setShowTimeSyncModal(false);
+  };
+
+  const handleOpenControlPanel = () => {
+    setShowControlPanel(true);
+  };
+
+  const handleCloseControlPanel = () => {
+    setShowControlPanel(false);
   };
 
   // ダミーデータ
@@ -100,7 +110,7 @@ export function App({ gameId }: Props) {
         </div>
 
         {/* ステータスバー */}
-        <StatusBar gameId={gameId} onCreditsClick={handleOpenCreditsModal} onQRClick={handleOpenQRModal} onTimeSyncClick={handleOpenTimeSyncModal} />
+        <StatusBar gameId={gameId} onCreditsClick={handleOpenCreditsModal} onQRClick={handleOpenQRModal} onTimeSyncClick={handleOpenTimeSyncModal} onControlPanelClick={handleOpenControlPanel} />
       </div>
 
       {/* モバイル表示用 (md未満) */}
@@ -144,7 +154,7 @@ export function App({ gameId }: Props) {
         </div>
 
         {/* ステータスバー */}
-        <StatusBar gameId={gameId} onCreditsClick={handleOpenCreditsModal} onQRClick={handleOpenQRModal} onTimeSyncClick={handleOpenTimeSyncModal} />
+        <StatusBar gameId={gameId} onCreditsClick={handleOpenCreditsModal} onQRClick={handleOpenQRModal} onTimeSyncClick={handleOpenTimeSyncModal} onControlPanelClick={handleOpenControlPanel} />
       </div>
 
       {/* クレジットモーダル */}
@@ -164,6 +174,12 @@ export function App({ gameId }: Props) {
       <TimeSyncModal
         isOpen={showTimeSyncModal}
         onClose={handleCloseTimeSyncModal}
+      />
+
+      {/* コントロールパネル */}
+      <ControlPanel
+        isOpen={showControlPanel}
+        onClose={handleCloseControlPanel}
       />
     </>
   );
