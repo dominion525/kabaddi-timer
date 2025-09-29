@@ -1,4 +1,4 @@
-import { useEffect } from 'preact/hooks';
+import { useEffect, useState } from 'preact/hooks';
 import { JSX } from 'preact';
 
 type TimeSyncStatus = 'good' | 'warning' | 'error' | 'unknown';
@@ -6,29 +6,29 @@ type TimeSyncStatus = 'good' | 'warning' | 'error' | 'unknown';
 interface Props {
   isOpen: boolean;
   onClose: () => void;
+  timeSyncStatus: TimeSyncStatus;
+  serverTimeOffset: number;
+  lastRTT: number;
+  lastSyncTime: Date | null;
+  lastSyncClientTime: Date | null;
+  lastSyncServerTime: Date | null;
+  onRequestTimeSync: () => void;
 }
 
-// 現在時刻をミリ秒まで取得する関数
-const getCurrentTimeWithMillis = () => {
-  const now = new Date();
-  const hours = now.getHours().toString().padStart(2, '0');
-  const minutes = now.getMinutes().toString().padStart(2, '0');
-  const seconds = now.getSeconds().toString().padStart(2, '0');
-  const millis = now.getMilliseconds().toString().padStart(3, '0');
-  return `${hours}:${minutes}:${seconds}.${millis}`;
-};
+export function TimeSyncModal({
+  isOpen,
+  onClose,
+  timeSyncStatus,
+  serverTimeOffset,
+  lastRTT,
+  lastSyncTime,
+  lastSyncClientTime,
+  lastSyncServerTime,
+  onRequestTimeSync,
+}: Props) {
+  const [currentClientTime, setCurrentClientTime] = useState('');
+  const [currentServerTime, setCurrentServerTime] = useState('');
 
-// Mock データ（現状は動作不要）
-const getMockSyncData = () => ({
-  timeSyncStatus: 'good' as TimeSyncStatus,
-  serverTimeOffset: 12,
-  lastRTT: 45,
-  currentClientTime: getCurrentTimeWithMillis(),
-  currentServerTime: getCurrentTimeWithMillis(),
-  lastSyncTime: '12:34:45.123'
-});
-
-export function TimeSyncModal({ isOpen, onClose }: Props) {
   if (!isOpen) return null;
 
   const handleBackgroundClick = (e: JSX.TargetedMouseEvent<HTMLDivElement>) => {
@@ -44,12 +44,35 @@ export function TimeSyncModal({ isOpen, onClose }: Props) {
   };
 
   const handleRequestTimeSync = () => {
-    console.log('時刻同期を実行（Mock）');
-    // 現状は何もしない（Mock実装）
+    onRequestTimeSync();
   };
 
-  // エスケープキーのリスナーを追加とLucideアイコンの初期化
+  const updateSyncTimeDisplay = () => {
+    // 同期時の実際の時刻を表示
+    if (lastSyncClientTime && lastSyncServerTime) {
+      setCurrentClientTime(formatTime(lastSyncClientTime));
+      setCurrentServerTime(formatTime(lastSyncServerTime));
+    } else {
+      // 同期データがない場合は空文字
+      setCurrentClientTime('');
+      setCurrentServerTime('');
+    }
+  };
+
+  const formatTime = (date: Date) => {
+    const hours = date.getHours().toString().padStart(2, '0');
+    const minutes = date.getMinutes().toString().padStart(2, '0');
+    const seconds = date.getSeconds().toString().padStart(2, '0');
+    const millis = date.getMilliseconds().toString().padStart(3, '0');
+    return `${hours}:${minutes}:${seconds}.${millis}`;
+  };
+
+  // モーダルが開いた時と同期データが更新された時に時刻を取得
   useEffect(() => {
+    if (isOpen) {
+      updateSyncTimeDisplay();
+    }
+
     document.addEventListener('keydown', handleKeyDown);
 
     // Lucideアイコンの初期化
@@ -60,12 +83,9 @@ export function TimeSyncModal({ isOpen, onClose }: Props) {
     return () => {
       document.removeEventListener('keydown', handleKeyDown);
     };
-  }, []);
+  }, [isOpen, lastSyncClientTime, lastSyncServerTime]);
 
-  const getSyncStatusDisplay = () => {
-    const mockSyncData = getMockSyncData();
-    const { timeSyncStatus } = mockSyncData;
-
+  const getTimeSyncStatusDisplay = () => {
     const statusConfig = {
       good: {
         emoji: '✅',
@@ -104,8 +124,7 @@ export function TimeSyncModal({ isOpen, onClose }: Props) {
     return statusConfig[timeSyncStatus];
   };
 
-  const statusDisplay = getSyncStatusDisplay();
-  const mockSyncData = getMockSyncData();
+  const statusDisplay = getTimeSyncStatusDisplay();
 
   return (
     <div
@@ -143,30 +162,29 @@ export function TimeSyncModal({ isOpen, onClose }: Props) {
           <div className="grid grid-cols-2 gap-2 text-sm">
             <div className="flex justify-between items-center p-2 bg-gray-50 rounded">
               <span className="text-gray-600 text-xs">時刻差:</span>
-              <span className="font-mono font-medium text-xs">{mockSyncData.serverTimeOffset}ms</span>
+              <span className="font-mono font-medium text-xs">{serverTimeOffset}ms</span>
             </div>
             <div className="flex justify-between items-center p-2 bg-gray-50 rounded">
               <span className="text-gray-600 text-xs">RTT:</span>
-              <span className="font-mono font-medium text-xs">{mockSyncData.lastRTT}ms</span>
+              <span className="font-mono font-medium text-xs">{lastRTT}ms</span>
             </div>
             <div className="flex justify-between items-center p-2 bg-gray-50 rounded">
               <span className="text-gray-600 text-xs">クライアント:</span>
-              <span className="font-mono font-medium text-xs">{mockSyncData.currentClientTime}</span>
+              <span className="font-mono font-medium text-xs">{currentClientTime}</span>
             </div>
             <div className="flex justify-between items-center p-2 bg-gray-50 rounded">
               <span className="text-gray-600 text-xs">サーバー:</span>
-              <span className="font-mono font-medium text-xs">{mockSyncData.currentServerTime}</span>
+              <span className="font-mono font-medium text-xs">{currentServerTime}</span>
             </div>
           </div>
-
           {/* 最終同期時刻 */}
           <div className="flex justify-center items-center p-2 bg-gray-50 rounded text-sm">
             <span className="text-gray-600 mr-2">最終同期:</span>
-            <span className="font-mono font-medium text-xs">{mockSyncData.lastSyncTime}</span>
+            <span className="font-mono font-medium text-xs">{lastSyncTime ? formatTime(lastSyncTime) : '未同期'}</span>
           </div>
 
           {/* 警告メッセージ */}
-          {getMockSyncData().timeSyncStatus === 'warning' && (
+          {timeSyncStatus === 'warning' && (
             <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
               <div className="flex items-start gap-2">
                 <span className="text-yellow-600 mt-0.5">⚠️</span>
@@ -178,7 +196,7 @@ export function TimeSyncModal({ isOpen, onClose }: Props) {
             </div>
           )}
 
-          {getMockSyncData().timeSyncStatus === 'error' && (
+          {timeSyncStatus === 'error' && (
             <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
               <div className="flex items-start gap-2">
                 <span className="text-red-600 mt-0.5">❌</span>

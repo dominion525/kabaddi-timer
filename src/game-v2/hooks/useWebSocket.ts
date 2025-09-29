@@ -1,5 +1,7 @@
-import { useEffect, useRef, useCallback } from 'preact/hooks';
+import { useEffect, useRef, useCallback, useState } from 'preact/hooks';
 import type { GameAction, GameMessage, MESSAGE_TYPES } from '../../types/game';
+
+type ConnectionStatus = 'connecting' | 'connected' | 'reconnecting' | 'disconnected' | 'error';
 
 interface UseWebSocketOptions {
   gameId: string;
@@ -12,6 +14,10 @@ interface UseWebSocketOptions {
 interface UseWebSocketResult {
   sendAction: (action: GameAction) => boolean;
   isConnected: boolean;
+  connectionStatus: ConnectionStatus;
+  reconnectAttempts: number;
+  maxReconnectAttempts: number;
+  errorMessage: string | null;
   reconnect: () => void;
 }
 
@@ -21,14 +27,19 @@ class WebSocketManager {
     ws: WebSocket | null;
     isConnected: boolean;
     isConnecting: boolean;
+    connectionStatus: ConnectionStatus;
     reconnectAttempts: number;
     maxReconnectAttempts: number;
+    errorMessage: string | null;
     subscribers: Set<{
       onMessage?: (message: GameMessage) => void;
       onConnected?: () => void;
       onDisconnected?: () => void;
       onError?: (error: Event) => void;
       setIsConnected?: (connected: boolean) => void;
+      setConnectionStatus?: (status: ConnectionStatus) => void;
+      setReconnectAttempts?: (attempts: number) => void;
+      setErrorMessage?: (message: string | null) => void;
     }>;
     reconnectTimeout: number | null;
     didUnmount: boolean;
@@ -40,6 +51,9 @@ class WebSocketManager {
     onDisconnected?: () => void;
     onError?: (error: Event) => void;
     setIsConnected?: (connected: boolean) => void;
+    setConnectionStatus?: (status: ConnectionStatus) => void;
+    setReconnectAttempts?: (attempts: number) => void;
+    setErrorMessage?: (message: string | null) => void;
   }) {
     console.log(`[WebSocketManager] Connect request for gameId: ${gameId}`);
 
@@ -54,9 +68,14 @@ class WebSocketManager {
       connection.subscribers.add(callbacks);
       console.log(`[WebSocketManager] Added subscriber to existing connection. Total subscribers: ${connection.subscribers.size}`);
 
+      // 現在の状態を新しいサブスクライバーに通知
+      callbacks.setIsConnected?.(connection.isConnected);
+      callbacks.setConnectionStatus?.(connection.connectionStatus);
+      callbacks.setReconnectAttempts?.(connection.reconnectAttempts);
+      callbacks.setErrorMessage?.(connection.errorMessage);
+
       // 既に接続済みの場合は即座にonConnectedを呼ぶ
       if (connection.isConnected) {
-        callbacks.setIsConnected?.(true);
         callbacks.onConnected?.();
       }
       return;
@@ -67,8 +86,10 @@ class WebSocketManager {
       ws: null,
       isConnected: false,
       isConnecting: false,
+      connectionStatus: 'disconnected' as ConnectionStatus,
       reconnectAttempts: 0,
       maxReconnectAttempts: 10,
+      errorMessage: null,
       subscribers: new Set([callbacks]),
       reconnectTimeout: null,
       didUnmount: false
@@ -141,7 +162,16 @@ class WebSocketManager {
     }
 
     connection.isConnecting = true;
+    connection.connectionStatus = connection.reconnectAttempts > 0 ? 'reconnecting' : 'connecting';
+    connection.errorMessage = null;
     console.log(`[WebSocketManager] Creating WebSocket for ${gameId} (attempt ${connection.reconnectAttempts + 1})`);
+
+    // 状態をサブスクライバーに通知
+    connection.subscribers.forEach(subscriber => {
+      subscriber.setConnectionStatus?.(connection.connectionStatus);
+      subscriber.setReconnectAttempts?.(connection.reconnectAttempts);
+      subscriber.setErrorMessage?.(connection.errorMessage);
+    });
 
     const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
     const wsUrl = `${protocol}//${window.location.host}/ws/${gameId}`;
@@ -153,10 +183,15 @@ class WebSocketManager {
       console.log(`[WebSocketManager] ✓ WebSocket connected: ${gameId}`);
       connection.isConnected = true;
       connection.isConnecting = false;
+      connection.connectionStatus = 'connected';
       connection.reconnectAttempts = 0; // 成功時にリセット
+      connection.errorMessage = null;
 
       connection.subscribers.forEach(subscriber => {
         subscriber.setIsConnected?.(true);
+        subscriber.setConnectionStatus?.(connection.connectionStatus);
+        subscriber.setReconnectAttempts?.(connection.reconnectAttempts);
+        subscriber.setErrorMessage?.(connection.errorMessage);
         subscriber.onConnected?.();
       });
     };
@@ -178,9 +213,11 @@ class WebSocketManager {
       console.log(`[WebSocketManager] ✗ WebSocket closed: ${gameId}, code: ${event.code}, reason: ${event.reason}`);
       connection.isConnected = false;
       connection.isConnecting = false;
+      connection.connectionStatus = 'disconnected';
 
       connection.subscribers.forEach(subscriber => {
         subscriber.setIsConnected?.(false);
+        subscriber.setConnectionStatus?.(connection.connectionStatus);
         subscriber.onDisconnected?.();
       });
 
@@ -193,7 +230,12 @@ class WebSocketManager {
       // 最大再接続回数に達した場合は停止
       if (connection.reconnectAttempts >= connection.maxReconnectAttempts) {
         console.warn(`[WebSocketManager] Max reconnect attempts reached for ${gameId}`);
+        connection.connectionStatus = 'error';
+        connection.errorMessage = '最大再接続回数に達しました';
+
         connection.subscribers.forEach(subscriber => {
+          subscriber.setConnectionStatus?.(connection.connectionStatus);
+          subscriber.setErrorMessage?.(connection.errorMessage);
           subscriber.onError?.(new Event('MaxReconnectAttemptsReached'));
         });
         return;
@@ -218,8 +260,12 @@ class WebSocketManager {
     ws.onerror = (event: Event) => {
       console.error(`[WebSocketManager] ⚠ WebSocket error: ${gameId}`, event);
       connection.isConnecting = false;
+      connection.connectionStatus = 'error';
+      connection.errorMessage = 'WebSocket接続エラーが発生しました';
 
       connection.subscribers.forEach(subscriber => {
+        subscriber.setConnectionStatus?.(connection.connectionStatus);
+        subscriber.setErrorMessage?.(connection.errorMessage);
         subscriber.onError?.(event);
       });
     };
@@ -262,15 +308,14 @@ export function useWebSocket({
   onDisconnected,
   onError,
 }: UseWebSocketOptions): UseWebSocketResult {
-  const isConnectedRef = useRef(false);
+  const [isConnected, setIsConnected] = useState(false);
+  const [connectionStatus, setConnectionStatus] = useState<ConnectionStatus>('disconnected');
+  const [reconnectAttempts, setReconnectAttempts] = useState(0);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const callbacksRef = useRef({ onMessage, onConnected, onDisconnected, onError });
 
   // コールバックを最新に保つ
   callbacksRef.current = { onMessage, onConnected, onDisconnected, onError };
-
-  const setIsConnected = useCallback((connected: boolean) => {
-    isConnectedRef.current = connected;
-  }, []);
 
   const wrappedCallbacks = useRef({
     onMessage: (message: GameMessage) => callbacksRef.current.onMessage?.(message),
@@ -278,6 +323,9 @@ export function useWebSocket({
     onDisconnected: () => callbacksRef.current.onDisconnected?.(),
     onError: (error: Event) => callbacksRef.current.onError?.(error),
     setIsConnected,
+    setConnectionStatus,
+    setReconnectAttempts,
+    setErrorMessage,
   });
 
   useEffect(() => {
@@ -290,8 +338,11 @@ export function useWebSocket({
       console.log(`[useWebSocket] 🔌 Disconnecting from gameId: ${gameId}`);
       wsManager.disconnect(gameId, wrappedCallbacks.current);
       setIsConnected(false);
+      setConnectionStatus('disconnected');
+      setReconnectAttempts(0);
+      setErrorMessage(null);
     };
-  }, [gameId, setIsConnected]);
+  }, [gameId]);
 
   const sendAction = useCallback((action: GameAction): boolean => {
     return wsManager.sendAction(gameId, action);
@@ -304,7 +355,11 @@ export function useWebSocket({
 
   return {
     sendAction,
-    isConnected: isConnectedRef.current,
+    isConnected,
+    connectionStatus,
+    reconnectAttempts,
+    maxReconnectAttempts: 10, // WebSocketManagerから取得するのが理想的だが、現状は定数として設定
+    errorMessage,
     reconnect,
   };
 }

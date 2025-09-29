@@ -8,6 +8,7 @@ import { CreditsModal } from './CreditsModal';
 import { QRModal } from './QRModal';
 import { TimeSyncModal } from './TimeSyncModal';
 import { ControlPanel } from './ControlPanel';
+import { LoadingModal } from './LoadingModal';
 import { useGameState } from '../hooks/useGameState';
 
 interface Props {
@@ -16,7 +17,25 @@ interface Props {
 
 export function App({ gameId }: Props) {
   // ゲーム状態とWebSocket通信
-  const { gameState, isConnected, scoreUpdate, resetTeamScore, resetAllScores } = useGameState({ gameId });
+  const {
+    gameState,
+    isConnected,
+    connectionStatus,
+    reconnectAttempts,
+    maxReconnectAttempts,
+    errorMessage,
+    serverTimeOffset,
+    lastRTT,
+    timeSyncStatus,
+    lastSyncTime,
+    lastSyncClientTime,
+    lastSyncServerTime,
+    scoreUpdate,
+    resetTeamScore,
+    resetAllScores,
+    reconnect,
+    requestTimeSync
+  } = useGameState({ gameId });
 
   // モーダルの状態管理
   const [showCreditsModal, setShowCreditsModal] = useState(false);
@@ -56,11 +75,17 @@ export function App({ gameId }: Props) {
     setShowControlPanel(false);
   };
 
-  // ゲーム状態が読み込まれるまでは初期状態を表示
-  if (!gameState) {
-    return <div className="h-screen bg-gray-900 flex items-center justify-center text-white">
-      読み込み中...
-    </div>;
+  // ゲーム状態が読み込まれるまで、または接続中はLoadingModalを表示
+  if (!gameState || connectionStatus !== 'connected') {
+    return (
+      <LoadingModal
+        connectionStatus={connectionStatus}
+        reconnectAttempts={reconnectAttempts}
+        maxReconnectAttempts={maxReconnectAttempts}
+        errorMessage={errorMessage}
+        onRetry={reconnect}
+      />
+    );
   }
 
   const teamA = { ...gameState.teamA, color: 'red' };
@@ -181,6 +206,13 @@ export function App({ gameId }: Props) {
       <TimeSyncModal
         isOpen={showTimeSyncModal}
         onClose={handleCloseTimeSyncModal}
+        timeSyncStatus={timeSyncStatus}
+        serverTimeOffset={serverTimeOffset}
+        lastRTT={lastRTT}
+        lastSyncTime={lastSyncTime}
+        lastSyncClientTime={lastSyncClientTime}
+        lastSyncServerTime={lastSyncServerTime}
+        onRequestTimeSync={requestTimeSync}
       />
 
       {/* コントロールパネル */}
