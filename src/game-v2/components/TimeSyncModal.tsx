@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'preact/hooks';
+import { useEffect, useState, useRef } from 'preact/hooks';
 import { JSX } from 'preact';
 
 type TimeSyncStatus = 'good' | 'warning' | 'error' | 'unknown';
@@ -28,6 +28,8 @@ export function TimeSyncModal({
 }: Props) {
   const [currentClientTime, setCurrentClientTime] = useState('');
   const [currentServerTime, setCurrentServerTime] = useState('');
+  const [isSyncing, setIsSyncing] = useState(false);
+  const syncTimeoutRef = useRef<number | null>(null);
 
   if (!isOpen) return null;
 
@@ -44,7 +46,19 @@ export function TimeSyncModal({
   };
 
   const handleRequestTimeSync = () => {
+    if (isSyncing) return;
+
+    setIsSyncing(true);
     onRequestTimeSync();
+
+    // 2秒後に自動的に再有効化（レスポンスが来ない場合の保険）
+    if (syncTimeoutRef.current) {
+      clearTimeout(syncTimeoutRef.current);
+    }
+    syncTimeoutRef.current = window.setTimeout(() => {
+      setIsSyncing(false);
+      syncTimeoutRef.current = null;
+    }, 2000);
   };
 
   const updateSyncTimeDisplay = () => {
@@ -82,8 +96,24 @@ export function TimeSyncModal({
 
     return () => {
       document.removeEventListener('keydown', handleKeyDown);
+      // クリーンアップ時にタイムアウトをクリア
+      if (syncTimeoutRef.current) {
+        clearTimeout(syncTimeoutRef.current);
+        syncTimeoutRef.current = null;
+      }
     };
   }, [isOpen, lastSyncClientTime, lastSyncServerTime]);
+
+  // 同期データが更新されたら同期中状態を解除
+  useEffect(() => {
+    if (lastSyncTime && isSyncing) {
+      setIsSyncing(false);
+      if (syncTimeoutRef.current) {
+        clearTimeout(syncTimeoutRef.current);
+        syncTimeoutRef.current = null;
+      }
+    }
+  }, [lastSyncTime]);
 
   const getTimeSyncStatusDisplay = () => {
     const statusConfig = {
@@ -212,10 +242,15 @@ export function TimeSyncModal({
           <div className="pt-2">
             <button
               onClick={handleRequestTimeSync}
-              className="w-full bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition-colors flex items-center justify-center gap-2"
+              disabled={isSyncing}
+              className={`w-full px-4 py-2 rounded transition-colors flex items-center justify-center gap-2 ${
+                isSyncing
+                  ? 'bg-gray-500 text-gray-300 cursor-not-allowed'
+                  : 'bg-blue-600 text-white hover:bg-blue-700'
+              }`}
             >
-              <i data-lucide="refresh-cw" className="w-4 h-4"></i>
-              <span>今すぐ同期</span>
+              <i data-lucide="refresh-cw" className={`w-4 h-4 ${isSyncing ? 'animate-spin' : ''}`}></i>
+              <span>{isSyncing ? '同期中...' : '今すぐ同期'}</span>
             </button>
           </div>
         </div>
