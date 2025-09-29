@@ -68,13 +68,6 @@ export class GameSession {
       // 初回メッセージ受信時の初期化処理
       if (!this.isStateLoaded) {
         await this.loadGameState();
-
-        // ゲーム状態を送信
-        this.sendToClient(ws, {
-          type: MESSAGE_TYPES.GAME_STATE,
-          data: this.gameState,
-          timestamp: Date.now()
-        });
       }
 
       const parsedMessage: WebSocketMessage = JSON.parse(messageStr);
@@ -306,7 +299,7 @@ export class GameSession {
     }
   }
 
-  private async handleGameManagementActions(action: GameAction): Promise<void> {
+  private async handleGameManagementActions(action: GameAction): Promise<boolean> {
     switch (action.type) {
       case ACTION_TYPES.COURT_CHANGE:
         this.changeCourtSides();
@@ -323,8 +316,12 @@ export class GameSession {
       case ACTION_TYPES.GET_GAME_STATE:
         // 状態を変更せず、現在の状態をブロードキャスト
         await this.broadcastState();
-        return; // 状態変更がないため、saveAndBroadcastは呼ばない
+        return true; // 処理済みフラグ
+
+      default:
+        return false; // 未処理
     }
+    return false;
   }
 
   private async handleTimerActions(action: GameAction): Promise<boolean> {
@@ -388,10 +385,14 @@ export class GameSession {
       return;
     }
 
+    // ゲーム管理アクションをチェック（GET_GAME_STATEは早期リターン）
+    if (await this.handleGameManagementActions(action)) {
+      return;
+    }
+
     // その他のアクションは状態変更のみ行い、最後に保存・ブロードキャストする
     await this.handleScoreActions(action);
     await this.handleDoOrDieActions(action);
-    await this.handleGameManagementActions(action);
 
     // 状態保存とブロードキャスト
     await this.saveGameState();
@@ -417,15 +418,6 @@ export class GameSession {
       }
     }
   }
-
-  private sendToClient(webSocket: WebSocket, message: GameMessage): void {
-    try {
-      webSocket.send(JSON.stringify(message));
-    } catch (error) {
-      console.warn('Failed to send message to client:', error);
-    }
-  }
-
 
   private updateRemainingTime(): void {
     if (this.gameState.timer.startTime && this.gameState.timer.isRunning) {
