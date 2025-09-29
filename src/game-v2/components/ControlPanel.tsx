@@ -9,6 +9,8 @@ interface Props {
 export function ControlPanel({ isOpen, onClose }: Props) {
   const [isVisible, setIsVisible] = useState(false);
   const [isAnimating, setIsAnimating] = useState(false);
+  const [simpleMode, setSimpleMode] = useState(false);
+  const [scrollLockEnabled, setScrollLockEnabled] = useState(false);
 
   const handleKeyDown = (e: KeyboardEvent) => {
     if (e.key === 'Escape') {
@@ -20,6 +22,14 @@ export function ControlPanel({ isOpen, onClose }: Props) {
     if (e.target === e.currentTarget) {
       onClose();
     }
+  };
+
+  const toggleSimpleMode = () => {
+    setSimpleMode(!simpleMode);
+  };
+
+  const toggleScrollLock = () => {
+    setScrollLockEnabled(!scrollLockEnabled);
   };
 
   // アニメーション制御
@@ -49,38 +59,40 @@ export function ControlPanel({ isOpen, onClose }: Props) {
     };
   }, []);
 
-  if (!isVisible) return null;
 
   return (
     <>
-      {/* オーバーレイ背景 */}
-      <div
-        className={`fixed inset-0 bg-black z-40 transition-opacity duration-100 ${
-          isAnimating ? 'opacity-50' : 'opacity-0'
-        }`}
-        onClick={handleBackgroundClick}
-      ></div>
+      {/* デスクトップ版オーバーレイ背景 */}
+      {isVisible && (
+        <div
+          className={`hidden md:block fixed inset-0 bg-black z-40 transition-opacity duration-100 ${
+            isAnimating ? 'opacity-50' : 'opacity-0'
+          }`}
+          onClick={handleBackgroundClick}
+        ></div>
+      )}
 
-      {/* コントロールパネル */}
-      <div
-        className={`fixed inset-x-0 bottom-0 bg-white shadow-2xl z-50 transition-transform duration-200 ease-in-out ${
-          isAnimating ? 'transform translate-y-0' : 'transform translate-y-full'
-        }`}
-        style={{ height: '50vh' }}
-      >
-        {/* パネル内容 */}
-        <div className="relative z-50 h-full flex flex-col">
-          {/* ハンドル */}
-          <div className="bg-gray-200 p-2 text-center cursor-pointer" onClick={onClose}>
-            <div className="w-12 h-1 bg-gray-400 rounded-full mx-auto"></div>
-          </div>
+      {/* デスクトップ版コントロールパネル */}
+      {isVisible && (
+        <div
+          className={`hidden md:block fixed inset-x-0 bottom-0 bg-white shadow-2xl z-50 transition-transform duration-200 ease-in-out ${
+            isAnimating ? 'transform translate-y-0' : 'transform translate-y-full'
+          }`}
+          style={{ height: '50vh' }}
+        >
+          {/* パネル内容 */}
+          <div className="relative z-50 h-full flex flex-col">
+            {/* ハンドル */}
+            <div className="bg-gray-200 p-2 text-center cursor-pointer" onClick={onClose}>
+              <div className="w-12 h-1 bg-gray-400 rounded-full mx-auto"></div>
+            </div>
 
-          {/* コンテンツエリア */}
-          <div className="flex-1 p-6 overflow-y-auto" style={{ backgroundColor: '#7F7F7F' }}>
-          <div className="max-w-4xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* コンテンツエリア */}
+            <div className="flex-1 p-6 overflow-y-auto" style={{ backgroundColor: '#7F7F7F' }}>
+              <div className="max-w-4xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-6">
 
-            {/* チーム名設定 */}
-            <div className="bg-gray-50 p-4 rounded-lg">
+                {/* チーム名設定 */}
+                <div className="bg-gray-50 p-4 rounded-lg">
               <h3 className="font-bold text-lg mb-4">チーム名設定</h3>
               <div className="space-y-3">
                 <div>
@@ -316,10 +328,101 @@ export function ControlPanel({ isOpen, onClose }: Props) {
               </div>
             </div>
 
+              </div>
+            </div>
           </div>
         </div>
-      </div>
-      </div>
+      )}
+
+      {/* モバイル版オーバーレイ背景 */}
+      {isOpen && (
+        <div
+          className={`md:hidden fixed inset-0 bg-black z-40 transition-opacity duration-100 ${
+            isAnimating ? 'opacity-50' : 'opacity-0'
+          }`}
+          onClick={handleBackgroundClick}
+        ></div>
+      )}
+
+      {/* モバイル版コントロールパネル */}
+      {isOpen && (
+        <div
+          className={`md:hidden fixed inset-x-0 bottom-0 bg-white shadow-2xl z-50 transition-transform duration-200 ease-in-out ${
+            isAnimating ? 'transform translate-y-0' : 'transform translate-y-full'
+          }`}
+          style={{ height: '50vh' }}
+        >
+        {/* パネル内容 */}
+        <div className="relative z-50 h-full flex flex-col">
+          {/* ハンドル */}
+          <div className="bg-gray-200 p-3 relative">
+            {/* 左側トグル */}
+            {simpleMode && (
+              <div className="absolute left-3 top-1/2 transform -translate-y-1/2 flex items-center space-x-1">
+                <button
+                  onClick={toggleScrollLock}
+                  className={`relative inline-flex h-4 w-7 items-center rounded-full transition-colors ${
+                    scrollLockEnabled ? 'bg-blue-500' : 'bg-gray-300'
+                  }`}
+                >
+                  <span
+                    className={`inline-block h-2.5 w-2.5 transform rounded-full bg-white transition-transform ${
+                      scrollLockEnabled ? 'translate-x-3' : 'translate-x-0.5'
+                    }`}
+                  ></span>
+                </button>
+                <span className="text-xs text-gray-600" style={{ fontSize: '10px' }}>
+                  スクロールロック
+                </span>
+              </div>
+            )}
+
+            {/* 中央ハンドル（完全中央固定） */}
+            <div className="flex justify-center items-center" onClick={onClose}>
+              <div className="w-12 h-1 bg-gray-400 rounded-full cursor-pointer"></div>
+            </div>
+
+            {/* 右側トグル */}
+            <div className="absolute right-3 top-1/2 transform -translate-y-1/2 flex items-center space-x-1">
+              <span className="text-xs text-gray-600" style={{ fontSize: '10px' }}>
+                シンプル
+              </span>
+              <button
+                onClick={toggleSimpleMode}
+                className={`relative inline-flex h-4 w-7 items-center rounded-full transition-colors ${
+                  simpleMode ? 'bg-blue-500' : 'bg-gray-300'
+                }`}
+              >
+                <span
+                  className={`inline-block h-2.5 w-2.5 transform rounded-full bg-white transition-transform ${
+                    simpleMode ? 'translate-x-3' : 'translate-x-0.5'
+                  }`}
+                ></span>
+              </button>
+            </div>
+          </div>
+
+          {/* コンテンツエリア - 通常モード */}
+          {!simpleMode && (
+            <div className="flex-1 p-3 overflow-y-auto space-y-3" style={{ backgroundColor: '#7F7F7F' }}>
+              <div>通常モードのコンテンツ（実装予定）</div>
+            </div>
+          )}
+
+          {/* コンテンツエリア - シンプルモード */}
+          {simpleMode && (
+            <div
+              className={`flex-1 p-3 space-y-3 ${
+                scrollLockEnabled ? '' : 'overflow-y-auto'
+              }`}
+              style={{ backgroundColor: '#7F7F7F' }}
+            >
+              <div>シンプルモードのコンテンツ（実装予定）</div>
+            </div>
+          )}
+        </div>
+        </div>
+      )}
     </>
   );
 }
