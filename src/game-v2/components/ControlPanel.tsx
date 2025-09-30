@@ -11,6 +11,9 @@ interface Props {
   doOrDieUpdate: (team: 'teamA' | 'teamB', delta: number) => void;
   doOrDieReset: () => void;
   setTeamName: (team: 'teamA' | 'teamB', name: string) => void;
+  subTimerStart: () => void;
+  subTimerPause: () => void;
+  subTimerReset: () => void;
 }
 
 export function ControlPanel({
@@ -22,7 +25,10 @@ export function ControlPanel({
   resetAllScores,
   doOrDieUpdate,
   doOrDieReset,
-  setTeamName
+  setTeamName,
+  subTimerStart,
+  subTimerPause,
+  subTimerReset
 }: Props) {
   const [isVisible, setIsVisible] = useState(false);
   const [isAnimating, setIsAnimating] = useState(false);
@@ -251,13 +257,13 @@ export function ControlPanel({
 
               {/* スタート/ストップ/リセット */}
               <div className="flex space-x-2">
-                <button className="flex-1 bg-yellow-500 hover:bg-yellow-600 text-white p-3 rounded-lg font-bold transition-colors">
+                <button onClick={subTimerStart} className="flex-1 bg-yellow-500 hover:bg-yellow-600 text-white p-3 rounded-lg font-bold transition-colors">
                   スタート
                 </button>
-                <button className="flex-1 bg-red-500 hover:bg-red-600 text-white p-3 rounded-lg font-bold transition-colors">
+                <button onClick={subTimerPause} className="flex-1 bg-red-500 hover:bg-red-600 text-white p-3 rounded-lg font-bold transition-colors">
                   ストップ
                 </button>
-                <button className="flex-1 bg-orange-500 hover:bg-orange-600 text-white p-3 rounded-lg font-bold transition-colors">
+                <button onClick={subTimerReset} className="flex-1 bg-orange-500 hover:bg-orange-600 text-white p-3 rounded-lg font-bold transition-colors">
                   リセット
                 </button>
               </div>
@@ -610,13 +616,13 @@ export function ControlPanel({
 
                 {/* スタート/ストップ/リセット */}
                 <div className="flex space-x-2">
-                  <button className="flex-1 bg-yellow-500 hover:bg-yellow-600 text-white p-4 rounded-lg font-bold text-lg transition-colors">
+                  <button onClick={subTimerStart} className="flex-1 bg-yellow-500 hover:bg-yellow-600 text-white p-4 rounded-lg font-bold text-lg transition-colors">
                     スタート
                   </button>
-                  <button className="flex-1 bg-red-500 hover:bg-red-600 text-white p-4 rounded-lg font-bold text-lg transition-colors">
+                  <button onClick={subTimerPause} className="flex-1 bg-red-500 hover:bg-red-600 text-white p-4 rounded-lg font-bold text-lg transition-colors">
                     ストップ
                   </button>
-                  <button className="flex-1 bg-orange-500 hover:bg-orange-600 text-white p-4 rounded-lg font-bold text-lg transition-colors">
+                  <button onClick={subTimerReset} className="flex-1 bg-orange-500 hover:bg-orange-600 text-white p-4 rounded-lg font-bold text-lg transition-colors">
                     リセット
                   </button>
                 </div>
@@ -795,13 +801,13 @@ export function ControlPanel({
 
                   {/* サブタイマー */}
                   <div className="flex gap-1 flex-1">
-                    <button className="bg-green-500 hover:bg-green-600 text-white py-2 px-1 rounded text-xs font-bold transition-colors flex-1">
+                    <button onClick={subTimerStart} className="bg-green-500 hover:bg-green-600 text-white py-2 px-1 rounded text-xs font-bold transition-colors flex-1">
                       30秒<br />開始
                     </button>
-                    <button className="bg-yellow-500 hover:bg-yellow-600 text-white py-2 px-1 rounded text-xs font-bold transition-colors flex-1">
+                    <button onClick={subTimerPause} className="bg-yellow-500 hover:bg-yellow-600 text-white py-2 px-1 rounded text-xs font-bold transition-colors flex-1">
                       30秒<br />停止
                     </button>
-                    <button className="bg-red-500 hover:bg-red-600 text-white py-2 px-1 rounded text-xs font-bold transition-colors flex-1">
+                    <button onClick={subTimerReset} className="bg-red-500 hover:bg-red-600 text-white py-2 px-1 rounded text-xs font-bold transition-colors flex-1">
                       30秒<br />リセット
                     </button>
                   </div>

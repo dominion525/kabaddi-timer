@@ -10,7 +10,7 @@ import { TimeSyncModal } from './TimeSyncModal';
 import { ControlPanel } from './ControlPanel';
 import { LoadingModal } from './LoadingModal';
 import { useGameState } from '../hooks/useGameState';
-import { calculateRemainingSeconds, calculateSubTimerRemainingSeconds } from '../utils/timer-logic';
+import { useTimerAnimation } from '../hooks/useTimerAnimation';
 
 interface Props {
   gameId: string;
@@ -37,6 +37,9 @@ export function App({ gameId }: Props) {
     doOrDieUpdate,
     doOrDieReset,
     setTeamName,
+    subTimerStart,
+    subTimerPause,
+    subTimerReset,
     reconnect,
     requestTimeSync
   } = useGameState({ gameId });
@@ -95,9 +98,8 @@ export function App({ gameId }: Props) {
   const teamA = { ...gameState.teamA, color: 'red' };
   const teamB = { ...gameState.teamB, color: 'blue' };
 
-  // タイマーロジックを使用して残り時間を計算
-  const { seconds: mainTimerSeconds } = calculateRemainingSeconds(gameState.timer, serverTimeOffset);
-  const { seconds: subTimerSeconds } = calculateSubTimerRemainingSeconds(gameState.subTimer, serverTimeOffset);
+  // タイマーアニメーション: V1と同じrequestAnimationFrameループで毎フレーム更新
+  const { mainTimerSeconds, subTimerSeconds } = useTimerAnimation(gameState, serverTimeOffset);
 
   return (
     <>
@@ -234,6 +236,9 @@ export function App({ gameId }: Props) {
         doOrDieUpdate={doOrDieUpdate}
         doOrDieReset={doOrDieReset}
         setTeamName={setTeamName}
+        subTimerStart={subTimerStart}
+        subTimerPause={subTimerPause}
+        subTimerReset={subTimerReset}
       />
     </>
   );

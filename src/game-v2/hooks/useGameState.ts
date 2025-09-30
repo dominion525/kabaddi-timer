@@ -28,6 +28,9 @@ interface UseGameStateResult {
   doOrDieUpdate: (team: 'teamA' | 'teamB', delta: number) => void;
   doOrDieReset: () => void;
   setTeamName: (team: 'teamA' | 'teamB', name: string) => void;
+  subTimerStart: () => void;
+  subTimerPause: () => void;
+  subTimerReset: () => void;
   reconnect: () => void;
   requestTimeSync: () => void;
 }
@@ -83,6 +86,29 @@ export function useGameState({ gameId }: UseGameStateOptions): UseGameStateResul
     console.log('Received WebSocket message:', message.type);
     if (message.type === 'game_state' && message.data) {
       const data = message.data as GameState;
+      const clientTime = Date.now();
+
+      // V1と同じstartTime調整処理: サーバー時刻をクライアント時刻に置換
+      // タイマーが実行中の場合、startTimeを「メッセージ受信時のクライアント時刻」に置き換え
+      if (data.timer && data.timer.isRunning && data.timer.startTime) {
+        console.log('Adjusting timer startTime for relative calculation:', {
+          originalStartTime: data.timer.startTime,
+          remainingSeconds: data.timer.remainingSeconds,
+          clientTime: clientTime
+        });
+        data.timer.startTime = clientTime;
+      }
+
+      // サブタイマーも同様の処理
+      if (data.subTimer && data.subTimer.isRunning && data.subTimer.startTime) {
+        console.log('Adjusting subTimer startTime for relative calculation:', {
+          originalStartTime: data.subTimer.startTime,
+          remainingSeconds: data.subTimer.remainingSeconds,
+          clientTime: clientTime
+        });
+        data.subTimer.startTime = clientTime;
+      }
+
       setGameState(data);
 
       // 時刻同期計算（GET_GAME_STATEレスポンスで実行）
@@ -269,6 +295,24 @@ export function useGameState({ gameId }: UseGameStateOptions): UseGameStateResul
     });
   }, [sendAction]);
 
+  const subTimerStart = useCallback(() => {
+    sendAction({
+      type: 'SUB_TIMER_START',
+    });
+  }, [sendAction]);
+
+  const subTimerPause = useCallback(() => {
+    sendAction({
+      type: 'SUB_TIMER_PAUSE',
+    });
+  }, [sendAction]);
+
+  const subTimerReset = useCallback(() => {
+    sendAction({
+      type: 'SUB_TIMER_RESET',
+    });
+  }, [sendAction]);
+
   return {
     gameState,
     isConnected,
@@ -288,6 +332,9 @@ export function useGameState({ gameId }: UseGameStateOptions): UseGameStateResul
     doOrDieUpdate,
     doOrDieReset,
     setTeamName,
+    subTimerStart,
+    subTimerPause,
+    subTimerReset,
     reconnect,
     requestTimeSync,
   };
