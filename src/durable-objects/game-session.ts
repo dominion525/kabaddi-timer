@@ -1,5 +1,6 @@
 // @ts-ignore: ACTION_TYPES is used in switch case statements
 import { GameState, GameAction, GameMessage, WebSocketMessage, TimeSyncData, MESSAGE_TYPES, ACTION_TYPES } from '../types/game';
+import { isValidScore, isValidDoOrDieCount, clampScore, clampDoOrDieCount } from '../utils/score-logic';
 
 export class GameSession {
   private ctx: DurableObjectState;
@@ -184,13 +185,13 @@ export class GameSession {
     const repairedState: GameState = {
       teamA: {
         name: (state?.teamA?.name && typeof state.teamA.name === 'string') ? state.teamA.name : defaultState.teamA.name,
-        score: (state?.teamA?.score && typeof state.teamA.score === 'number' && state.teamA.score >= 0) ? state.teamA.score : defaultState.teamA.score,
-        doOrDieCount: (state?.teamA?.doOrDieCount && typeof state.teamA.doOrDieCount === 'number' && state.teamA.doOrDieCount >= 0 && state.teamA.doOrDieCount <= 3) ? state.teamA.doOrDieCount : defaultState.teamA.doOrDieCount
+        score: (state?.teamA?.score && typeof state.teamA.score === 'number' && isValidScore(state.teamA.score)) ? state.teamA.score : defaultState.teamA.score,
+        doOrDieCount: (state?.teamA?.doOrDieCount && typeof state.teamA.doOrDieCount === 'number' && isValidDoOrDieCount(state.teamA.doOrDieCount)) ? state.teamA.doOrDieCount : defaultState.teamA.doOrDieCount
       },
       teamB: {
         name: (state?.teamB?.name && typeof state.teamB.name === 'string') ? state.teamB.name : defaultState.teamB.name,
-        score: (state?.teamB?.score && typeof state.teamB.score === 'number' && state.teamB.score >= 0) ? state.teamB.score : defaultState.teamB.score,
-        doOrDieCount: (state?.teamB?.doOrDieCount && typeof state.teamB.doOrDieCount === 'number' && state.teamB.doOrDieCount >= 0 && state.teamB.doOrDieCount <= 3) ? state.teamB.doOrDieCount : defaultState.teamB.doOrDieCount
+        score: (state?.teamB?.score && typeof state.teamB.score === 'number' && isValidScore(state.teamB.score)) ? state.teamB.score : defaultState.teamB.score,
+        doOrDieCount: (state?.teamB?.doOrDieCount && typeof state.teamB.doOrDieCount === 'number' && isValidDoOrDieCount(state.teamB.doOrDieCount)) ? state.teamB.doOrDieCount : defaultState.teamB.doOrDieCount
       },
       timer: {
         totalDuration: (state?.timer?.totalDuration && typeof state.timer.totalDuration === 'number' && state.timer.totalDuration > 0) ? state.timer.totalDuration : defaultState.timer.totalDuration,
@@ -268,9 +269,11 @@ export class GameSession {
     switch (action.type) {
       case ACTION_TYPES.SCORE_UPDATE:
         if (action.team === 'teamA') {
-          this.gameState.teamA.score = Math.max(0, this.gameState.teamA.score + action.points);
+          const newScoreA = this.gameState.teamA.score + action.points;
+          this.gameState.teamA.score = clampScore(newScoreA);
         } else {
-          this.gameState.teamB.score = Math.max(0, this.gameState.teamB.score + action.points);
+          const newScoreB = this.gameState.teamB.score + action.points;
+          this.gameState.teamB.score = clampScore(newScoreB);
         }
         break;
 
@@ -293,9 +296,9 @@ export class GameSession {
     switch (action.type) {
       case ACTION_TYPES.DO_OR_DIE_UPDATE:
         if (action.team === 'teamA') {
-          this.gameState.teamA.doOrDieCount = Math.max(0, Math.min(3, this.gameState.teamA.doOrDieCount + action.delta));
+          this.gameState.teamA.doOrDieCount = clampDoOrDieCount(this.gameState.teamA.doOrDieCount + action.delta);
         } else {
-          this.gameState.teamB.doOrDieCount = Math.max(0, Math.min(3, this.gameState.teamB.doOrDieCount + action.delta));
+          this.gameState.teamB.doOrDieCount = clampDoOrDieCount(this.gameState.teamB.doOrDieCount + action.delta);
         }
         break;
 
