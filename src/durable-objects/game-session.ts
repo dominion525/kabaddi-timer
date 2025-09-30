@@ -1,6 +1,5 @@
 // @ts-ignore: ACTION_TYPES is used in switch case statements
 import { GameState, GameAction, GameMessage, WebSocketMessage, TimeSyncData, MESSAGE_TYPES, ACTION_TYPES } from '../types/game';
-import { isValidScore, isValidDoOrDieCount, clampScore, clampDoOrDieCount } from '../utils/score-logic';
 
 export class GameSession {
   private ctx: DurableObjectState;
@@ -53,16 +52,6 @@ export class GameSession {
 
       await this.loadGameState();
 
-      // 接続確立後、初期状態とtime_syncメッセージを送信
-      this.updateRemainingTime();
-      this.updateSubTimerRemainingTime();
-
-      server.send(JSON.stringify({
-        type: MESSAGE_TYPES.GAME_STATE,
-        data: this.gameState,
-        timestamp: Date.now()
-      }));
-
       return new Response(null, {
         status: 101,
         webSocket: client,
@@ -79,6 +68,13 @@ export class GameSession {
       // 初回メッセージ受信時の初期化処理
       if (!this.isStateLoaded) {
         await this.loadGameState();
+
+        // ゲーム状態を送信
+        this.sendToClient(ws, {
+          type: MESSAGE_TYPES.GAME_STATE,
+          data: this.gameState,
+          timestamp: Date.now()
+        });
       }
 
       const parsedMessage: WebSocketMessage = JSON.parse(messageStr);
@@ -188,13 +184,13 @@ export class GameSession {
     const repairedState: GameState = {
       teamA: {
         name: (state?.teamA?.name && typeof state.teamA.name === 'string') ? state.teamA.name : defaultState.teamA.name,
-        score: (state?.teamA?.score && typeof state.teamA.score === 'number' && isValidScore(state.teamA.score)) ? state.teamA.score : defaultState.teamA.score,
-        doOrDieCount: (state?.teamA?.doOrDieCount && typeof state.teamA.doOrDieCount === 'number' && isValidDoOrDieCount(state.teamA.doOrDieCount)) ? state.teamA.doOrDieCount : defaultState.teamA.doOrDieCount
+        score: (state?.teamA?.score && typeof state.teamA.score === 'number' && state.teamA.score >= 0) ? state.teamA.score : defaultState.teamA.score,
+        doOrDieCount: (state?.teamA?.doOrDieCount && typeof state.teamA.doOrDieCount === 'number' && state.teamA.doOrDieCount >= 0 && state.teamA.doOrDieCount <= 3) ? state.teamA.doOrDieCount : defaultState.teamA.doOrDieCount
       },
       teamB: {
         name: (state?.teamB?.name && typeof state.teamB.name === 'string') ? state.teamB.name : defaultState.teamB.name,
-        score: (state?.teamB?.score && typeof state.teamB.score === 'number' && isValidScore(state.teamB.score)) ? state.teamB.score : defaultState.teamB.score,
-        doOrDieCount: (state?.teamB?.doOrDieCount && typeof state.teamB.doOrDieCount === 'number' && isValidDoOrDieCount(state.teamB.doOrDieCount)) ? state.teamB.doOrDieCount : defaultState.teamB.doOrDieCount
+        score: (state?.teamB?.score && typeof state.teamB.score === 'number' && state.teamB.score >= 0) ? state.teamB.score : defaultState.teamB.score,
+        doOrDieCount: (state?.teamB?.doOrDieCount && typeof state.teamB.doOrDieCount === 'number' && state.teamB.doOrDieCount >= 0 && state.teamB.doOrDieCount <= 3) ? state.teamB.doOrDieCount : defaultState.teamB.doOrDieCount
       },
       timer: {
         totalDuration: (state?.timer?.totalDuration && typeof state.timer.totalDuration === 'number' && state.timer.totalDuration > 0) ? state.timer.totalDuration : defaultState.timer.totalDuration,
@@ -272,11 +268,9 @@ export class GameSession {
     switch (action.type) {
       case ACTION_TYPES.SCORE_UPDATE:
         if (action.team === 'teamA') {
-          const newScoreA = this.gameState.teamA.score + action.points;
-          this.gameState.teamA.score = clampScore(newScoreA);
+          this.gameState.teamA.score = Math.max(0, this.gameState.teamA.score + action.points);
         } else {
-          const newScoreB = this.gameState.teamB.score + action.points;
-          this.gameState.teamB.score = clampScore(newScoreB);
+          this.gameState.teamB.score = Math.max(0, this.gameState.teamB.score + action.points);
         }
         break;
 
@@ -299,9 +293,9 @@ export class GameSession {
     switch (action.type) {
       case ACTION_TYPES.DO_OR_DIE_UPDATE:
         if (action.team === 'teamA') {
-          this.gameState.teamA.doOrDieCount = clampDoOrDieCount(this.gameState.teamA.doOrDieCount + action.delta);
+          this.gameState.teamA.doOrDieCount = Math.max(0, Math.min(3, this.gameState.teamA.doOrDieCount + action.delta));
         } else {
-          this.gameState.teamB.doOrDieCount = clampDoOrDieCount(this.gameState.teamB.doOrDieCount + action.delta);
+          this.gameState.teamB.doOrDieCount = Math.max(0, Math.min(3, this.gameState.teamB.doOrDieCount + action.delta));
         }
         break;
 
@@ -312,7 +306,7 @@ export class GameSession {
     }
   }
 
-  private async handleGameManagementActions(action: GameAction): Promise<boolean> {
+  private async handleGameManagementActions(action: GameAction): Promise<void> {
     switch (action.type) {
       case ACTION_TYPES.COURT_CHANGE:
         this.changeCourtSides();
@@ -329,12 +323,8 @@ export class GameSession {
       case ACTION_TYPES.GET_GAME_STATE:
         // 状態を変更せず、現在の状態をブロードキャスト
         await this.broadcastState();
-        return true; // 処理済みフラグ
-
-      default:
-        return false; // 未処理
+        return; // 状態変更がないため、saveAndBroadcastは呼ばない
     }
-    return false;
   }
 
   private async handleTimerActions(action: GameAction): Promise<boolean> {
@@ -398,14 +388,10 @@ export class GameSession {
       return;
     }
 
-    // ゲーム管理アクションをチェック（GET_GAME_STATEは早期リターン）
-    if (await this.handleGameManagementActions(action)) {
-      return;
-    }
-
     // その他のアクションは状態変更のみ行い、最後に保存・ブロードキャストする
     await this.handleScoreActions(action);
     await this.handleDoOrDieActions(action);
+    await this.handleGameManagementActions(action);
 
     // 状態保存とブロードキャスト
     await this.saveGameState();
@@ -431,6 +417,15 @@ export class GameSession {
       }
     }
   }
+
+  private sendToClient(webSocket: WebSocket, message: GameMessage): void {
+    try {
+      webSocket.send(JSON.stringify(message));
+    } catch (error) {
+      console.warn('Failed to send message to client:', error);
+    }
+  }
+
 
   private updateRemainingTime(): void {
     if (this.gameState.timer.startTime && this.gameState.timer.isRunning) {
