@@ -1,3 +1,5 @@
+import { generateDoOrDieIndicators } from '../../utils/score-logic';
+
 interface Props {
   count: number;
   teamColor: string;
@@ -16,13 +18,16 @@ export function DoOrDieIndicator({ count, teamColor }: Props) {
     }
   };
 
+  // スコアロジックを使用してインジケーター配列を生成
+  const indicators = generateDoOrDieIndicators(count, 3);
+
   return (
     <div className="md:h-8 h-6 flex md:space-x-2 space-x-1 md:px-4 px-2 md:mb-2 md:pb-0 pb-3">
-      {[1, 2, 3].map((i) => (
+      {indicators.map((isActive, i) => (
         <div
           key={i}
           className={`flex-1 transition-colors duration-200 md:rounded rounded-sm ${
-            count >= i ? 'bg-yellow-400' : getInactiveColor(teamColor)
+            isActive ? 'bg-yellow-400' : getInactiveColor(teamColor)
           }`}
         />
       ))}

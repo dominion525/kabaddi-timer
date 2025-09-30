@@ -15,6 +15,7 @@ vi.mock('./useWebSocket', () => ({
 
 describe('useGameState', () => {
   const mockGameId = 'test-game-123';
+  const mockGameState = createMockGameState();
   let mockOnMessage: (message: GameMessage) => void;
   let mockOnConnected: () => void;
   let mockOnDisconnected: () => void;
@@ -81,6 +82,16 @@ describe('useGameState', () => {
       useGameState({ gameId: mockGameId })
     );
 
+    // gameStateを設定するためにメッセージを送信
+    act(() => {
+      if (mockOnMessage) {
+        mockOnMessage({
+          type: 'game_state',
+          data: mockGameState,
+        });
+      }
+    });
+
     act(() => {
       result.current.scoreUpdate('teamA', 5);
     });
@@ -125,6 +136,16 @@ describe('useGameState', () => {
     const { result } = renderHook(() =>
       useGameState({ gameId: mockGameId })
     );
+
+    // gameStateを設定するためにメッセージを送信
+    act(() => {
+      if (mockOnMessage) {
+        mockOnMessage({
+          type: 'game_state',
+          data: mockGameState,
+        });
+      }
+    });
 
     act(() => {
       result.current.doOrDieUpdate('teamA', 1);

@@ -1,6 +1,7 @@
 import { useState, useCallback, useRef, useEffect } from 'preact/hooks';
 import type { GameState, GameMessage, MESSAGE_TYPES } from '../../types/game';
 import { useWebSocket } from './useWebSocket';
+import { isValidScore, isValidDoOrDieCount } from '../utils/score-logic';
 
 type ConnectionStatus = 'connecting' | 'connected' | 'reconnecting' | 'disconnected' | 'error';
 
@@ -189,12 +190,24 @@ export function useGameState({ gameId }: UseGameStateOptions): UseGameStateResul
   }, [gameId]);
 
   const scoreUpdate = useCallback((team: 'teamA' | 'teamB', points: number) => {
+    // クライアント側でスコアの妥当性を検証
+    if (!gameState) return;
+
+    const currentScore = team === 'teamA' ? gameState.teamA.score : gameState.teamB.score;
+    const newScore = currentScore + points;
+
+    // 新しいスコアが有効範囲（0-999）かチェック
+    if (!isValidScore(newScore)) {
+      console.warn(`Invalid score: ${newScore}. Score must be between 0 and 999.`);
+      return;
+    }
+
     sendAction({
       type: 'SCORE_UPDATE',
       team,
       points,
     });
-  }, [sendAction]);
+  }, [sendAction, gameState]);
 
   const resetTeamScore = useCallback((team: 'teamA' | 'teamB') => {
     sendAction({
@@ -216,12 +229,24 @@ export function useGameState({ gameId }: UseGameStateOptions): UseGameStateResul
   }, [sendActionWithTimeSync]);
 
   const doOrDieUpdate = useCallback((team: 'teamA' | 'teamB', delta: number) => {
+    // クライアント側でDoOrDieカウントの妥当性を検証
+    if (!gameState) return;
+
+    const currentCount = team === 'teamA' ? gameState.teamA.doOrDieCount : gameState.teamB.doOrDieCount;
+    const newCount = currentCount + delta;
+
+    // 新しいカウントが有効範囲（0-3）かチェック
+    if (!isValidDoOrDieCount(newCount)) {
+      console.warn(`Invalid DoOrDie count: ${newCount}. Count must be between 0 and 3.`);
+      return;
+    }
+
     sendAction({
       type: 'DO_OR_DIE_UPDATE',
       team,
       delta,
     });
-  }, [sendAction]);
+  }, [sendAction, gameState]);
 
   const doOrDieReset = useCallback(() => {
     sendAction({
