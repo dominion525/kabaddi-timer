@@ -70,8 +70,8 @@ describe('ScoreLogic', () => {
       expect(formatScore(0)).toBe('0');
     });
 
-    it('999を文字列に変換する', () => {
-      expect(formatScore(999)).toBe('999');
+    it('99を文字列に変換する', () => {
+      expect(formatScore(99)).toBe('99');
     });
 
     it('null の場合、"0" を返す', () => {
@@ -100,8 +100,8 @@ describe('ScoreLogic', () => {
       expect(isValidScore(42)).toBe(true);
     });
 
-    it('999は有効なスコア（上限）', () => {
-      expect(isValidScore(999)).toBe(true);
+    it('99は有効なスコア（上限）', () => {
+      expect(isValidScore(99)).toBe(true);
     });
 
     it('1000は無効なスコア（上限を超える）', () => {
@@ -190,8 +190,8 @@ describe('ScoreLogic', () => {
   describe('clampScore', () => {
     it('範囲内の値はそのまま返す', () => {
       expect(clampScore(0)).toBe(0);
-      expect(clampScore(500)).toBe(500);
-      expect(clampScore(999)).toBe(999);
+      expect(clampScore(50)).toBe(50);
+      expect(clampScore(99)).toBe(99);
     });
 
     it('最小値未満は0にクランプ', () => {
@@ -199,9 +199,9 @@ describe('ScoreLogic', () => {
       expect(clampScore(-100)).toBe(0);
     });
 
-    it('最大値超過は999にクランプ', () => {
-      expect(clampScore(1000)).toBe(999);
-      expect(clampScore(9999)).toBe(999);
+    it('最大値超過は99にクランプ', () => {
+      expect(clampScore(100)).toBe(99);
+      expect(clampScore(999)).toBe(99);
     });
 
     it('境界値が正しく処理される', () => {
@@ -237,7 +237,7 @@ describe('ScoreLogic', () => {
   describe('定数', () => {
     it('SCORE定数が正しい値', () => {
       expect(SCORE_MIN).toBe(0);
-      expect(SCORE_MAX).toBe(999);
+      expect(SCORE_MAX).toBe(99);
     });
 
     it('DO_OR_DIE定数が正しい値', () => {

@@ -6,8 +6,8 @@
 /** スコアの最小値 */
 export const SCORE_MIN = 0;
 
-/** スコアの最大値 */
-export const SCORE_MAX = 999;
+/** スコアの最大値（カバディの実戦では100点に達することはほぼない） */
+export const SCORE_MAX = 99;
 
 /** Do or Dieカウントの最小値 */
 export const DO_OR_DIE_MIN = 0;
@@ -19,7 +19,7 @@ export const DO_OR_DIE_MAX = 3;
 /**
  * スコアを有効範囲内にクランプ（制限）する
  * @param score - クランプするスコア値
- * @returns 0-999の範囲内に収められたスコア値
+ * @returns 0-99の範囲内に収められたスコア値
  */
 export function clampScore(score: number): number {
   return Math.max(SCORE_MIN, Math.min(SCORE_MAX, score));
