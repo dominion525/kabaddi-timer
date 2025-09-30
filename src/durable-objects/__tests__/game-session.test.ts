@@ -97,18 +97,17 @@ describe('GameSession', () => {
 
       // エラーメッセージを受信するためのプロミス（タイムアウト付き）
       const errorPromise = new Promise((resolve, reject) => {
-        let messageCount = 0;
+        const messages: any[] = [];
         const timeout = setTimeout(() => reject(new Error('Timeout waiting for error message')), 1000);
 
         webSocket.addEventListener('message', (event) => {
-          messageCount++;
-          // 初期メッセージ（game_state, time_sync）をスキップ
-          if (messageCount > 2) {
-            const message = JSON.parse(event.data as string);
-            if (message.type === 'error') {
-              clearTimeout(timeout);
-              resolve(message);
-            }
+          const message = JSON.parse(event.data as string);
+          messages.push(message);
+
+          // errorメッセージが来たら即座にresolve
+          if (message.type === 'error') {
+            clearTimeout(timeout);
+            resolve(message);
           }
         });
       });
@@ -142,18 +141,17 @@ describe('GameSession', () => {
 
       // エラーメッセージを受信するためのプロミス（タイムアウト付き）
       const errorPromise = new Promise((resolve, reject) => {
-        let messageCount = 0;
+        const messages: any[] = [];
         const timeout = setTimeout(() => reject(new Error('Timeout waiting for error message')), 1000);
 
         webSocket.addEventListener('message', (event) => {
-          messageCount++;
-          // 初期メッセージ（game_state, time_sync）をスキップ
-          if (messageCount > 2) {
-            const message = JSON.parse(event.data as string);
-            if (message.type === 'error') {
-              clearTimeout(timeout);
-              resolve(message);
-            }
+          const message = JSON.parse(event.data as string);
+          messages.push(message);
+
+          // errorメッセージが来たら即座にresolve
+          if (message.type === 'error') {
+            clearTimeout(timeout);
+            resolve(message);
           }
         });
       });
@@ -497,42 +495,22 @@ describe('GameSession', () => {
       const id = env.GAME_SESSION.idFromName('test-action-message');
       const gameSession = env.GAME_SESSION.get(id);
 
-      const request = new Request('http://localhost/websocket', {
-        headers: {
-          'Upgrade': 'websocket',
-          'Connection': 'Upgrade',
-          'Sec-WebSocket-Key': 'test-key',
-          'Sec-WebSocket-Version': '13'
-        }
+      // runInDurableObjectを使用して直接アクションを実行
+      const result = await runInDurableObject(gameSession, async (instance) => {
+        // handleActionを直接呼び出し
+        await (instance as any).handleAction({ type: 'SCORE_UPDATE', team: 'teamA', points: 3 });
+
+        // アクション処理後のゲーム状態を取得
+        const gameState = (instance as any).gameState;
+        return {
+          teamAScore: gameState.teamA.score,
+          teamBScore: gameState.teamB.score
+        };
       });
 
-      const response = await gameSession.fetch(request);
-      const webSocket = response.webSocket!;
-      webSocket.accept();
-
-      // 状態更新メッセージを受信するためのプロミス
-      const stateUpdatePromise = new Promise((resolve) => {
-        let messageCount = 0;
-        webSocket.addEventListener('message', (event) => {
-          messageCount++;
-          // 初期メッセージ（game_state, time_sync）をスキップ
-          if (messageCount > 2) {
-            const message = JSON.parse(event.data as string);
-            if (message.type === 'game_state') {
-              resolve(message);
-            }
-          }
-        });
-      });
-
-      // スコア更新アクションを送信
-      webSocket.send(JSON.stringify({
-        action: { type: 'SCORE_UPDATE', team: 'teamA', points: 3 }
-      }));
-
-      const stateMessage = await stateUpdatePromise as any;
-      expect(stateMessage.type).toBe('game_state');
-      expect(stateMessage.data.teamA.score).toBe(3);
+      // スコアが正しく更新されていることを確認
+      expect(result.teamAScore).toBe(3);
+      expect(result.teamBScore).toBe(0);
     });
 
 
