@@ -99,7 +99,7 @@ export function App({ gameId }: Props) {
   const teamB = { ...gameState.teamB, color: 'blue' };
 
   // タイマーアニメーション: V1と同じrequestAnimationFrameループで毎フレーム更新
-  const { mainTimerSeconds, subTimerSeconds } = useTimerAnimation(gameState, serverTimeOffset);
+  const { mainTimerSeconds, subTimerSeconds, subTimerIsRunning } = useTimerAnimation(gameState, serverTimeOffset);
 
   return (
     <>
@@ -128,7 +128,7 @@ export function App({ gameId }: Props) {
 
           {/* 上段：サブタイマー */}
           <div className="bg-gray-800 text-white flex flex-col items-center justify-center py-1 px-4">
-            <SubTimer seconds={subTimerSeconds} isRunning={gameState.subTimer?.isRunning || false} />
+            <SubTimer seconds={subTimerSeconds} isRunning={subTimerIsRunning} />
           </div>
 
           {/* 上段：右側チーム */}
@@ -176,7 +176,7 @@ export function App({ gameId }: Props) {
 
           {/* 上段：サブタイマー */}
           <div className="bg-gray-800 text-white flex flex-col items-center justify-center py-0.5 px-1">
-            <SubTimer seconds={subTimerSeconds} isRunning={gameState.subTimer?.isRunning || false} />
+            <SubTimer seconds={subTimerSeconds} isRunning={subTimerIsRunning} />
           </div>
 
           {/* 上段：右側チーム */}

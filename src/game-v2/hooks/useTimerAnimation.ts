@@ -5,6 +5,7 @@ import { calculateRemainingSeconds, calculateSubTimerRemainingSeconds } from '..
 interface UseTimerAnimationResult {
   mainTimerSeconds: number;
   subTimerSeconds: number;
+  subTimerIsRunning: boolean;
 }
 
 /**
@@ -17,6 +18,7 @@ export function useTimerAnimation(
 ): UseTimerAnimationResult {
   const [mainTimerSeconds, setMainTimerSeconds] = useState(0);
   const [subTimerSeconds, setSubTimerSeconds] = useState(0);
+  const [subTimerIsRunning, setSubTimerIsRunning] = useState(false);
   const animationIdRef = useRef<number | null>(null);
 
   useEffect(() => {
@@ -40,6 +42,7 @@ export function useTimerAnimation(
         if (gameState.subTimer) {
           const subResult = calculateSubTimerRemainingSeconds(gameState.subTimer, serverTimeOffset);
           setSubTimerSeconds(subResult.seconds);
+          setSubTimerIsRunning(subResult.isRunning);
         }
 
         // 次フレームをスケジュール
@@ -74,5 +77,6 @@ export function useTimerAnimation(
   return {
     mainTimerSeconds,
     subTimerSeconds,
+    subTimerIsRunning,
   };
 }
