@@ -53,6 +53,22 @@ export class GameSession {
 
       await this.loadGameState();
 
+      // 接続確立後、初期状態とtime_syncメッセージを送信
+      this.updateRemainingTime();
+      this.updateSubTimerRemainingTime();
+
+      server.send(JSON.stringify({
+        type: MESSAGE_TYPES.GAME_STATE,
+        data: this.gameState,
+        timestamp: Date.now()
+      }));
+
+      server.send(JSON.stringify({
+        type: MESSAGE_TYPES.TIME_SYNC,
+        data: { serverTime: Date.now() },
+        timestamp: Date.now()
+      }));
+
       return new Response(null, {
         status: 101,
         webSocket: client,
