@@ -10,6 +10,7 @@ import { TimeSyncModal } from './TimeSyncModal';
 import { ControlPanel } from './ControlPanel';
 import { LoadingModal } from './LoadingModal';
 import { useGameState } from '../hooks/useGameState';
+import { calculateRemainingSeconds, calculateSubTimerRemainingSeconds } from '../utils/timer-logic';
 
 interface Props {
   gameId: string;
@@ -93,6 +94,10 @@ export function App({ gameId }: Props) {
   const teamA = { ...gameState.teamA, color: 'red' };
   const teamB = { ...gameState.teamB, color: 'blue' };
 
+  // タイマーロジックを使用して残り時間を計算
+  const { seconds: mainTimerSeconds } = calculateRemainingSeconds(gameState.timer, serverTimeOffset);
+  const { seconds: subTimerSeconds } = calculateSubTimerRemainingSeconds(gameState.subTimer, serverTimeOffset);
+
   return (
     <>
       {/* デスクトップ表示用 (md以上) */}
@@ -120,7 +125,7 @@ export function App({ gameId }: Props) {
 
           {/* 上段：サブタイマー */}
           <div className="bg-gray-800 text-white flex flex-col items-center justify-center py-1 px-4">
-            <SubTimer seconds={gameState.subTimer?.remainingSeconds || 30} isRunning={gameState.subTimer?.isRunning || false} />
+            <SubTimer seconds={subTimerSeconds} isRunning={gameState.subTimer?.isRunning || false} />
           </div>
 
           {/* 上段：右側チーム */}
@@ -132,8 +137,8 @@ export function App({ gameId }: Props) {
           {/* 下段：メインタイマー（3列全体を使用） */}
           <div className="col-span-3 bg-gray-800 text-white flex flex-col items-center justify-center px-4 pb-4 pt-2">
             <MainTimer
-              minutes={Math.floor(gameState.timer.remainingSeconds / 60)}
-              seconds={gameState.timer.remainingSeconds % 60}
+              minutes={Math.floor(mainTimerSeconds / 60)}
+              seconds={mainTimerSeconds % 60}
               isRunning={gameState.timer.isRunning}
             />
           </div>
@@ -168,7 +173,7 @@ export function App({ gameId }: Props) {
 
           {/* 上段：サブタイマー */}
           <div className="bg-gray-800 text-white flex flex-col items-center justify-center py-0.5 px-1">
-            <SubTimer seconds={gameState.subTimer?.remainingSeconds || 30} isRunning={gameState.subTimer?.isRunning || false} />
+            <SubTimer seconds={subTimerSeconds} isRunning={gameState.subTimer?.isRunning || false} />
           </div>
 
           {/* 上段：右側チーム */}
@@ -180,8 +185,8 @@ export function App({ gameId }: Props) {
           {/* 下段：メインタイマー（3列全体を使用） */}
           <div className="col-span-3 bg-gray-800 text-white flex flex-col items-center justify-center px-1 pt-8 pb-2">
             <MainTimer
-              minutes={Math.floor(gameState.timer.remainingSeconds / 60)}
-              seconds={gameState.timer.remainingSeconds % 60}
+              minutes={Math.floor(mainTimerSeconds / 60)}
+              seconds={mainTimerSeconds % 60}
               isRunning={gameState.timer.isRunning}
             />
           </div>
