@@ -5,6 +5,12 @@ import {
   isValidScore,
   isValidDoOrDieCount,
   isValidTeamName,
+  clampScore,
+  clampDoOrDieCount,
+  SCORE_MIN,
+  SCORE_MAX,
+  DO_OR_DIE_MIN,
+  DO_OR_DIE_MAX,
 } from '../../utils/score-logic';
 
 describe('ScoreLogic', () => {
@@ -178,6 +184,65 @@ describe('ScoreLogic', () => {
 
     it('undefinedは無効なカウント', () => {
       expect(isValidDoOrDieCount(undefined as any)).toBe(false);
+    });
+  });
+
+  describe('clampScore', () => {
+    it('範囲内の値はそのまま返す', () => {
+      expect(clampScore(0)).toBe(0);
+      expect(clampScore(500)).toBe(500);
+      expect(clampScore(999)).toBe(999);
+    });
+
+    it('最小値未満は0にクランプ', () => {
+      expect(clampScore(-1)).toBe(0);
+      expect(clampScore(-100)).toBe(0);
+    });
+
+    it('最大値超過は999にクランプ', () => {
+      expect(clampScore(1000)).toBe(999);
+      expect(clampScore(9999)).toBe(999);
+    });
+
+    it('境界値が正しく処理される', () => {
+      expect(clampScore(SCORE_MIN)).toBe(SCORE_MIN);
+      expect(clampScore(SCORE_MAX)).toBe(SCORE_MAX);
+    });
+  });
+
+  describe('clampDoOrDieCount', () => {
+    it('範囲内の値はそのまま返す', () => {
+      expect(clampDoOrDieCount(0)).toBe(0);
+      expect(clampDoOrDieCount(1)).toBe(1);
+      expect(clampDoOrDieCount(2)).toBe(2);
+      expect(clampDoOrDieCount(3)).toBe(3);
+    });
+
+    it('最小値未満は0にクランプ', () => {
+      expect(clampDoOrDieCount(-1)).toBe(0);
+      expect(clampDoOrDieCount(-5)).toBe(0);
+    });
+
+    it('最大値超過は3にクランプ', () => {
+      expect(clampDoOrDieCount(4)).toBe(3);
+      expect(clampDoOrDieCount(10)).toBe(3);
+    });
+
+    it('境界値が正しく処理される', () => {
+      expect(clampDoOrDieCount(DO_OR_DIE_MIN)).toBe(DO_OR_DIE_MIN);
+      expect(clampDoOrDieCount(DO_OR_DIE_MAX)).toBe(DO_OR_DIE_MAX);
+    });
+  });
+
+  describe('定数', () => {
+    it('SCORE定数が正しい値', () => {
+      expect(SCORE_MIN).toBe(0);
+      expect(SCORE_MAX).toBe(999);
+    });
+
+    it('DO_OR_DIE定数が正しい値', () => {
+      expect(DO_OR_DIE_MIN).toBe(0);
+      expect(DO_OR_DIE_MAX).toBe(3);
     });
   });
 
