@@ -25,7 +25,10 @@
     "test:coverage:ui": "vitest --coverage --ui",
     "test:client": "vitest --config vitest.client.config.ts",
     "test:client:run": "vitest run --config vitest.client.config.ts",
-    "test:client:coverage": "vitest run --config vitest.client.config.ts --coverage"
+    "test:client:coverage": "vitest run --config vitest.client.config.ts --coverage",
+    "test:game-v2": "vitest --config vitest.game-v2.config.ts",
+    "test:game-v2:run": "vitest run --config vitest.game-v2.config.ts",
+    "test:game-v2:coverage": "vitest run --config vitest.game-v2.config.ts --coverage"
   },
   "keywords": [
     "kabaddi",
@@ -40,6 +43,9 @@
     "@cloudflare/vitest-pool-workers": "^0.9.3",
     "@cloudflare/workers-types": "^4.20241127.0",
     "@preact/preset-vite": "^2.10.2",
+    "@testing-library/jest-dom": "^6.8.0",
+    "@testing-library/preact": "^3.2.4",
+    "@testing-library/user-event": "^14.6.1",
     "@types/node": "^22.0.0",
     "@vitest/coverage-istanbul": "^3.2.4",
     "@vitest/coverage-v8": "^3.2.4",
