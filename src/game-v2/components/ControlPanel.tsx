@@ -4,26 +4,34 @@ import { JSX } from 'preact';
 interface Props {
   isOpen: boolean;
   onClose: () => void;
+  gameState: any;
   scoreUpdate: (team: 'teamA' | 'teamB', points: number) => void;
   resetTeamScore: (team: 'teamA' | 'teamB') => void;
   resetAllScores: () => void;
   doOrDieUpdate: (team: 'teamA' | 'teamB', delta: number) => void;
   doOrDieReset: () => void;
+  setTeamName: (team: 'teamA' | 'teamB', name: string) => void;
 }
 
 export function ControlPanel({
   isOpen,
   onClose,
+  gameState,
   scoreUpdate,
   resetTeamScore,
   resetAllScores,
   doOrDieUpdate,
-  doOrDieReset
+  doOrDieReset,
+  setTeamName
 }: Props) {
   const [isVisible, setIsVisible] = useState(false);
   const [isAnimating, setIsAnimating] = useState(false);
   const [simpleMode, setSimpleMode] = useState(false);
   const [scrollLockEnabled, setScrollLockEnabled] = useState(false);
+
+  // チーム名のローカルstate
+  const [teamAName, setTeamAName] = useState('チームA');
+  const [teamBName, setTeamBName] = useState('チームB');
 
   const handleKeyDown = (e: KeyboardEvent) => {
     if (e.key === 'Escape') {
@@ -72,6 +80,23 @@ export function ControlPanel({
     };
   }, []);
 
+  // サーバー状態とチーム名の同期（フォーカスチェック付き）
+  useEffect(() => {
+    if (!gameState) return;
+
+    // チームAの入力フィールドがフォーカス中か確認
+    const teamAInput = document.querySelector('input[data-team="teamA"]');
+    if (teamAInput !== document.activeElement && gameState.teamA?.name) {
+      setTeamAName(gameState.teamA.name);
+    }
+
+    // チームBの入力フィールドがフォーカス中か確認
+    const teamBInput = document.querySelector('input[data-team="teamB"]');
+    if (teamBInput !== document.activeElement && gameState.teamB?.name) {
+      setTeamBName(gameState.teamB.name);
+    }
+  }, [gameState?.teamA?.name, gameState?.teamB?.name]);
+
   return (
     <>
       {/* デスクトップ版オーバーレイ背景 */}
@@ -110,15 +135,29 @@ export function ControlPanel({
                 <div>
                   <input
                     type="text"
-                    value="チームA"
+                    data-team="teamA"
+                    value={teamAName}
+                    onInput={(e) => {
+                      const value = e.currentTarget.value;
+                      setTeamAName(value);
+                      setTeamName('teamA', value);
+                    }}
                     className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                    maxLength={20}
                   />
                 </div>
                 <div>
                   <input
                     type="text"
-                    value="チームB"
+                    data-team="teamB"
+                    value={teamBName}
+                    onInput={(e) => {
+                      const value = e.currentTarget.value;
+                      setTeamBName(value);
+                      setTeamName('teamB', value);
+                    }}
                     className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    maxLength={20}
                   />
                 </div>
               </div>
@@ -449,17 +488,33 @@ export function ControlPanel({
                   <div>
                     <input
                       type="text"
+                      data-team="teamA"
+                      value={teamAName}
+                      onInput={(e) => {
+                        const value = e.currentTarget.value;
+                        setTeamAName(value);
+                        setTeamName('teamA', value);
+                      }}
                       className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
                       style={{ fontSize: '16px' }}
                       placeholder="チームA"
+                      maxLength={20}
                     />
                   </div>
                   <div>
                     <input
                       type="text"
+                      data-team="teamB"
+                      value={teamBName}
+                      onInput={(e) => {
+                        const value = e.currentTarget.value;
+                        setTeamBName(value);
+                        setTeamName('teamB', value);
+                      }}
                       className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                       style={{ fontSize: '16px' }}
                       placeholder="チームB"
+                      maxLength={20}
                     />
                   </div>
                 </div>

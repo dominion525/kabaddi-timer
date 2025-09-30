@@ -1,7 +1,7 @@
 import { useState, useCallback, useRef, useEffect } from 'preact/hooks';
 import type { GameState, GameMessage, MESSAGE_TYPES } from '../../types/game';
 import { useWebSocket } from './useWebSocket';
-import { isValidScore, isValidDoOrDieCount } from '../../utils/score-logic';
+import { isValidScore, isValidDoOrDieCount, isValidTeamName } from '../../utils/score-logic';
 
 type ConnectionStatus = 'connecting' | 'connected' | 'reconnecting' | 'disconnected' | 'error';
 
@@ -27,6 +27,7 @@ interface UseGameStateResult {
   resetAllScores: () => void;
   doOrDieUpdate: (team: 'teamA' | 'teamB', delta: number) => void;
   doOrDieReset: () => void;
+  setTeamName: (team: 'teamA' | 'teamB', name: string) => void;
   reconnect: () => void;
   requestTimeSync: () => void;
 }
@@ -254,6 +255,20 @@ export function useGameState({ gameId }: UseGameStateOptions): UseGameStateResul
     });
   }, [sendAction]);
 
+  const setTeamName = useCallback((team: 'teamA' | 'teamB', name: string) => {
+    // チーム名の妥当性を検証
+    if (!isValidTeamName(name)) {
+      console.warn(`Invalid team name: "${name}". Name must be 1-20 characters and not empty.`);
+      return;
+    }
+
+    sendAction({
+      type: 'SET_TEAM_NAME',
+      team,
+      name: name.trim(),
+    });
+  }, [sendAction]);
+
   return {
     gameState,
     isConnected,
@@ -272,6 +287,7 @@ export function useGameState({ gameId }: UseGameStateOptions): UseGameStateResul
     resetAllScores,
     doOrDieUpdate,
     doOrDieReset,
+    setTeamName,
     reconnect,
     requestTimeSync,
   };

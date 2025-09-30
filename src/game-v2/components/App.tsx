@@ -36,6 +36,7 @@ export function App({ gameId }: Props) {
     resetAllScores,
     doOrDieUpdate,
     doOrDieReset,
+    setTeamName,
     reconnect,
     requestTimeSync
   } = useGameState({ gameId });
@@ -226,11 +227,13 @@ export function App({ gameId }: Props) {
       <ControlPanel
         isOpen={showControlPanel}
         onClose={handleCloseControlPanel}
+        gameState={gameState}
         scoreUpdate={scoreUpdate}
         resetTeamScore={resetTeamScore}
         resetAllScores={resetAllScores}
         doOrDieUpdate={doOrDieUpdate}
         doOrDieReset={doOrDieReset}
+        setTeamName={setTeamName}
       />
     </>
   );
