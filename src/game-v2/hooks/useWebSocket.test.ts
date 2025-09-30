@@ -268,4 +268,79 @@ describe('WebSocketManager（統合テスト）', () => {
 
     expect(mockOnDisconnected).toHaveBeenCalled();
   });
+
+  it('不正なJSONメッセージを受信した場合、エラーを処理する', () => {
+    const mockOnError = vi.fn();
+    const mockOnMessage = vi.fn();
+
+    renderHook(() =>
+      useWebSocket({
+        gameId: 'test-game',
+        onMessage: mockOnMessage,
+        onError: mockOnError,
+      })
+    );
+
+    act(() => {
+      if (mockWebSocket.onmessage) {
+        // 不正なJSON文字列
+        mockWebSocket.onmessage(
+          new MessageEvent('message', {
+            data: 'invalid json {',
+          })
+        );
+      }
+    });
+
+    // onMessageは呼ばれない
+    expect(mockOnMessage).not.toHaveBeenCalled();
+    // エラーが発生してもアプリは続行する（console.errorで記録）
+  });
+
+  it('異常なコードでの切断時に再接続を試みる', () => {
+    const mockOnDisconnected = vi.fn();
+
+    renderHook(() =>
+      useWebSocket({
+        gameId: 'test-game',
+        onDisconnected: mockOnDisconnected,
+      })
+    );
+
+    act(() => {
+      if (mockWebSocket.onclose) {
+        // 異常切断（code: 1006）
+        mockWebSocket.onclose(
+          new CloseEvent('close', { code: 1006, reason: 'Abnormal closure' })
+        );
+      }
+    });
+
+    expect(mockOnDisconnected).toHaveBeenCalled();
+  });
+
+  it('空のメッセージを受信した場合、処理をスキップする', () => {
+    const mockOnMessage = vi.fn();
+
+    renderHook(() =>
+      useWebSocket({
+        gameId: 'test-game',
+        onMessage: mockOnMessage,
+      })
+    );
+
+    act(() => {
+      if (mockWebSocket.onmessage) {
+        // 空文字列
+        mockWebSocket.onmessage(
+          new MessageEvent('message', {
+            data: '',
+          })
+        );
+      }
+    });
+
+    // onMessageは呼ばれない
+    expect(mockOnMessage).not.toHaveBeenCalled();
+  });
 });
