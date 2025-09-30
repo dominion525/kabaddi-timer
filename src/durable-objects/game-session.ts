@@ -63,12 +63,6 @@ export class GameSession {
         timestamp: Date.now()
       }));
 
-      server.send(JSON.stringify({
-        type: MESSAGE_TYPES.TIME_SYNC,
-        data: { serverTime: Date.now() },
-        timestamp: Date.now()
-      }));
-
       return new Response(null, {
         status: 101,
         webSocket: client,
