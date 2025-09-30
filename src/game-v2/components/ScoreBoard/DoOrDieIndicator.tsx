@@ -1,4 +1,4 @@
-import { generateDoOrDieIndicators } from '../../utils/score-logic';
+import { generateDoOrDieIndicators } from '../../../utils/score-logic';
 
 interface Props {
   count: number;

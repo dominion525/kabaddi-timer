@@ -1,7 +1,7 @@
 import { useState, useCallback, useRef, useEffect } from 'preact/hooks';
 import type { GameState, GameMessage, MESSAGE_TYPES } from '../../types/game';
 import { useWebSocket } from './useWebSocket';
-import { isValidScore, isValidDoOrDieCount } from '../utils/score-logic';
+import { isValidScore, isValidDoOrDieCount } from '../../utils/score-logic';
 
 type ConnectionStatus = 'connecting' | 'connected' | 'reconnecting' | 'disconnected' | 'error';
 

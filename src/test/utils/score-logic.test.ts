@@ -5,7 +5,7 @@ import {
   isValidScore,
   isValidDoOrDieCount,
   isValidTeamName,
-} from './score-logic';
+} from '../../utils/score-logic';
 
 describe('ScoreLogic', () => {
   describe('generateDoOrDieIndicators', () => {
