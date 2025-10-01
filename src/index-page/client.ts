@@ -15,7 +15,7 @@ declare const lucide: {
  */
 function createNewTimer(): void {
   const timerId = generateShortId();
-  window.location.href = `/game/${encodeURIComponent(timerId)}`;
+  window.location.href = `/game-v2/${encodeURIComponent(timerId)}`;
 }
 
 /**
@@ -37,7 +37,7 @@ function goToTimer(): void {
   }
 
   // URLエンコーディングして安全に遷移
-  window.location.href = `/game/${encodeURIComponent(timerId)}`;
+  window.location.href = `/game-v2/${encodeURIComponent(timerId)}`;
 }
 
 /**
