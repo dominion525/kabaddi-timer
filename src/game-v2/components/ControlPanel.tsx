@@ -4,6 +4,7 @@ import { DoOrDieIncrementButton, DoOrDieDecrementButton, DoOrDieResetButton } fr
 import { ScoreIncrementButton, ScoreDecrementButton, ScoreResetButton } from './ScoreControl';
 import { TeamOperationGrid } from './TeamOperationGrid';
 import { TeamNameSettings } from './TeamNameSettings';
+import { OverallControlSection } from './OverallControlSection';
 
 // localStorage キー
 const STORAGE_KEY_SIMPLE_MODE = 'v2_kabaddi_simple_mode';
@@ -351,17 +352,11 @@ export function ControlPanel({
             />
 
             {/* 全体コントロール */}
-            <div className="bg-gray-50 p-4 rounded-lg lg:col-span-2">
-              <h3 className="font-bold text-lg mb-4">全体コントロール</h3>
-              <div className="flex space-x-4 justify-center">
-                <button onClick={courtChange} className="bg-orange-500 hover:bg-orange-600 text-white px-3 py-1 rounded-lg font-bold text-lg transition-colors">
-                  コートチェンジ
-                </button>
-                <button onClick={resetAll} className="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded-lg font-bold text-lg transition-colors">
-                  全リセット
-                </button>
-              </div>
-            </div>
+            <OverallControlSection
+              size="desktop"
+              onCourtChange={courtChange}
+              onResetAll={resetAll}
+            />
 
               </div>
             </div>
@@ -575,19 +570,11 @@ export function ControlPanel({
               />
 
               {/* 全体コントロール */}
-              <div className="bg-gray-50 p-3 rounded-lg">
-                <h3 className="font-bold text-base mb-3">全体コントロール</h3>
-                <div className="grid grid-cols-2 gap-3">
-                  <button onClick={courtChange} className="bg-orange-500 hover:bg-orange-600 text-white px-4 py-1 rounded-lg font-bold text-base transition-colors">
-                    コートチェンジ
-                  </button>
-                  <button
-                    onClick={resetAll}
-                    className="bg-red-600 hover:bg-red-700 text-white px-4 py-1 rounded-lg font-bold text-base transition-colors">
-                    全リセット
-                  </button>
-                </div>
-              </div>
+              <OverallControlSection
+                size="mobile"
+                onCourtChange={courtChange}
+                onResetAll={resetAll}
+              />
 
             </div>
           )}
