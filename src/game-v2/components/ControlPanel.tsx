@@ -1,6 +1,21 @@
 import { useEffect, useState } from 'preact/hooks';
 import { JSX } from 'preact';
 
+// localStorage キー
+const STORAGE_KEY_SIMPLE_MODE = 'v2_kabaddi_simple_mode';
+const STORAGE_KEY_SCROLL_LOCK = 'v2_kabaddi_scroll_lock';
+
+// localStorageからboolean値を取得するヘルパー
+const getStoredBoolean = (key: string, defaultValue: boolean): boolean => {
+  try {
+    const stored = localStorage.getItem(key);
+    return stored !== null ? stored === 'true' : defaultValue;
+  } catch (error) {
+    console.error(`Failed to read ${key} from localStorage:`, error);
+    return defaultValue;
+  }
+};
+
 interface Props {
   isOpen: boolean;
   onClose: () => void;
@@ -46,8 +61,8 @@ export function ControlPanel({
 }: Props) {
   const [isVisible, setIsVisible] = useState(false);
   const [isAnimating, setIsAnimating] = useState(false);
-  const [simpleMode, setSimpleMode] = useState(false);
-  const [scrollLockEnabled, setScrollLockEnabled] = useState(false);
+  const [simpleMode, setSimpleMode] = useState(() => getStoredBoolean(STORAGE_KEY_SIMPLE_MODE, false));
+  const [scrollLockEnabled, setScrollLockEnabled] = useState(() => getStoredBoolean(STORAGE_KEY_SCROLL_LOCK, true));
 
   // チーム名のローカルstate
   const [teamAName, setTeamAName] = useState('チームA');
@@ -76,6 +91,23 @@ export function ControlPanel({
   const toggleScrollLock = () => {
     setScrollLockEnabled(!scrollLockEnabled);
   };
+
+  // localStorageへの保存
+  useEffect(() => {
+    try {
+      localStorage.setItem(STORAGE_KEY_SIMPLE_MODE, String(simpleMode));
+    } catch (error) {
+      console.error('Failed to save simpleMode to localStorage:', error);
+    }
+  }, [simpleMode]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(STORAGE_KEY_SCROLL_LOCK, String(scrollLockEnabled));
+    } catch (error) {
+      console.error('Failed to save scrollLockEnabled to localStorage:', error);
+    }
+  }, [scrollLockEnabled]);
 
   // アニメーション制御
   useEffect(() => {
