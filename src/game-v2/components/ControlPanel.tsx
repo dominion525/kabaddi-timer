@@ -5,6 +5,7 @@ import { ScoreIncrementButton, ScoreDecrementButton, ScoreResetButton } from './
 import { TeamOperationGrid } from './TeamOperationGrid';
 import { TeamNameSettings } from './TeamNameSettings';
 import { OverallControlSection } from './OverallControlSection';
+import { SubTimerControl } from './SubTimerControl';
 
 // localStorage キー
 const STORAGE_KEY_SIMPLE_MODE = 'v2_kabaddi_simple_mode';
@@ -321,22 +322,12 @@ export function ControlPanel({
             </div>
 
             {/* サブタイマー操作 */}
-            <div className="bg-yellow-50 p-4 rounded-lg border border-yellow-200">
-              <h3 className="font-bold text-lg mb-4 text-yellow-800">サブタイマー操作 (30秒レイドタイマー)</h3>
-
-              {/* スタート/ストップ/リセット */}
-              <div className="flex space-x-2">
-                <button onClick={subTimerStart} className="flex-1 bg-yellow-500 hover:bg-yellow-600 text-white p-3 rounded-lg font-bold transition-colors">
-                  スタート
-                </button>
-                <button onClick={subTimerPause} className="flex-1 bg-red-500 hover:bg-red-600 text-white p-3 rounded-lg font-bold transition-colors">
-                  ストップ
-                </button>
-                <button onClick={subTimerReset} className="flex-1 bg-orange-500 hover:bg-orange-600 text-white p-3 rounded-lg font-bold transition-colors">
-                  リセット
-                </button>
-              </div>
-            </div>
+            <SubTimerControl
+              size="desktop"
+              onStart={subTimerStart}
+              onPause={subTimerPause}
+              onReset={subTimerReset}
+            />
 
             {/* チーム操作グリッド */}
             <TeamOperationGrid
@@ -539,22 +530,12 @@ export function ControlPanel({
               </div>
 
               {/* サブタイマー操作 */}
-              <div className="bg-yellow-50 p-4 rounded-lg border border-yellow-200">
-                <h3 className="font-bold text-lg mb-4 text-yellow-800">サブタイマー操作 (30秒レイドタイマー)</h3>
-
-                {/* スタート/ストップ/リセット */}
-                <div className="flex space-x-2">
-                  <button onClick={subTimerStart} className="flex-1 bg-yellow-500 hover:bg-yellow-600 text-white p-4 rounded-lg font-bold text-lg transition-colors">
-                    スタート
-                  </button>
-                  <button onClick={subTimerPause} className="flex-1 bg-red-500 hover:bg-red-600 text-white p-4 rounded-lg font-bold text-lg transition-colors">
-                    ストップ
-                  </button>
-                  <button onClick={subTimerReset} className="flex-1 bg-orange-500 hover:bg-orange-600 text-white p-4 rounded-lg font-bold text-lg transition-colors">
-                    リセット
-                  </button>
-                </div>
-              </div>
+              <SubTimerControl
+                size="mobile"
+                onStart={subTimerStart}
+                onPause={subTimerPause}
+                onReset={subTimerReset}
+              />
 
               {/* チーム操作グリッド */}
               <TeamOperationGrid
