@@ -13,8 +13,10 @@ function getRevision(): string {
 
 export function indexTemplate(): string {
   // リビジョン情報を取得
-  const revision = getRevision();
+  const fullRevision = getRevision();
+  const shortRevision = fullRevision.substring(0, 7);
 
   return indexHTML
-    .replace(/{{REVISION}}/g, revision);
+    .replace(/{{REVISION}}/g, shortRevision)
+    .replace(/{{FULL_REVISION}}/g, fullRevision);
 }

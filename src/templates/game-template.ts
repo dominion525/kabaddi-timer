@@ -51,7 +51,8 @@ export function gameTemplate(gameId: string, env?: any): string {
   }
 
   // リビジョン情報を取得
-  const revision = getRevision();
+  const fullRevision = getRevision();
+  const shortRevision = fullRevision.substring(0, 7);
 
   // 分離されたパーツから動的にテンプレートを構築
   const gameHTML = buildGameTemplate();
@@ -59,5 +60,6 @@ export function gameTemplate(gameId: string, env?: any): string {
   return gameHTML
     .replace(/{{gameId}}/g, gameId)
     .replace('{{JS_INCLUDES}}', jsIncludes)
-    .replace(/{{REVISION}}/g, revision);
+    .replace(/{{REVISION}}/g, shortRevision)
+    .replace(/{{FULL_REVISION}}/g, fullRevision);
 }
