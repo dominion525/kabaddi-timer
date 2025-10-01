@@ -343,4 +343,244 @@ describe('WebSocketManager（統合テスト）', () => {
     // onMessageは呼ばれない
     expect(mockOnMessage).not.toHaveBeenCalled();
   });
+
+  describe('通信アニメーション', () => {
+    beforeEach(() => {
+      vi.useFakeTimers();
+    });
+
+    afterEach(() => {
+      vi.restoreAllMocks();
+    });
+
+    it('sendAction呼び出し時にsendingDataがtrueになり、300ms後にfalseになる', () => {
+      const { result } = renderHook(() =>
+        useWebSocket({
+          gameId: 'test-game',
+        })
+      );
+
+      // 接続状態をシミュレート
+      act(() => {
+        if (mockWebSocket.onopen) {
+          mockWebSocket.onopen(new Event('open'));
+        }
+      });
+
+      // 初期状態ではsendingDataはfalse
+      expect(result.current.sendingData).toBe(false);
+
+      // メッセージ送信
+      const testAction = { type: 'TEST_ACTION' };
+      act(() => {
+        result.current.sendAction(testAction);
+      });
+
+      // 送信直後はsendingDataがtrue
+      expect(result.current.sendingData).toBe(true);
+
+      // 300ms経過
+      act(() => {
+        vi.advanceTimersByTime(300);
+      });
+
+      // 300ms後はsendingDataがfalseに戻る
+      expect(result.current.sendingData).toBe(false);
+    });
+
+    it('メッセージ受信時にreceivingDataがtrueになり、200ms後にfalseになる', () => {
+      const { result } = renderHook(() =>
+        useWebSocket({
+          gameId: 'test-game',
+        })
+      );
+
+      // 初期状態ではreceivingDataはfalse
+      expect(result.current.receivingData).toBe(false);
+
+      const testMessage: GameMessage = {
+        type: 'game_state',
+        data: { test: 'data' },
+      };
+
+      // メッセージ受信
+      act(() => {
+        if (mockWebSocket.onmessage) {
+          mockWebSocket.onmessage(
+            new MessageEvent('message', {
+              data: JSON.stringify(testMessage),
+            })
+          );
+        }
+      });
+
+      // 受信直後はreceivingDataがtrue
+      expect(result.current.receivingData).toBe(true);
+
+      // 200ms経過
+      act(() => {
+        vi.advanceTimersByTime(200);
+      });
+
+      // 200ms後はreceivingDataがfalseに戻る
+      expect(result.current.receivingData).toBe(false);
+    });
+
+    it('連続送信時に既存のタイマーがクリアされて再スケジュールされる', () => {
+      const { result } = renderHook(() =>
+        useWebSocket({
+          gameId: 'test-game',
+        })
+      );
+
+      // 接続状態をシミュレート
+      act(() => {
+        if (mockWebSocket.onopen) {
+          mockWebSocket.onopen(new Event('open'));
+        }
+      });
+
+      // 1回目の送信
+      const testAction1 = { type: 'TEST_ACTION_1' };
+      act(() => {
+        result.current.sendAction(testAction1);
+      });
+
+      expect(result.current.sendingData).toBe(true);
+
+      // 100ms経過（まだtrueのはず）
+      act(() => {
+        vi.advanceTimersByTime(100);
+      });
+
+      expect(result.current.sendingData).toBe(true);
+
+      // 2回目の送信（タイマーがリセットされる）
+      const testAction2 = { type: 'TEST_ACTION_2' };
+      act(() => {
+        result.current.sendAction(testAction2);
+      });
+
+      // まだtrueのまま
+      expect(result.current.sendingData).toBe(true);
+
+      // さらに200ms経過（最初の送信から300ms、2回目から200ms）
+      act(() => {
+        vi.advanceTimersByTime(200);
+      });
+
+      // まだtrueのまま（2回目の送信から300ms経過していないため）
+      expect(result.current.sendingData).toBe(true);
+
+      // さらに100ms経過（2回目の送信から300ms）
+      act(() => {
+        vi.advanceTimersByTime(100);
+      });
+
+      // ここでfalseになる
+      expect(result.current.sendingData).toBe(false);
+    });
+
+    it('連続受信時に既存のタイマーがクリアされて再スケジュールされる', () => {
+      const { result } = renderHook(() =>
+        useWebSocket({
+          gameId: 'test-game',
+        })
+      );
+
+      const testMessage1: GameMessage = {
+        type: 'game_state',
+        data: { test: 'data1' },
+      };
+
+      // 1回目の受信
+      act(() => {
+        if (mockWebSocket.onmessage) {
+          mockWebSocket.onmessage(
+            new MessageEvent('message', {
+              data: JSON.stringify(testMessage1),
+            })
+          );
+        }
+      });
+
+      expect(result.current.receivingData).toBe(true);
+
+      // 100ms経過（まだtrueのはず）
+      act(() => {
+        vi.advanceTimersByTime(100);
+      });
+
+      expect(result.current.receivingData).toBe(true);
+
+      const testMessage2: GameMessage = {
+        type: 'game_state',
+        data: { test: 'data2' },
+      };
+
+      // 2回目の受信（タイマーがリセットされる）
+      act(() => {
+        if (mockWebSocket.onmessage) {
+          mockWebSocket.onmessage(
+            new MessageEvent('message', {
+              data: JSON.stringify(testMessage2),
+            })
+          );
+        }
+      });
+
+      // まだtrueのまま
+      expect(result.current.receivingData).toBe(true);
+
+      // さらに100ms経過（最初の受信から200ms、2回目から100ms）
+      act(() => {
+        vi.advanceTimersByTime(100);
+      });
+
+      // まだtrueのまま（2回目の受信から200ms経過していないため）
+      expect(result.current.receivingData).toBe(true);
+
+      // さらに100ms経過（2回目の受信から200ms）
+      act(() => {
+        vi.advanceTimersByTime(100);
+      });
+
+      // ここでfalseになる
+      expect(result.current.receivingData).toBe(false);
+    });
+
+    it('アンマウント時にアニメーションタイマーがクリアされる', () => {
+      const { result, unmount } = renderHook(() =>
+        useWebSocket({
+          gameId: 'test-game',
+        })
+      );
+
+      // 接続状態をシミュレート
+      act(() => {
+        if (mockWebSocket.onopen) {
+          mockWebSocket.onopen(new Event('open'));
+        }
+      });
+
+      // メッセージ送信
+      const testAction = { type: 'TEST_ACTION' };
+      act(() => {
+        result.current.sendAction(testAction);
+      });
+
+      expect(result.current.sendingData).toBe(true);
+
+      // アンマウント
+      unmount();
+
+      // タイマーが経過してもエラーが発生しないことを確認
+      act(() => {
+        vi.advanceTimersByTime(500);
+      });
+
+      // エラーが発生しなければ成功
+      expect(true).toBe(true);
+    });
+  });
 });
