@@ -378,12 +378,12 @@ export function ControlPanel({
                       <div className={`text-xs ${leftTeam.color === 'red' ? 'text-red-600' : 'text-blue-600'}`}>得点</div>
                     </div>
                     <div className="text-center">
-                      <div className="text-xs text-orange-600">Do or Die</div>
+                      <div className={`text-xs ${leftTeam.color === 'red' ? 'text-red-600' : 'text-blue-600'}`}>Do or Die</div>
                     </div>
                   </div>
                   <div className="flex-1 grid grid-cols-2 gap-x-2">
                     <div className="text-center">
-                      <div className="text-xs text-orange-600">Do or Die</div>
+                      <div className={`text-xs ${rightTeam.color === 'red' ? 'text-red-600' : 'text-blue-600'}`}>Do or Die</div>
                     </div>
                     <div className="text-center">
                       <div className={`text-xs ${rightTeam.color === 'red' ? 'text-red-600' : 'text-blue-600'}`}>得点</div>
@@ -746,12 +746,12 @@ export function ControlPanel({
                         <div className={`text-xs ${leftTeam.color === 'red' ? 'text-red-600' : 'text-blue-600'}`}>得点</div>
                       </div>
                       <div className="text-center">
-                        <div className="text-xs text-orange-600">Do or Die</div>
+                        <div className={`text-xs ${leftTeam.color === 'red' ? 'text-red-600' : 'text-blue-600'}`}>Do or Die</div>
                       </div>
                     </div>
                     <div className="flex-1 grid grid-cols-2 gap-x-1">
                       <div className="text-center">
-                        <div className="text-xs text-orange-600">Do or Die</div>
+                        <div className={`text-xs ${rightTeam.color === 'red' ? 'text-red-600' : 'text-blue-600'}`}>Do or Die</div>
                       </div>
                       <div className="text-center">
                         <div className={`text-xs ${rightTeam.color === 'red' ? 'text-red-600' : 'text-blue-600'}`}>得点</div>
@@ -939,12 +939,12 @@ export function ControlPanel({
                         <div className={`text-xs ${leftTeam.color === 'red' ? 'text-red-600' : 'text-blue-600'}`}>得点</div>
                       </div>
                       <div className="text-center">
-                        <div className="text-xs text-orange-600">Do or Die</div>
+                        <div className={`text-xs ${leftTeam.color === 'red' ? 'text-red-600' : 'text-blue-600'}`}>Do or Die</div>
                       </div>
                     </div>
                     <div className="flex-1 grid grid-cols-2 gap-x-1">
                       <div className="text-center">
-                        <div className="text-xs text-orange-600">Do or Die</div>
+                        <div className={`text-xs ${rightTeam.color === 'red' ? 'text-red-600' : 'text-blue-600'}`}>Do or Die</div>
                       </div>
                       <div className="text-center">
                         <div className={`text-xs ${rightTeam.color === 'red' ? 'text-red-600' : 'text-blue-600'}`}>得点</div>
