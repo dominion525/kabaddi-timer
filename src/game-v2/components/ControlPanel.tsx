@@ -428,7 +428,10 @@ export function ControlPanel({
                       スコア<br />リセット
                     </button>
                     <button
-                      onClick={() => doOrDieUpdate(leftTeamId, -3)}
+                      onClick={() => {
+                        const currentCount = leftTeamId === 'teamA' ? gameState.teamA.doOrDieCount : gameState.teamB.doOrDieCount;
+                        doOrDieUpdate(leftTeamId, -currentCount);
+                      }}
                       className="h-12 bg-gray-400 hover:bg-gray-500 text-white rounded-lg font-bold text-xs transition-colors active:scale-95">
                       リセット
                     </button>
@@ -466,7 +469,10 @@ export function ControlPanel({
                   {/* リセットボタン行 */}
                   <div className="grid grid-cols-2 gap-x-2">
                     <button
-                      onClick={() => doOrDieUpdate(rightTeamId, -3)}
+                      onClick={() => {
+                        const currentCount = rightTeamId === 'teamA' ? gameState.teamA.doOrDieCount : gameState.teamB.doOrDieCount;
+                        doOrDieUpdate(rightTeamId, -currentCount);
+                      }}
                       className="h-12 bg-gray-400 hover:bg-gray-500 text-white rounded-lg font-bold text-xs transition-colors active:scale-95">
                       リセット
                     </button>
@@ -790,7 +796,10 @@ export function ControlPanel({
                         スコア<br />リセット
                       </button>
                       <button
-                        onClick={() => doOrDieUpdate(leftTeamId, -3)}
+                        onClick={() => {
+                          const currentCount = leftTeamId === 'teamA' ? gameState.teamA.doOrDieCount : gameState.teamB.doOrDieCount;
+                          doOrDieUpdate(leftTeamId, -currentCount);
+                        }}
                         className="h-12 bg-gray-400 hover:bg-gray-500 text-white rounded-lg font-bold text-xs transition-colors active:scale-95">
                         リセット
                       </button>
@@ -828,7 +837,10 @@ export function ControlPanel({
                     {/* リセットボタン行 */}
                     <div className="grid grid-cols-2 gap-x-1">
                       <button
-                        onClick={() => doOrDieUpdate(rightTeamId, -3)}
+                        onClick={() => {
+                          const currentCount = rightTeamId === 'teamA' ? gameState.teamA.doOrDieCount : gameState.teamB.doOrDieCount;
+                          doOrDieUpdate(rightTeamId, -currentCount);
+                        }}
                         className="h-12 bg-gray-400 hover:bg-gray-500 text-white rounded-lg font-bold text-xs transition-colors active:scale-95">
                         リセット
                       </button>
@@ -977,7 +989,10 @@ export function ControlPanel({
                         スコア<br />リセット
                       </button>
                       <button
-                        onClick={() => doOrDieUpdate(leftTeamId, -3)}
+                        onClick={() => {
+                          const currentCount = leftTeamId === 'teamA' ? gameState.teamA.doOrDieCount : gameState.teamB.doOrDieCount;
+                          doOrDieUpdate(leftTeamId, -currentCount);
+                        }}
                         className="h-8 bg-gray-400 hover:bg-gray-500 text-white rounded text-xs font-bold transition-colors active:scale-95">
                         リセット
                       </button>
@@ -1015,7 +1030,10 @@ export function ControlPanel({
                     {/* リセットボタン行 */}
                     <div className="grid grid-cols-2 gap-x-1">
                       <button
-                        onClick={() => doOrDieUpdate(rightTeamId, -3)}
+                        onClick={() => {
+                          const currentCount = rightTeamId === 'teamA' ? gameState.teamA.doOrDieCount : gameState.teamB.doOrDieCount;
+                          doOrDieUpdate(rightTeamId, -currentCount);
+                        }}
                         className="h-8 bg-gray-400 hover:bg-gray-500 text-white rounded text-xs font-bold transition-colors active:scale-95">
                         リセット
                       </button>
