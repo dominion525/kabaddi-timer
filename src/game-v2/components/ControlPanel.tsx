@@ -16,10 +16,22 @@ const getStoredBoolean = (key: string, defaultValue: boolean): boolean => {
   }
 };
 
+interface TeamData {
+  name: string;
+  score: number;
+  doOrDieCount: number;
+  color: 'red' | 'blue';
+}
+
 interface Props {
   isOpen: boolean;
   onClose: () => void;
   gameState: any;
+  leftTeam: TeamData;
+  rightTeam: TeamData;
+  leftTeamId: 'teamA' | 'teamB';
+  rightTeamId: 'teamA' | 'teamB';
+  displayFlipped: boolean;
   scoreUpdate: (team: 'teamA' | 'teamB', points: number) => void;
   resetTeamScore: (team: 'teamA' | 'teamB') => void;
   resetAllScores: () => void;
@@ -42,6 +54,11 @@ export function ControlPanel({
   isOpen,
   onClose,
   gameState,
+  leftTeam,
+  rightTeam,
+  leftTeamId,
+  rightTeamId,
+  displayFlipped,
   scoreUpdate,
   resetTeamScore,
   resetAllScores,
@@ -346,17 +363,17 @@ export function ControlPanel({
                 {/* チーム名行 */}
                 <div className="flex justify-between gap-x-8 mb-2">
                   <div className="text-center flex-1">
-                    <div className="text-lg font-bold text-red-600">チームA</div>
+                    <div className={`text-lg font-bold ${leftTeam.color === 'red' ? 'text-red-600' : 'text-blue-600'}`}>{leftTeam.name}</div>
                   </div>
                   <div className="text-center flex-1">
-                    <div className="text-lg font-bold text-blue-600">チームB</div>
+                    <div className={`text-lg font-bold ${rightTeam.color === 'red' ? 'text-red-600' : 'text-blue-600'}`}>{rightTeam.name}</div>
                   </div>
                 </div>
                 {/* カテゴリー行 */}
                 <div className="flex justify-between gap-x-8">
                   <div className="flex-1 grid grid-cols-2 gap-x-2">
                     <div className="text-center">
-                      <div className="text-xs text-red-600">得点</div>
+                      <div className={`text-xs ${leftTeam.color === 'red' ? 'text-red-600' : 'text-blue-600'}`}>得点</div>
                     </div>
                     <div className="text-center">
                       <div className="text-xs text-orange-600">Do or Die</div>
@@ -367,7 +384,7 @@ export function ControlPanel({
                       <div className="text-xs text-orange-600">Do or Die</div>
                     </div>
                     <div className="text-center">
-                      <div className="text-xs text-blue-600">得点</div>
+                      <div className={`text-xs ${rightTeam.color === 'red' ? 'text-red-600' : 'text-blue-600'}`}>得点</div>
                     </div>
                   </div>
                 </div>
@@ -380,12 +397,12 @@ export function ControlPanel({
                   {/* +1ボタン行 */}
                   <div className="grid grid-cols-2 gap-x-2">
                     <button
-                      onClick={() => scoreUpdate('teamA', 1)}
-                      className="aspect-square bg-red-600 hover:bg-red-700 text-white rounded-lg font-bold transition-colors active:scale-95">
+                      onClick={() => scoreUpdate(leftTeamId, 1)}
+                      className={`aspect-square text-white rounded-lg font-bold transition-colors active:scale-95 ${leftTeam.color === 'red' ? 'bg-red-600 hover:bg-red-700' : 'bg-blue-600 hover:bg-blue-700'}`}>
                       +1
                     </button>
                     <button
-                      onClick={() => doOrDieUpdate('teamA', 1)}
+                      onClick={() => doOrDieUpdate(leftTeamId, 1)}
                       className="aspect-square bg-orange-400 hover:bg-orange-500 text-white rounded-lg font-bold transition-colors active:scale-95">
                       +1
                     </button>
@@ -393,12 +410,12 @@ export function ControlPanel({
                   {/* -1ボタン行 */}
                   <div className="grid grid-cols-2 gap-x-2">
                     <button
-                      onClick={() => scoreUpdate('teamA', -1)}
-                      className="aspect-square bg-red-100 hover:bg-red-200 text-red-600 rounded-lg font-bold transition-colors active:scale-95">
+                      onClick={() => scoreUpdate(leftTeamId, -1)}
+                      className={`aspect-square rounded-lg font-bold transition-colors active:scale-95 ${leftTeam.color === 'red' ? 'bg-red-100 hover:bg-red-200 text-red-600' : 'bg-blue-100 hover:bg-blue-200 text-blue-600'}`}>
                       -1
                     </button>
                     <button
-                      onClick={() => doOrDieUpdate('teamA', -1)}
+                      onClick={() => doOrDieUpdate(leftTeamId, -1)}
                       className="aspect-square bg-orange-200 hover:bg-orange-300 text-orange-800 rounded-lg font-bold transition-colors active:scale-95">
                       -1
                     </button>
@@ -406,12 +423,12 @@ export function ControlPanel({
                   {/* リセットボタン行 */}
                   <div className="grid grid-cols-2 gap-x-2">
                     <button
-                      onClick={() => resetTeamScore('teamA')}
+                      onClick={() => resetTeamScore(leftTeamId)}
                       className="h-12 bg-gray-500 hover:bg-gray-600 text-white rounded-lg font-bold text-xs transition-colors active:scale-95">
                       スコア<br />リセット
                     </button>
                     <button
-                      onClick={() => doOrDieUpdate('teamA', -3)}
+                      onClick={() => doOrDieUpdate(leftTeamId, -3)}
                       className="h-12 bg-gray-400 hover:bg-gray-500 text-white rounded-lg font-bold text-xs transition-colors active:scale-95">
                       リセット
                     </button>
@@ -423,38 +440,38 @@ export function ControlPanel({
                   {/* +1ボタン行 */}
                   <div className="grid grid-cols-2 gap-x-2">
                     <button
-                      onClick={() => doOrDieUpdate('teamB', 1)}
+                      onClick={() => doOrDieUpdate(rightTeamId, 1)}
                       className="aspect-square bg-orange-400 hover:bg-orange-500 text-white rounded-lg font-bold transition-colors active:scale-95">
                       +1
                     </button>
                     <button
-                      onClick={() => scoreUpdate('teamB', 1)}
-                      className="aspect-square bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-bold transition-colors active:scale-95">
+                      onClick={() => scoreUpdate(rightTeamId, 1)}
+                      className={`aspect-square text-white rounded-lg font-bold transition-colors active:scale-95 ${rightTeam.color === 'red' ? 'bg-red-600 hover:bg-red-700' : 'bg-blue-600 hover:bg-blue-700'}`}>
                       +1
                     </button>
                   </div>
                   {/* -1ボタン行 */}
                   <div className="grid grid-cols-2 gap-x-2">
                     <button
-                      onClick={() => doOrDieUpdate('teamB', -1)}
+                      onClick={() => doOrDieUpdate(rightTeamId, -1)}
                       className="aspect-square bg-orange-200 hover:bg-orange-300 text-orange-800 rounded-lg font-bold transition-colors active:scale-95">
                       -1
                     </button>
                     <button
-                      onClick={() => scoreUpdate('teamB', -1)}
-                      className="aspect-square bg-blue-100 hover:bg-blue-200 text-blue-600 rounded-lg font-bold transition-colors active:scale-95">
+                      onClick={() => scoreUpdate(rightTeamId, -1)}
+                      className={`aspect-square rounded-lg font-bold transition-colors active:scale-95 ${rightTeam.color === 'red' ? 'bg-red-100 hover:bg-red-200 text-red-600' : 'bg-blue-100 hover:bg-blue-200 text-blue-600'}`}>
                       -1
                     </button>
                   </div>
                   {/* リセットボタン行 */}
                   <div className="grid grid-cols-2 gap-x-2">
                     <button
-                      onClick={() => doOrDieUpdate('teamB', -3)}
+                      onClick={() => doOrDieUpdate(rightTeamId, -3)}
                       className="h-12 bg-gray-400 hover:bg-gray-500 text-white rounded-lg font-bold text-xs transition-colors active:scale-95">
                       リセット
                     </button>
                     <button
-                      onClick={() => resetTeamScore('teamB')}
+                      onClick={() => resetTeamScore(rightTeamId)}
                       className="h-12 bg-gray-500 hover:bg-gray-600 text-white rounded-lg font-bold text-xs transition-colors active:scale-95">
                       スコア<br />リセット
                     </button>
@@ -708,17 +725,17 @@ export function ControlPanel({
                   {/* チーム名行 */}
                   <div className="flex justify-between gap-x-6 mb-2">
                     <div className="text-center flex-1">
-                      <div className="text-base font-bold text-red-700">チームA</div>
+                      <div className={`text-base font-bold ${leftTeam.color === 'red' ? 'text-red-700' : 'text-blue-700'}`}>{leftTeam.name}</div>
                     </div>
                     <div className="text-center flex-1">
-                      <div className="text-base font-bold text-blue-700">チームB</div>
+                      <div className={`text-base font-bold ${rightTeam.color === 'red' ? 'text-red-700' : 'text-blue-700'}`}>{rightTeam.name}</div>
                     </div>
                   </div>
                   {/* カテゴリー行 */}
                   <div className="flex justify-between gap-x-6">
                     <div className="flex-1 grid grid-cols-2 gap-x-1">
                       <div className="text-center">
-                        <div className="text-xs text-red-600">得点</div>
+                        <div className={`text-xs ${leftTeam.color === 'red' ? 'text-red-600' : 'text-blue-600'}`}>得点</div>
                       </div>
                       <div className="text-center">
                         <div className="text-xs text-orange-600">Do or Die</div>
@@ -729,7 +746,7 @@ export function ControlPanel({
                         <div className="text-xs text-orange-600">Do or Die</div>
                       </div>
                       <div className="text-center">
-                        <div className="text-xs text-blue-600">得点</div>
+                        <div className={`text-xs ${rightTeam.color === 'red' ? 'text-red-600' : 'text-blue-600'}`}>得点</div>
                       </div>
                     </div>
                   </div>
@@ -742,12 +759,12 @@ export function ControlPanel({
                     {/* +1ボタン行 */}
                     <div className="grid grid-cols-2 gap-x-1">
                       <button
-                        onClick={() => scoreUpdate('teamA', 1)}
-                        className="h-12 bg-red-500 hover:bg-red-600 text-white rounded-lg font-bold text-base transition-colors active:scale-95">
+                        onClick={() => scoreUpdate(leftTeamId, 1)}
+                        className={`h-12 text-white rounded-lg font-bold text-base transition-colors active:scale-95 ${leftTeam.color === 'red' ? 'bg-red-500 hover:bg-red-600' : 'bg-blue-500 hover:bg-blue-600'}`}>
                         +1
                       </button>
                       <button
-                        onClick={() => doOrDieUpdate('teamA', 1)}
+                        onClick={() => doOrDieUpdate(leftTeamId, 1)}
                         className="h-12 bg-orange-400 hover:bg-orange-500 text-white rounded-lg font-bold text-base transition-colors active:scale-95">
                         +1
                       </button>
@@ -755,12 +772,12 @@ export function ControlPanel({
                     {/* -1ボタン行 */}
                     <div className="grid grid-cols-2 gap-x-1">
                       <button
-                        onClick={() => scoreUpdate('teamA', -1)}
-                        className="h-12 bg-red-300 hover:bg-red-400 text-red-800 rounded-lg font-bold text-base transition-colors active:scale-95">
+                        onClick={() => scoreUpdate(leftTeamId, -1)}
+                        className={`h-12 rounded-lg font-bold text-base transition-colors active:scale-95 ${leftTeam.color === 'red' ? 'bg-red-300 hover:bg-red-400 text-red-800' : 'bg-blue-300 hover:bg-blue-400 text-blue-800'}`}>
                         -1
                       </button>
                       <button
-                        onClick={() => doOrDieUpdate('teamA', -1)}
+                        onClick={() => doOrDieUpdate(leftTeamId, -1)}
                         className="h-12 bg-orange-200 hover:bg-orange-300 text-orange-800 rounded-lg font-bold text-base transition-colors active:scale-95">
                         -1
                       </button>
@@ -768,12 +785,12 @@ export function ControlPanel({
                     {/* リセットボタン行 */}
                     <div className="grid grid-cols-2 gap-x-1">
                       <button
-                        onClick={() => resetTeamScore('teamA')}
+                        onClick={() => resetTeamScore(leftTeamId)}
                         className="h-12 bg-gray-500 hover:bg-gray-600 text-white rounded-lg font-bold text-xs transition-colors active:scale-95">
                         スコア<br />リセット
                       </button>
                       <button
-                        onClick={() => doOrDieUpdate('teamA', -3)}
+                        onClick={() => doOrDieUpdate(leftTeamId, -3)}
                         className="h-12 bg-gray-400 hover:bg-gray-500 text-white rounded-lg font-bold text-xs transition-colors active:scale-95">
                         リセット
                       </button>
@@ -785,38 +802,38 @@ export function ControlPanel({
                     {/* +1ボタン行 */}
                     <div className="grid grid-cols-2 gap-x-1">
                       <button
-                        onClick={() => doOrDieUpdate('teamB', 1)}
+                        onClick={() => doOrDieUpdate(rightTeamId, 1)}
                         className="h-12 bg-orange-400 hover:bg-orange-500 text-white rounded-lg font-bold text-base transition-colors active:scale-95">
                         +1
                       </button>
                       <button
-                        onClick={() => scoreUpdate('teamB', 1)}
-                        className="h-12 bg-blue-500 hover:bg-blue-600 text-white rounded-lg font-bold text-base transition-colors active:scale-95">
+                        onClick={() => scoreUpdate(rightTeamId, 1)}
+                        className={`h-12 text-white rounded-lg font-bold text-base transition-colors active:scale-95 ${rightTeam.color === 'red' ? 'bg-red-500 hover:bg-red-600' : 'bg-blue-500 hover:bg-blue-600'}`}>
                         +1
                       </button>
                     </div>
                     {/* -1ボタン行 */}
                     <div className="grid grid-cols-2 gap-x-1">
                       <button
-                        onClick={() => doOrDieUpdate('teamB', -1)}
+                        onClick={() => doOrDieUpdate(rightTeamId, -1)}
                         className="h-12 bg-orange-200 hover:bg-orange-300 text-orange-800 rounded-lg font-bold text-base transition-colors active:scale-95">
                         -1
                       </button>
                       <button
-                        onClick={() => scoreUpdate('teamB', -1)}
-                        className="h-12 bg-blue-300 hover:bg-blue-400 text-blue-800 rounded-lg font-bold text-base transition-colors active:scale-95">
+                        onClick={() => scoreUpdate(rightTeamId, -1)}
+                        className={`h-12 rounded-lg font-bold text-base transition-colors active:scale-95 ${rightTeam.color === 'red' ? 'bg-red-300 hover:bg-red-400 text-red-800' : 'bg-blue-300 hover:bg-blue-400 text-blue-800'}`}>
                         -1
                       </button>
                     </div>
                     {/* リセットボタン行 */}
                     <div className="grid grid-cols-2 gap-x-1">
                       <button
-                        onClick={() => doOrDieUpdate('teamB', -3)}
+                        onClick={() => doOrDieUpdate(rightTeamId, -3)}
                         className="h-12 bg-gray-400 hover:bg-gray-500 text-white rounded-lg font-bold text-xs transition-colors active:scale-95">
                         リセット
                       </button>
                       <button
-                        onClick={() => resetTeamScore('teamB')}
+                        onClick={() => resetTeamScore(rightTeamId)}
                         className="h-12 bg-gray-500 hover:bg-gray-600 text-white rounded-lg font-bold text-xs transition-colors active:scale-95">
                         スコア<br />リセット
                       </button>
@@ -892,11 +909,20 @@ export function ControlPanel({
 
                 {/* ヘッダー行 */}
                 <div className="mb-2 relative z-10">
+                  {/* チーム名行 */}
+                  <div className="flex justify-between gap-x-3 mb-1">
+                    <div className="text-center flex-1">
+                      <div className={`text-xs font-bold ${leftTeam.color === 'red' ? 'text-red-700' : 'text-blue-700'}`}>{leftTeam.name}</div>
+                    </div>
+                    <div className="text-center flex-1">
+                      <div className={`text-xs font-bold ${rightTeam.color === 'red' ? 'text-red-700' : 'text-blue-700'}`}>{rightTeam.name}</div>
+                    </div>
+                  </div>
                   {/* カテゴリー行 */}
                   <div className="flex justify-between gap-x-3">
                     <div className="flex-1 grid grid-cols-2 gap-x-1">
                       <div className="text-center">
-                        <div className="text-xs text-red-600">得点</div>
+                        <div className={`text-xs ${leftTeam.color === 'red' ? 'text-red-600' : 'text-blue-600'}`}>得点</div>
                       </div>
                       <div className="text-center">
                         <div className="text-xs text-orange-600">Do or Die</div>
@@ -907,7 +933,7 @@ export function ControlPanel({
                         <div className="text-xs text-orange-600">Do or Die</div>
                       </div>
                       <div className="text-center">
-                        <div className="text-xs text-blue-600">得点</div>
+                        <div className={`text-xs ${rightTeam.color === 'red' ? 'text-red-600' : 'text-blue-600'}`}>得点</div>
                       </div>
                     </div>
                   </div>
@@ -920,12 +946,12 @@ export function ControlPanel({
                     {/* +1ボタン行 */}
                     <div className="grid grid-cols-2 gap-x-1">
                       <button
-                        onClick={() => scoreUpdate('teamA', 1)}
-                        className="h-8 bg-red-500 hover:bg-red-600 text-white rounded text-xs font-bold transition-colors active:scale-95">
+                        onClick={() => scoreUpdate(leftTeamId, 1)}
+                        className={`h-8 text-white rounded text-xs font-bold transition-colors active:scale-95 ${leftTeam.color === 'red' ? 'bg-red-500 hover:bg-red-600' : 'bg-blue-500 hover:bg-blue-600'}`}>
                         +1
                       </button>
                       <button
-                        onClick={() => doOrDieUpdate('teamA', 1)}
+                        onClick={() => doOrDieUpdate(leftTeamId, 1)}
                         className="h-8 bg-orange-400 hover:bg-orange-500 text-white rounded text-xs font-bold transition-colors active:scale-95">
                         +1
                       </button>
@@ -933,12 +959,12 @@ export function ControlPanel({
                     {/* -1ボタン行 */}
                     <div className="grid grid-cols-2 gap-x-1">
                       <button
-                        onClick={() => scoreUpdate('teamA', -1)}
-                        className="h-8 bg-red-300 hover:bg-red-400 text-red-800 rounded text-xs font-bold transition-colors active:scale-95">
+                        onClick={() => scoreUpdate(leftTeamId, -1)}
+                        className={`h-8 rounded text-xs font-bold transition-colors active:scale-95 ${leftTeam.color === 'red' ? 'bg-red-300 hover:bg-red-400 text-red-800' : 'bg-blue-300 hover:bg-blue-400 text-blue-800'}`}>
                         -1
                       </button>
                       <button
-                        onClick={() => doOrDieUpdate('teamA', -1)}
+                        onClick={() => doOrDieUpdate(leftTeamId, -1)}
                         className="h-8 bg-orange-200 hover:bg-orange-300 text-orange-800 rounded text-xs font-bold transition-colors active:scale-95">
                         -1
                       </button>
@@ -946,12 +972,12 @@ export function ControlPanel({
                     {/* リセットボタン行 */}
                     <div className="grid grid-cols-2 gap-x-1">
                       <button
-                        onClick={() => resetTeamScore('teamA')}
+                        onClick={() => resetTeamScore(leftTeamId)}
                         className="h-8 bg-gray-500 hover:bg-gray-600 text-white rounded text-xs font-bold transition-colors active:scale-95">
                         スコア<br />リセット
                       </button>
                       <button
-                        onClick={() => doOrDieUpdate('teamA', -3)}
+                        onClick={() => doOrDieUpdate(leftTeamId, -3)}
                         className="h-8 bg-gray-400 hover:bg-gray-500 text-white rounded text-xs font-bold transition-colors active:scale-95">
                         リセット
                       </button>
@@ -963,38 +989,38 @@ export function ControlPanel({
                     {/* +1ボタン行 */}
                     <div className="grid grid-cols-2 gap-x-1">
                       <button
-                        onClick={() => doOrDieUpdate('teamB', 1)}
+                        onClick={() => doOrDieUpdate(rightTeamId, 1)}
                         className="h-8 bg-orange-400 hover:bg-orange-500 text-white rounded text-xs font-bold transition-colors active:scale-95">
                         +1
                       </button>
                       <button
-                        onClick={() => scoreUpdate('teamB', 1)}
-                        className="h-8 bg-blue-500 hover:bg-blue-600 text-white rounded text-xs font-bold transition-colors active:scale-95">
+                        onClick={() => scoreUpdate(rightTeamId, 1)}
+                        className={`h-8 text-white rounded text-xs font-bold transition-colors active:scale-95 ${rightTeam.color === 'red' ? 'bg-red-500 hover:bg-red-600' : 'bg-blue-500 hover:bg-blue-600'}`}>
                         +1
                       </button>
                     </div>
                     {/* -1ボタン行 */}
                     <div className="grid grid-cols-2 gap-x-1">
                       <button
-                        onClick={() => doOrDieUpdate('teamB', -1)}
+                        onClick={() => doOrDieUpdate(rightTeamId, -1)}
                         className="h-8 bg-orange-200 hover:bg-orange-300 text-orange-800 rounded text-xs font-bold transition-colors active:scale-95">
                         -1
                       </button>
                       <button
-                        onClick={() => scoreUpdate('teamB', -1)}
-                        className="h-8 bg-blue-300 hover:bg-blue-400 text-blue-800 rounded text-xs font-bold transition-colors active:scale-95">
+                        onClick={() => scoreUpdate(rightTeamId, -1)}
+                        className={`h-8 rounded text-xs font-bold transition-colors active:scale-95 ${rightTeam.color === 'red' ? 'bg-red-300 hover:bg-red-400 text-red-800' : 'bg-blue-300 hover:bg-blue-400 text-blue-800'}`}>
                         -1
                       </button>
                     </div>
                     {/* リセットボタン行 */}
                     <div className="grid grid-cols-2 gap-x-1">
                       <button
-                        onClick={() => doOrDieUpdate('teamB', -3)}
+                        onClick={() => doOrDieUpdate(rightTeamId, -3)}
                         className="h-8 bg-gray-400 hover:bg-gray-500 text-white rounded text-xs font-bold transition-colors active:scale-95">
                         リセット
                       </button>
                       <button
-                        onClick={() => resetTeamScore('teamB')}
+                        onClick={() => resetTeamScore(rightTeamId)}
                         className="h-8 bg-gray-500 hover:bg-gray-600 text-white rounded text-xs font-bold transition-colors active:scale-95">
                         スコア<br />リセット
                       </button>

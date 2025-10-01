@@ -1,4 +1,4 @@
-import { useState } from 'preact/hooks';
+import { useState, useEffect } from 'preact/hooks';
 import { ScoreBoard } from './ScoreBoard';
 import { MainTimer } from './Timer/MainTimer';
 import { SubTimer } from './Timer/SubTimer';
@@ -60,6 +60,17 @@ export function App({ gameId }: Props) {
   // ステータスバー表示制御
   const [showStatusBar, setShowStatusBar] = useState(true);
 
+  // ローカル表示反転状態（サーバーとは独立）
+  const [displayFlipped, setDisplayFlipped] = useState(() => {
+    try {
+      const stored = localStorage.getItem(`v2_kabaddi_display_flipped_${gameId}`);
+      return stored === 'true';
+    } catch (error) {
+      console.error('Failed to read displayFlipped from localStorage:', error);
+      return false;
+    }
+  });
+
   const handleOpenCreditsModal = () => {
     setShowCreditsModal(true);
   };
@@ -96,6 +107,19 @@ export function App({ gameId }: Props) {
     setShowStatusBar(prev => !prev);
   };
 
+  const toggleDisplayFlip = () => {
+    setDisplayFlipped(prev => !prev);
+  };
+
+  // displayFlippedをlocalStorageに保存
+  useEffect(() => {
+    try {
+      localStorage.setItem(`v2_kabaddi_display_flipped_${gameId}`, String(displayFlipped));
+    } catch (error) {
+      console.error('Failed to save displayFlipped to localStorage:', error);
+    }
+  }, [displayFlipped, gameId]);
+
   // ゲーム状態が読み込まれるまで、または接続中はLoadingModalを表示
   if (!gameState || connectionStatus !== 'connected') {
     return (
@@ -109,14 +133,24 @@ export function App({ gameId }: Props) {
     );
   }
 
-  // leftSideTeamに基づいて左右のチームを決定
-  const leftTeam = gameState.leftSideTeam === 'teamA'
+  // leftSideTeamに基づいて左右のチームを決定（サーバー状態ベース）
+  const baseLeftTeam = gameState.leftSideTeam === 'teamA'
     ? { ...gameState.teamA, color: 'red' as const }
     : { ...gameState.teamB, color: 'blue' as const };
 
-  const rightTeam = gameState.leftSideTeam === 'teamA'
+  const baseRightTeam = gameState.leftSideTeam === 'teamA'
     ? { ...gameState.teamB, color: 'blue' as const }
     : { ...gameState.teamA, color: 'red' as const };
+
+  // チームIDも計算（サーバー状態ベース）
+  const baseLeftTeamId: 'teamA' | 'teamB' = gameState.leftSideTeam;
+  const baseRightTeamId: 'teamA' | 'teamB' = gameState.leftSideTeam === 'teamA' ? 'teamB' : 'teamA';
+
+  // ローカル表示反転を適用
+  const leftTeam = displayFlipped ? baseRightTeam : baseLeftTeam;
+  const rightTeam = displayFlipped ? baseLeftTeam : baseRightTeam;
+  const leftTeamId = displayFlipped ? baseRightTeamId : baseLeftTeamId;
+  const rightTeamId = displayFlipped ? baseLeftTeamId : baseRightTeamId;
 
   // タイマーアニメーション: V1と同じrequestAnimationFrameループで毎フレーム更新
   const { mainTimerSeconds, subTimerSeconds, subTimerIsRunning } = useTimerAnimation(gameState, serverTimeOffset);
@@ -131,7 +165,7 @@ export function App({ gameId }: Props) {
             <div className={`p-4 ${leftTeam.color === 'red' ? 'bg-red-600' : 'bg-blue-600'}`}>
               <h1 className="text-3xl font-bold text-center">{leftTeam.name}</h1>
             </div>
-            <VersusIndicator />
+            <VersusIndicator onClick={toggleDisplayFlip} />
             <div className={`p-4 ${rightTeam.color === 'blue' ? 'bg-blue-600' : 'bg-red-600'}`}>
               <h1 className="text-3xl font-bold text-center">{rightTeam.name}</h1>
             </div>
@@ -184,7 +218,7 @@ export function App({ gameId }: Props) {
             <div className={`p-2 ${leftTeam.color === 'red' ? 'bg-red-600' : 'bg-blue-600'}`}>
               <h1 className="text-lg font-bold text-center">{leftTeam.name}</h1>
             </div>
-            <VersusIndicator />
+            <VersusIndicator onClick={toggleDisplayFlip} />
             <div className={`p-2 ${rightTeam.color === 'blue' ? 'bg-blue-600' : 'bg-red-600'}`}>
               <h1 className="text-lg font-bold text-center">{rightTeam.name}</h1>
             </div>
@@ -260,6 +294,11 @@ export function App({ gameId }: Props) {
         isOpen={showControlPanel}
         onClose={handleCloseControlPanel}
         gameState={gameState}
+        leftTeam={leftTeam}
+        rightTeam={rightTeam}
+        leftTeamId={leftTeamId}
+        rightTeamId={rightTeamId}
+        displayFlipped={displayFlipped}
         scoreUpdate={scoreUpdate}
         resetTeamScore={resetTeamScore}
         resetAllScores={resetAllScores}
