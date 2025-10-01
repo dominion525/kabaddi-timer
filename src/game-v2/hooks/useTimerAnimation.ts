@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'preact/hooks';
 import type { GameState } from '../../types/game';
-import { calculateRemainingSeconds, calculateSubTimerRemainingSeconds } from '../utils/timer-logic';
+import { calculateRemainingSeconds, calculateSubTimerRemainingSeconds } from '../../utils/timer-logic-client';
 
 interface UseTimerAnimationResult {
   mainTimerSeconds: number;

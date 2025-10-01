@@ -4,7 +4,7 @@ import {
   calculateSubTimerRemainingSeconds,
   formatTimer,
   formatSubTimer,
-} from './timer-logic';
+} from '../../utils/timer-logic-client';
 
 describe('timer-logic', () => {
   afterEach(() => {

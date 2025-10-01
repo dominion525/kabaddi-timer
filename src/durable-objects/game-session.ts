@@ -1,6 +1,7 @@
 // @ts-ignore: ACTION_TYPES is used in switch case statements
 import { GameState, GameAction, GameMessage, WebSocketMessage, TimeSyncData, MESSAGE_TYPES, ACTION_TYPES } from '../types/game';
 import { isValidScore, isValidDoOrDieCount, clampScore, clampDoOrDieCount } from '../utils/score-logic';
+import { calculateServerRemainingSeconds } from '../utils/timer-logic-server';
 
 export class GameSession {
   private ctx: DurableObjectState;
@@ -432,15 +433,19 @@ export class GameSession {
 
   private updateRemainingTime(): void {
     if (this.gameState.timer.startTime && this.gameState.timer.isRunning) {
-      const elapsed = (Date.now() - this.gameState.timer.startTime) / 1000;
-      this.gameState.timer.remainingSeconds = Math.max(0, this.gameState.timer.totalDuration - elapsed);
+      this.gameState.timer.remainingSeconds = calculateServerRemainingSeconds(
+        this.gameState.timer.startTime,
+        this.gameState.timer.totalDuration
+      );
     }
   }
 
   private updateSubTimerRemainingTime(): void {
     if (this.gameState.subTimer?.startTime && this.gameState.subTimer.isRunning) {
-      const elapsed = (Date.now() - this.gameState.subTimer.startTime) / 1000;
-      this.gameState.subTimer.remainingSeconds = Math.max(0, this.gameState.subTimer.totalDuration - elapsed);
+      this.gameState.subTimer.remainingSeconds = calculateServerRemainingSeconds(
+        this.gameState.subTimer.startTime,
+        this.gameState.subTimer.totalDuration
+      );
     }
   }
 
