@@ -1,6 +1,7 @@
 import { useState, useCallback, useRef, useEffect } from 'preact/hooks';
 import type { GameState, GameMessage, MESSAGE_TYPES } from '../../types/game';
 import { useWebSocket } from './useWebSocket';
+import { useIdleTimer } from './useIdleTimer';
 import { isValidScore, isValidDoOrDieCount, isValidTeamName } from '../../utils/score-logic';
 
 type ConnectionStatus = 'connecting' | 'connected' | 'reconnecting' | 'disconnected' | 'error';
@@ -89,6 +90,22 @@ export function useGameState({ gameId }: UseGameStateOptions): UseGameStateResul
   const [lastSyncServerTime, setLastSyncServerTime] = useState<Date | null>(null);
   const lastSyncRequestRef = useRef(0);
 
+  // アイドル同期のコールバック（Durable Objectsのハイバネーション防止）
+  const handleIdleSync = useCallback(() => {
+    console.log('[IdleTimer] Sending GET_GAME_STATE due to idle timeout');
+    if (sendActionRef.current) {
+      lastSyncRequestRef.current = Date.now();
+      sendActionRef.current({ type: 'GET_GAME_STATE' });
+    }
+  }, []);
+
+  // アイドルタイマーフック
+  const { resetIdleTimer } = useIdleTimer({
+    isTimerRunning: gameState?.timer?.isRunning ?? false,
+    isSubTimerRunning: gameState?.subTimer?.isRunning ?? false,
+    onIdleSync: handleIdleSync,
+  });
+
   const handleMessage = useCallback((message: GameMessage) => {
     console.log('Received WebSocket message:', message.type);
     if (message.type === 'game_state' && message.data) {
@@ -157,10 +174,13 @@ export function useGameState({ gameId }: UseGameStateOptions): UseGameStateResul
         lastSyncRequestRef.current = 0;
       }
     }
-  }, [serverTimeOffset]);
 
-  // GET_GAME_STATE送信時に時刻を記録するヘルパー関数
-  const sendActionWithTimeSync = useCallback((action: any) => {
+    // メッセージ受信時にアイドルタイマーをリセット
+    resetIdleTimer();
+  }, [resetIdleTimer, serverTimeOffset]);
+
+  // アクション送信 + 時刻記録 + アイドルタイマーリセット
+  const sendActionWithIdleReset = useCallback((action: any) => {
     if (!sendActionRef.current) return false;
 
     // GET_GAME_STATE送信時に時刻を記録
@@ -168,17 +188,27 @@ export function useGameState({ gameId }: UseGameStateOptions): UseGameStateResul
       lastSyncRequestRef.current = Date.now();
     }
 
-    return sendActionRef.current(action);
-  }, []);
+    const result = sendActionRef.current(action);
+
+    // アクション送信成功時にアイドルタイマーをリセット
+    if (result) {
+      resetIdleTimer();
+    }
+
+    return result;
+  }, [resetIdleTimer]);
 
   const handleConnected = useCallback(() => {
     console.log('Game WebSocket connected');
     // 初回接続時のみ状態を要求（重複リクエストを防ぐ）
     if (sendActionRef.current && !hasRequestedInitialState.current) {
       hasRequestedInitialState.current = true;
-      sendActionWithTimeSync({ type: 'GET_GAME_STATE' });
+      sendActionWithIdleReset({ type: 'GET_GAME_STATE' });
     }
-  }, [sendActionWithTimeSync]);
+
+    // 接続成功時にアイドルタイマーを開始
+    resetIdleTimer();
+  }, [sendActionWithIdleReset, resetIdleTimer]);
 
   const handleDisconnected = useCallback(() => {
     console.log('Game WebSocket disconnected');
@@ -236,31 +266,31 @@ export function useGameState({ gameId }: UseGameStateOptions): UseGameStateResul
       return;
     }
 
-    sendAction({
+    sendActionWithIdleReset({
       type: 'SCORE_UPDATE',
       team,
       points,
     });
-  }, [sendAction, gameState]);
+  }, [sendActionWithIdleReset, gameState]);
 
   const resetTeamScore = useCallback((team: 'teamA' | 'teamB') => {
-    sendAction({
+    sendActionWithIdleReset({
       type: 'RESET_TEAM_SCORE',
       team,
     });
-  }, [sendAction]);
+  }, [sendActionWithIdleReset]);
 
   const resetAllScores = useCallback(() => {
-    sendAction({
+    sendActionWithIdleReset({
       type: 'RESET_SCORES',
     });
-  }, [sendAction]);
+  }, [sendActionWithIdleReset]);
 
   const requestTimeSync = useCallback(() => {
-    sendActionWithTimeSync({
+    sendActionWithIdleReset({
       type: 'GET_GAME_STATE',
     });
-  }, [sendActionWithTimeSync]);
+  }, [sendActionWithIdleReset]);
 
   const doOrDieUpdate = useCallback((team: 'teamA' | 'teamB', delta: number) => {
     // クライアント側でDoOrDieカウントの妥当性を検証
@@ -275,18 +305,18 @@ export function useGameState({ gameId }: UseGameStateOptions): UseGameStateResul
       return;
     }
 
-    sendAction({
+    sendActionWithIdleReset({
       type: 'DO_OR_DIE_UPDATE',
       team,
       delta,
     });
-  }, [sendAction, gameState]);
+  }, [sendActionWithIdleReset, gameState]);
 
   const doOrDieReset = useCallback(() => {
-    sendAction({
+    sendActionWithIdleReset({
       type: 'DO_OR_DIE_RESET',
     });
-  }, [sendAction]);
+  }, [sendActionWithIdleReset]);
 
   const setTeamName = useCallback((team: 'teamA' | 'teamB', name: string) => {
     // チーム名の妥当性を検証
@@ -295,75 +325,75 @@ export function useGameState({ gameId }: UseGameStateOptions): UseGameStateResul
       return;
     }
 
-    sendAction({
+    sendActionWithIdleReset({
       type: 'SET_TEAM_NAME',
       team,
       name: name.trim(),
     });
-  }, [sendAction]);
+  }, [sendActionWithIdleReset]);
 
   const subTimerStart = useCallback(() => {
-    sendAction({
+    sendActionWithIdleReset({
       type: 'SUB_TIMER_START',
     });
-  }, [sendAction]);
+  }, [sendActionWithIdleReset]);
 
   const subTimerPause = useCallback(() => {
-    sendAction({
+    sendActionWithIdleReset({
       type: 'SUB_TIMER_PAUSE',
     });
-  }, [sendAction]);
+  }, [sendActionWithIdleReset]);
 
   const subTimerReset = useCallback(() => {
-    sendAction({
+    sendActionWithIdleReset({
       type: 'SUB_TIMER_RESET',
     });
-  }, [sendAction]);
+  }, [sendActionWithIdleReset]);
 
   const timerStart = useCallback(() => {
-    sendAction({
+    sendActionWithIdleReset({
       type: 'TIMER_START',
     });
-  }, [sendAction]);
+  }, [sendActionWithIdleReset]);
 
   const timerPause = useCallback(() => {
-    sendAction({
+    sendActionWithIdleReset({
       type: 'TIMER_PAUSE',
     });
-  }, [sendAction]);
+  }, [sendActionWithIdleReset]);
 
   const timerReset = useCallback(() => {
-    sendAction({
+    sendActionWithIdleReset({
       type: 'TIMER_RESET',
     });
-  }, [sendAction]);
+  }, [sendActionWithIdleReset]);
 
   const timerSet = useCallback((minutes: number, seconds: number) => {
     const totalSeconds = minutes * 60 + seconds;
-    sendAction({
+    sendActionWithIdleReset({
       type: 'TIMER_SET',
       duration: totalSeconds,
     });
-  }, [sendAction]);
+  }, [sendActionWithIdleReset]);
 
   const timerAdjust = useCallback((seconds: number) => {
-    sendAction({
+    sendActionWithIdleReset({
       type: 'TIMER_ADJUST',
       seconds,
     });
-  }, [sendAction]);
+  }, [sendActionWithIdleReset]);
 
   const courtChange = useCallback(() => {
-    sendAction({
+    sendActionWithIdleReset({
       type: 'COURT_CHANGE',
     });
-  }, [sendAction]);
+  }, [sendActionWithIdleReset]);
 
   const resetAll = useCallback(() => {
-    sendAction({
+    sendActionWithIdleReset({
       type: 'RESET_ALL',
     });
-  }, [sendAction]);
+  }, [sendActionWithIdleReset]);
 
   return {
     gameState,
