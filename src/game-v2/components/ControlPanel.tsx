@@ -117,21 +117,20 @@ export function ControlPanel({
     }
   }, [gameState?.teamA?.name, gameState?.teamB?.name]);
 
-  // サーバー状態とタイマー入力値の同期（totalDurationの変更時のみ）
-  // totalDurationはTIMER_SETとTIMER_RESETでのみ変更される
-  // TIMER_ADJUSTではremainingSecondsのみ変更されるため、入力欄は更新されない
+  // サーバー状態とタイマー入力値の同期
+  // totalDuration（リセット時の戻り値）を表示
+  // totalDurationはTIMER_SETでのみ変更される
+  // TIMER_ADJUSTではremainingSecondsのみ変更され、totalDurationは変わらないため、入力欄は更新されない
   useEffect(() => {
     if (!gameState?.timer) return;
 
-    // タイマーが停止中のときのみ、サーバーの値で入力欄を更新
-    if (!gameState.timer.isRunning) {
-      const totalSeconds = Math.ceil(gameState.timer.remainingSeconds);
-      const minutes = Math.floor(totalSeconds / 60);
-      const seconds = totalSeconds % 60;
-      setTimerInputMinutes(minutes);
-      setTimerInputSeconds(seconds);
-    }
-  }, [gameState?.timer?.totalDuration, gameState?.timer?.isRunning]);
+    // totalDurationを表示（リセット時の戻り値）
+    const totalSeconds = gameState.timer.totalDuration;
+    const minutes = Math.floor(totalSeconds / 60);
+    const seconds = totalSeconds % 60;
+    setTimerInputMinutes(minutes);
+    setTimerInputSeconds(seconds);
+  }, [gameState?.timer?.totalDuration]);
 
   return (
     <>
@@ -220,7 +219,7 @@ export function ControlPanel({
                     type="number"
                     min="0"
                     max="59"
-                    value={timerInputSeconds}
+                    value={String(timerInputSeconds).padStart(2, '0')}
                     onInput={(e) => setTimerInputSeconds(Number(e.currentTarget.value))}
                     className="w-16 p-2 border rounded focus:ring-2 focus:ring-blue-500 text-center"
                   />
@@ -581,11 +580,11 @@ export function ControlPanel({
                       type="number"
                       min="0"
                       max="59"
-                      value={timerInputSeconds}
+                      value={String(timerInputSeconds).padStart(2, '0')}
                       onInput={(e) => setTimerInputSeconds(Number(e.currentTarget.value))}
                       className="w-18 p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 text-center"
                       style={{ fontSize: '16px' }}
-                      placeholder="0"
+                      placeholder="00"
                     />
                     <span className="flex items-center">秒</span>
                     <button onClick={() => timerSet(timerInputMinutes, timerInputSeconds)} className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-3 rounded-lg transition-colors">
