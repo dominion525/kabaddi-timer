@@ -11,98 +11,195 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ### 必須コマンド
 - **開発サーバー起動**: `npm run dev` - Cloudflare Workersローカル開発環境
   - **重要**: 開発サーバーは必ずバックグラウンドで実行すること（`run_in_background: true`）
-- **ビルド**: `npm run build` - TypeScriptコンパイル（クライアント+ワーカー）
-  - `npm run build:client:dev` - 開発用個別ファイル出力
-  - `npm run build:client:prod` - 本番用バンドル+ミニファイ（esbuild）
+- **ビルド**: `npm run build` - TypeScriptコンパイル（全体）
+  - `npm run build:client:dev` - レガシークライアント開発用
+  - `npm run build:client:prod` - レガシークライアント本番用（esbuild）
+  - `npm run build:v2` - GameV2ビルド（Vite）
+  - `npm run build:index-page` - インデックスページビルド（Preact SSG）
   - `npm run build:worker` - ワーカーサイドTypeScriptのビルド
 - **型チェック**: `npm run typecheck` - 型エラーのチェック
+- **テスト**:
+  - `npm run test` - Durable Objectsテスト
+  - `npm run test:client` - クライアントテスト
 - **デプロイ**: `npm run deploy` - 本番ビルド + Cloudflare Workersへのデプロイ
 
 ## アーキテクチャ構成
 
+### エンドポイント
+- `/` - インデックスページ（Preact SSG、静的HTML）
+- `/game-v2/{gameId}` - GameV2スコアボード（Preact + TSX）**← メイン実装**
+- `/game/{gameId}` - レガシースコアボード（Alpine.js）**← 削除予定**
+- `/ws/{gameId}` - WebSocket接続エンドポイント
+
 ### バックエンド (Cloudflare Workers + Durable Objects)
 - **`src/index.ts`**: Honoを使用したメインWorkerハンドラー
-  - `/game/{gameId}`: スコアボード画面（HTML配信）
-  - `/ws/{gameId}`: WebSocket接続エンドポイント
+  - ルーティング、静的ファイル配信、WebSocket接続管理
 - **`src/durable-objects/game-session.ts`**: GameSession Durable Object
-  - ゲーム状態の永続化とWebSocket接続管理
-  - リアルタイム同期機能（60秒ごとの時刻同期アラーム）
-  - 状態検証・修復機能付き
-- **`src/types/game.ts`**: TypeScript型定義
+  - ゲーム状態の永続化（SQLiteバックエンド）
+  - WebSocket接続管理
+  - 状態検証・修復機能（`validateGameState()`, `repairGameState()`）
+- **`src/types/game.ts`**: 共通TypeScript型定義
 
 ### フロントエンド
-- **単一ファイルSPA**: `/game/{gameId}`エンドポイントでHTML+JavaScript配信
-- **フレームワーク**: Alpine.js（CDN）、Tailwind CSS（CDN）
-- **静的アセット**: `public/js/` からJavaScriptファイルを配信
-- **TypeScript**: IIFE形式でコンパイル（`src/client/components/` → `public/js/`）
-- **ビルド最適化**:
-  - 開発: 13個の個別JSファイル（デバッグ可能）
-  - 本番: 1つのバンドル+ミニファイ（esbuild、82KB→21KB）
-- **レスポンシブデザイン**: タブレット表示（md以上）とスマホ表示に対応
-- **WebSocket通信**: リアルタイムゲーム状態同期
+
+#### GameV2 (メイン実装)
+- **技術スタック**: Preact + TSX + Tailwind CSS
+- **ビルド**: Vite (`vite.game-v2.config.ts`)
+- **出力**: `public/js/game-v2.js` (77KB、gzip: 21KB)
+- **ディレクトリ**: `src/game-v2/`
+  - `components/` - UIコンポーネント（ScoreBoard、Timer等）
+  - `hooks/` - カスタムフック（useWebSocket、useGameState等）
+  - `lib/` - ユーティリティ関数
+  - `types/` - 型定義
+
+#### インデックスページ
+- **技術スタック**: Preact SSG（静的生成）
+- **ビルド**:
+  - クライアントJS: Vite (`vite.index-page-client.config.ts`)
+  - HTML生成: `scripts/build-index-page.ts`
+- **出力**: `generated/index.html` (9KB)
+- **ディレクトリ**: `src/index-page/`
+  - `components/App.tsx` - メインコンポーネント
+  - `template.tsx` - HTMLテンプレート
+  - `client.ts` - クライアントサイドJS
+  - `utils/` - ユーティリティ
+
+#### 共有コンポーネント
+- **ディレクトリ**: `src/shared/components/`
+  - `CreditsModal.tsx` - クレジット表示モーダル（Preact）
+
+#### レガシー実装（削除予定）
+- **技術スタック**: Alpine.js + Tailwind CSS
+- **TypeScript**: IIFE形式（`tsconfig.client.json`）
+- **ディレクトリ**: `src/client/components/`
+- **出力**: `public/js/bundle.min.js` (24KB)
 
 ### データ永続化
-- **SQLiteバックエンド**: 新しいSQLite Durable Objects（10GB容量）
+- **SQLiteバックエンド**: Durable Objects SQLiteバックエンド使用
+  - `wrangler.toml`で`new_sqlite_classes = ["GameSession"]`設定
+  - 10GB容量、Point-in-Time Recovery対応
 - **永続化メカニズム**:
   - 全状態変更時に`this.state.storage.put()`で自動保存
   - 初期化時に`loadGameState()`でストレージから復元
   - リトライ機能付き保存（`saveGameStateWithRetry`）
 - **状態検証・修復**: `validateGameState()`と`repairGameState()`で整合性保証
-- **時刻同期**: サーバー・クライアント間のタイマー同期機能（60秒間隔）
 - **接続管理**: WebSocket切断時も状態を永続化し、再接続時に復元
 
 ## 重要な技術的詳細
 
-### タイマー同期システム
-- サーバーサイドで開始時刻を管理し、クライアントで経過時間を計算
-- 60秒ごとの自動時刻同期でドリフト防止
-- WebSocket接続断・再接続時の状態復元
-- **タイマー表示計算**: `Math.ceil()`を使用して自然なカウントダウン表示を実現
+### タイマー表示計算
+- **`Math.ceil()`を使用**: 自然なカウントダウン表示を実現
   - 開始時に設定時間を維持（60秒タイマーなら「60」を表示）
   - 0.1秒残っていても「1」と表示（0表示を避ける）
-  - `timer-logic.ts`で実装（メインタイマー・サブタイマー両方に適用）
-
-### Durable Objects設定
-- `wrangler.toml`でGameSessionクラスをバインディング
-- `compatibility_date: 2024-11-01`
-- **SQLiteバックエンド**: `new_sqlite_classes = [ "GameSession" ]`で有効化
-- マイグレーション設定済み（v1）
-- 10GB容量制限、Point-in-Time Recovery対応
+- **実装場所**: GameV2の各タイマーコンポーネント
 
 ### TypeScriptビルド設定
 - **`tsconfig.json`**: ワーカー（サーバーサイド）用設定
-- **`tsconfig.client.json`**: クライアントサイド用設定
+- **`tsconfig.client.json`**: レガシークライアント用設定
   - `module: "None"`: CommonJS出力を無効化
   - `moduleDetection: "legacy"`: IIFE形式での出力
   - `target: "ES2020"`: ブラウザ互換性確保
+- **`tsconfig.game-v2.json`**: GameV2用設定（Preact、JSX）
+- **`tsconfig.index-page.json`**: インデックスページ用設定（Preact SSG）
 
 ### HTMLテンプレート管理方針
-- HTMLは必ず別ファイルでimport文を使ってインポートする標準的なビルド時インポートパターンを使用
-- `import htmlContent from './template.html'` 形式で読み込み
-- 文字列埋め込みやfs.readFileSync()は使用禁止
+- **GameV2・インデックスページ**: Preact TSXコンポーネント
+- **レガシー**: ビルド時インポート（`import html from './template.html'`）
+- **禁止事項**: 文字列埋め込み、`fs.readFileSync()`は使用禁止
 
-### 開発時の注意点
-- WebSocket接続は`/ws/{gameId}`経由でDurable Objectに転送
-- ゲーム状態は自動的に永続化され、接続断後も復元される
-- 型安全性を重視（strictモード有効）
+### OGP（Open Graph Protocol）設定
+- **HTML構造**: `<html lang="ja" prefix="og: https://ogp.me/ns#">`
+  - `prefix`属性が必須（OGP仕様準拠）
+- **必須メタタグ**: og:title, og:type, og:url, og:image
+- **画像ファイル命名**: `og-image*.png`（OG標準に準拠）
+  - `og-image.png` (1200x630) - 標準
+  - `og-image-large.png` (1920x1005) - Twitter Large Card
+  - `og-image-square.png` (1200x1200) - Square版
+- **構造化プロパティ**: og:image:width, og:image:height, og:image:type, og:image:alt を追加
+
+### アイコン管理
+- **マスターファイル**:
+  - `ICON-BASIC.svg` - ソースSVG
+  - `ICON-BASIC.png` - SVGから生成した1024x1024 PNG
+  - `ICON-BASIC-LARGER.png` - 中心部クロップ版（各種アイコン生成元）
+- **生成フロー**:
+  1. `ICON-BASIC.svg` → `ICON-BASIC.png` (ImageMagick、1024x1024)
+  2. `ICON-BASIC.png` → `ICON-BASIC-LARGER.png` (中心850x850クロップ→1024x1024拡大)
+  3. `ICON-BASIC-LARGER.png` → 各サイズPWAアイコン、Favicon、OG画像
+
+## ディレクトリ構造
+
+```
+src/
+├── game-v2/              # GameV2実装（Preact + TSX）
+│   ├── components/      # UIコンポーネント
+│   ├── hooks/           # カスタムフック
+│   ├── lib/             # ユーティリティ
+│   └── types/           # 型定義
+├── index-page/          # インデックスページ（Preact SSG）
+│   ├── components/      # ページコンポーネント
+│   ├── utils/           # ユーティリティ
+│   ├── client.ts        # クライアントサイドJS
+│   └── template.tsx     # HTMLテンプレート
+├── shared/              # 共有コンポーネント
+│   └── components/      # CreditsModal等
+├── client/components/   # レガシークライアントTS（削除予定）
+├── durable-objects/     # Durable Objects実装
+├── templates/           # レガシーHTMLテンプレート（削除予定）
+├── types/               # 共通型定義
+└── index.ts             # メインWorkerハンドラー
+
+public/
+├── js/                  # ビルド済みJavaScript
+│   ├── game-v2.js      # GameV2バンドル
+│   ├── index-page-client.js  # インデックスページJS
+│   └── bundle.min.js   # レガシーバンドル
+└── images/              # アイコン・OG画像
+    ├── ICON-BASIC.svg  # マスターアイコンSVG
+    ├── ICON-BASIC.png  # 中間PNG
+    ├── ICON-BASIC-LARGER.png  # アイコン生成元
+    ├── og-image*.png   # OG画像
+    └── kabaddi-timer-app-icon*.png  # PWAアイコン
+
+generated/
+└── index.html           # ビルド済みインデックスページ（SSG）
+```
+
+## 開発時の注意点
+
+### WebSocket接続
+- エンドポイント: `/ws/{gameId}`
+- Durable Objectに転送され、永続的な状態管理
+- 接続断時も状態は保持され、再接続時に復元
+
+### ビルドシステム
+- **GameV2**: Viteでバンドル（`vite.game-v2.config.ts`）
+- **インデックスページ**:
+  - クライアントJS: Vite (`vite.index-page-client.config.ts`)
+  - HTML: Preact SSG (`scripts/build-index-page.ts`)
+- **レガシー**: esbuildでバンドル
+- **ワーカー**: TypeScript Compiler
+
+### 型安全性
+- 全設定でstrictモード有効
+- 共通型定義は`src/types/`に配置
+
+### デプロイフロー
+1. `npm run deploy`実行
+2. 本番ビルド自動実行（`npm run build:prod`）
+3. Cloudflare Workersへデプロイ
+4. アセットファイルアップロード
 
 ## コード品質改善
 
-### 定数管理システム
-- **`src/client/components/constants.ts`**: アプリケーション全体の定数を一元管理
-  - `DEFAULT_VALUES`: ゲーム初期化値
-  - `TEAM_CONFIG`: チーム色・スタイル設定
-  - `ACTIONS`: サーバー通信アクション
-  - `VALIDATION_CONSTRAINTS`: 入力値制限
-  - `UI_CONSTANTS`、`STORAGE_KEYS`: UI・ストレージ関連
-- **マジックストリング排除**: 文字列リテラルを定数化し、タイポやメンテナンス性の問題を解決
-- **型安全性向上**: 定数の型チェックにより実行時エラーを防止
+### 定数管理（レガシー）
+- **`src/client/components/constants.ts`**: レガシー実装の定数管理
+- GameV2では各コンポーネント内で定義
 
 ### WebSocket接続状態フィードバック
-- **視覚的インジケーター**: ステータスバーに接続状態を表示
+- **視覚的インジケーター**: 接続状態を色で表示
   - 緑色●: 接続済み
   - 黄色●: 接続中
   - オレンジ●（点滅）: 再接続中
   - 赤色●: 切断
-- **`connectionStatus`プロパティ**: Alpine.jsで状態管理
-- **適切な状態遷移**: 接続断→再接続中→接続済みの流れを正確に表示
+- GameV2・レガシー両方で実装
