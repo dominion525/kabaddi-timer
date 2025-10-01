@@ -6,6 +6,9 @@ import { TeamOperationGrid } from './TeamOperationGrid';
 import { TeamNameSettings } from './TeamNameSettings';
 import { OverallControlSection } from './OverallControlSection';
 import { SubTimerControl } from './SubTimerControl';
+import { TimerPresetButtons } from './TimerPresetButtons';
+import { TimerInputField } from './TimerInputField';
+import { TimerAdjustButtons } from './TimerAdjustButtons';
 
 // localStorage キー
 const STORAGE_KEY_SIMPLE_MODE = 'v2_kabaddi_simple_mode';
@@ -244,41 +247,16 @@ export function ControlPanel({
               {/* 時間設定 */}
               <div className="mb-4">
                 <label className="block text-sm font-medium text-gray-700 mb-2">時間設定</label>
-                <div className="flex space-x-2 mb-3">
-                  <input
-                    type="number"
-                    min="0"
-                    max="99"
-                    value={timerInputMinutes}
-                    onInput={(e) => setTimerInputMinutes(Number(e.currentTarget.value))}
-                    className="w-16 p-2 border rounded focus:ring-2 focus:ring-blue-500 text-center"
-                  />
-                  <span className="flex items-center text-sm">分</span>
-                  <input
-                    type="number"
-                    min="0"
-                    max="59"
-                    value={String(timerInputSeconds).padStart(2, '0')}
-                    onInput={(e) => setTimerInputSeconds(Number(e.currentTarget.value))}
-                    className="w-16 p-2 border rounded focus:ring-2 focus:ring-blue-500 text-center"
-                  />
-                  <span className="flex items-center text-sm">秒</span>
-                  <button onClick={() => timerSet(timerInputMinutes, timerInputSeconds)} className="bg-blue-500 hover:bg-blue-600 text-white px-3 py-2 rounded transition-colors text-sm">
-                    設定
-                  </button>
-                </div>
+                <TimerInputField
+                  size="desktop"
+                  minutes={timerInputMinutes}
+                  seconds={timerInputSeconds}
+                  onMinutesChange={setTimerInputMinutes}
+                  onSecondsChange={setTimerInputSeconds}
+                  onSet={() => timerSet(timerInputMinutes, timerInputSeconds)}
+                />
                 {/* プリセット */}
-                <div className="flex space-x-1">
-                  <button onClick={() => timerSet(20, 0)} className="flex-1 bg-gray-600 hover:bg-gray-700 text-white p-2 rounded text-sm transition-colors">
-                    20分
-                  </button>
-                  <button onClick={() => timerSet(15, 0)} className="flex-1 bg-gray-600 hover:bg-gray-700 text-white p-2 rounded text-sm transition-colors">
-                    15分
-                  </button>
-                  <button onClick={() => timerSet(3, 0)} className="flex-1 bg-gray-600 hover:bg-gray-700 text-white p-2 rounded text-sm transition-colors">
-                    3分
-                  </button>
-                </div>
+                <TimerPresetButtons size="desktop" onSetTimer={timerSet} />
               </div>
 
               {/* スタート/ストップ/リセット */}
@@ -295,30 +273,7 @@ export function ControlPanel({
               </div>
 
               {/* 時間調整ボタン */}
-              <div className="space-y-2">
-                <div className="flex space-x-1">
-                  <button onClick={() => timerAdjust(60)} className="flex-1 bg-blue-500 hover:bg-blue-600 text-white p-2 rounded text-sm transition-colors">
-                    +1分
-                  </button>
-                  <button onClick={() => timerAdjust(10)} className="flex-1 bg-blue-500 hover:bg-blue-600 text-white p-2 rounded text-sm transition-colors">
-                    +10秒
-                  </button>
-                  <button onClick={() => timerAdjust(1)} className="flex-1 bg-blue-500 hover:bg-blue-600 text-white p-2 rounded text-sm transition-colors">
-                    +1秒
-                  </button>
-                </div>
-                <div className="flex space-x-1">
-                  <button onClick={() => timerAdjust(-60)} className="flex-1 bg-gray-500 hover:bg-gray-600 text-white p-2 rounded text-sm transition-colors">
-                    -1分
-                  </button>
-                  <button onClick={() => timerAdjust(-10)} className="flex-1 bg-gray-500 hover:bg-gray-600 text-white p-2 rounded text-sm transition-colors">
-                    -10秒
-                  </button>
-                  <button onClick={() => timerAdjust(-1)} className="flex-1 bg-gray-500 hover:bg-gray-600 text-white p-2 rounded text-sm transition-colors">
-                    -1秒
-                  </button>
-                </div>
-              </div>
+              <TimerAdjustButtons size="desktop" onAdjust={timerAdjust} />
             </div>
 
             {/* サブタイマー操作 */}
@@ -448,45 +403,16 @@ export function ControlPanel({
                 {/* 時間設定 */}
                 <div className="mb-4">
                   <label className="block text-sm font-medium text-gray-700 mb-2">時間設定</label>
-                  <div className="flex space-x-2 mb-3">
-                    <input
-                      type="number"
-                      min="0"
-                      max="99"
-                      value={timerInputMinutes}
-                      onInput={(e) => setTimerInputMinutes(Number(e.currentTarget.value))}
-                      className="w-18 p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 text-center"
-                      style={{ fontSize: '16px' }}
-                      placeholder="60"
-                    />
-                    <span className="flex items-center">分</span>
-                    <input
-                      type="number"
-                      min="0"
-                      max="59"
-                      value={String(timerInputSeconds).padStart(2, '0')}
-                      onInput={(e) => setTimerInputSeconds(Number(e.currentTarget.value))}
-                      className="w-18 p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 text-center"
-                      style={{ fontSize: '16px' }}
-                      placeholder="00"
-                    />
-                    <span className="flex items-center">秒</span>
-                    <button onClick={() => timerSet(timerInputMinutes, timerInputSeconds)} className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-3 rounded-lg transition-colors">
-                      設定
-                    </button>
-                  </div>
+                  <TimerInputField
+                    size="mobile"
+                    minutes={timerInputMinutes}
+                    seconds={timerInputSeconds}
+                    onMinutesChange={setTimerInputMinutes}
+                    onSecondsChange={setTimerInputSeconds}
+                    onSet={() => timerSet(timerInputMinutes, timerInputSeconds)}
+                  />
                   {/* プリセット */}
-                  <div className="flex space-x-2">
-                    <button onClick={() => timerSet(20, 0)} className="flex-1 bg-gray-600 hover:bg-gray-700 text-white p-3 rounded-lg transition-colors">
-                      20分
-                    </button>
-                    <button onClick={() => timerSet(15, 0)} className="flex-1 bg-gray-600 hover:bg-gray-700 text-white p-3 rounded-lg transition-colors">
-                      15分
-                    </button>
-                    <button onClick={() => timerSet(3, 0)} className="flex-1 bg-gray-600 hover:bg-gray-700 text-white p-3 rounded-lg transition-colors">
-                      3分
-                    </button>
-                  </div>
+                  <TimerPresetButtons size="mobile" onSetTimer={timerSet} />
                 </div>
 
                 {/* スタート/ストップ/リセット */}
@@ -503,30 +429,7 @@ export function ControlPanel({
                 </div>
 
                 {/* 時間調整ボタン */}
-                <div className="space-y-3">
-                  <div className="flex space-x-2">
-                    <button onClick={() => timerAdjust(60)} className="flex-1 bg-blue-500 hover:bg-blue-600 text-white p-3 rounded-lg transition-colors">
-                      +1分
-                    </button>
-                    <button onClick={() => timerAdjust(10)} className="flex-1 bg-blue-500 hover:bg-blue-600 text-white p-3 rounded-lg transition-colors">
-                      +10秒
-                    </button>
-                    <button onClick={() => timerAdjust(1)} className="flex-1 bg-blue-500 hover:bg-blue-600 text-white p-3 rounded-lg transition-colors">
-                      +1秒
-                    </button>
-                  </div>
-                  <div className="flex space-x-2">
-                    <button onClick={() => timerAdjust(-60)} className="flex-1 bg-gray-500 hover:bg-gray-600 text-white p-3 rounded-lg transition-colors">
-                      -1分
-                    </button>
-                    <button onClick={() => timerAdjust(-10)} className="flex-1 bg-gray-500 hover:bg-gray-600 text-white p-3 rounded-lg transition-colors">
-                      -10秒
-                    </button>
-                    <button onClick={() => timerAdjust(-1)} className="flex-1 bg-gray-500 hover:bg-gray-600 text-white p-3 rounded-lg transition-colors">
-                      -1秒
-                    </button>
-                  </div>
-                </div>
+                <TimerAdjustButtons size="mobile" onAdjust={timerAdjust} />
               </div>
 
               {/* サブタイマー操作 */}
@@ -619,17 +522,7 @@ export function ControlPanel({
               <div className="bg-blue-50 p-2 rounded-lg border border-blue-200">
                 <div className="flex gap-1">
                   {/* 左側プリセット */}
-                  <div className="flex gap-1 flex-1">
-                    <button onClick={() => timerSet(20, 0)} className="bg-blue-500 hover:bg-blue-600 text-white py-2 px-1 rounded text-xs font-bold transition-colors flex-1">
-                      20分
-                    </button>
-                    <button onClick={() => timerSet(15, 0)} className="bg-blue-500 hover:bg-blue-600 text-white py-2 px-1 rounded text-xs font-bold transition-colors flex-1">
-                      15分
-                    </button>
-                    <button onClick={() => timerSet(3, 0)} className="bg-blue-500 hover:bg-blue-600 text-white py-2 px-1 rounded text-xs font-bold transition-colors flex-1">
-                      3分
-                    </button>
-                  </div>
+                  <TimerPresetButtons size="mobile-simple" onSetTimer={timerSet} />
 
                   {/* セパレーター */}
                   <div className="w-px bg-blue-300 mx-1"></div>
