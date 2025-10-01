@@ -75,7 +75,7 @@ export function TeamOperationGrid({
   const styles = getStyles(size);
 
   return (
-    <div className={`bg-gradient-to-r from-red-50 via-gray-50 to-blue-50 ${styles.container} rounded-lg border border-gray-200 relative`}>
+    <div data-testid="team-operation-grid" className={`bg-gradient-to-r from-red-50 via-gray-50 to-blue-50 ${styles.container} rounded-lg border border-gray-200 relative`}>
       {/* 中央セパレーター */}
       <div className={`absolute ${styles.separator} left-1/2 w-px bg-gray-300 transform -translate-x-px`}></div>
 

@@ -3,6 +3,7 @@ import { JSX } from 'preact';
 import { DoOrDieIncrementButton, DoOrDieDecrementButton, DoOrDieResetButton } from './DoOrDieControl';
 import { ScoreIncrementButton, ScoreDecrementButton, ScoreResetButton } from './ScoreControl';
 import { TeamOperationGrid } from './TeamOperationGrid';
+import { TeamNameSettings } from './TeamNameSettings';
 
 // localStorage キー
 const STORAGE_KEY_SIMPLE_MODE = 'v2_kabaddi_simple_mode';
@@ -220,39 +221,19 @@ export function ControlPanel({
               <div className="max-w-4xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-6">
 
                 {/* チーム名設定 */}
-                <div className="bg-gray-50 p-4 rounded-lg">
-              <h3 className="font-bold text-lg mb-4">チーム名設定</h3>
-              <div className="space-y-3">
-                <div>
-                  <input
-                    type="text"
-                    data-team="teamA"
-                    value={teamAName}
-                    onInput={(e) => {
-                      const value = e.currentTarget.value;
-                      setTeamAName(value);
-                      setTeamName('teamA', value);
-                    }}
-                    className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
-                    maxLength={20}
-                  />
-                </div>
-                <div>
-                  <input
-                    type="text"
-                    data-team="teamB"
-                    value={teamBName}
-                    onInput={(e) => {
-                      const value = e.currentTarget.value;
-                      setTeamBName(value);
-                      setTeamName('teamB', value);
-                    }}
-                    className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                    maxLength={20}
-                  />
-                </div>
-              </div>
-            </div>
+                <TeamNameSettings
+                  size="desktop"
+                  teamAName={teamAName}
+                  teamBName={teamBName}
+                  onTeamNameChange={(team, name) => {
+                    if (team === 'teamA') {
+                      setTeamAName(name);
+                    } else {
+                      setTeamBName(name);
+                    }
+                    setTeamName(team, name);
+                  }}
+                />
 
             {/* タイマー操作 */}
             <div className="bg-gray-50 p-4 rounded-lg">
@@ -460,43 +441,19 @@ export function ControlPanel({
           {!simpleMode && (
             <div className="flex-1 p-3 overflow-y-auto space-y-3" style={{ backgroundColor: '#7F7F7F' }}>
               {/* チーム名設定 */}
-              <div className="bg-gray-50 p-3 rounded-lg">
-                <h3 className="font-bold text-base mb-3">チーム名設定</h3>
-                <div className="space-y-3">
-                  <div>
-                    <input
-                      type="text"
-                      data-team="teamA"
-                      value={teamAName}
-                      onInput={(e) => {
-                        const value = e.currentTarget.value;
-                        setTeamAName(value);
-                        setTeamName('teamA', value);
-                      }}
-                      className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
-                      style={{ fontSize: '16px' }}
-                      placeholder="チームA"
-                      maxLength={20}
-                    />
-                  </div>
-                  <div>
-                    <input
-                      type="text"
-                      data-team="teamB"
-                      value={teamBName}
-                      onInput={(e) => {
-                        const value = e.currentTarget.value;
-                        setTeamBName(value);
-                        setTeamName('teamB', value);
-                      }}
-                      className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                      style={{ fontSize: '16px' }}
-                      placeholder="チームB"
-                      maxLength={20}
-                    />
-                  </div>
-                </div>
-              </div>
+              <TeamNameSettings
+                size="mobile"
+                teamAName={teamAName}
+                teamBName={teamBName}
+                onTeamNameChange={(team, name) => {
+                  if (team === 'teamA') {
+                    setTeamAName(name);
+                  } else {
+                    setTeamBName(name);
+                  }
+                  setTeamName(team, name);
+                }}
+              />
 
               {/* タイマー操作 */}
               <div className="bg-gray-50 p-3 rounded-lg">
