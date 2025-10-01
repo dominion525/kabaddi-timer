@@ -9,6 +9,7 @@ import { SubTimerControl } from './SubTimerControl';
 import { TimerPresetButtons } from './TimerPresetButtons';
 import { TimerInputField } from './TimerInputField';
 import { TimerAdjustButtons } from './TimerAdjustButtons';
+import { MainTimerControl } from './MainTimerControl';
 
 // localStorage キー
 const STORAGE_KEY_SIMPLE_MODE = 'v2_kabaddi_simple_mode';
@@ -241,40 +242,18 @@ export function ControlPanel({
                 />
 
             {/* タイマー操作 */}
-            <div className="bg-gray-50 p-4 rounded-lg">
-              <h3 className="font-bold text-lg mb-4">タイマー操作</h3>
-
-              {/* 時間設定 */}
-              <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700 mb-2">時間設定</label>
-                <TimerInputField
-                  size="desktop"
-                  minutes={timerInputMinutes}
-                  seconds={timerInputSeconds}
-                  onMinutesChange={setTimerInputMinutes}
-                  onSecondsChange={setTimerInputSeconds}
-                  onSet={() => timerSet(timerInputMinutes, timerInputSeconds)}
-                />
-                {/* プリセット */}
-                <TimerPresetButtons size="desktop" onSetTimer={timerSet} />
-              </div>
-
-              {/* スタート/ストップ/リセット */}
-              <div className="mb-4 flex space-x-2">
-                <button onClick={timerStart} className="flex-1 bg-green-500 hover:bg-green-600 text-white p-3 rounded-lg font-bold transition-colors">
-                  スタート
-                </button>
-                <button onClick={timerPause} className="flex-1 bg-red-500 hover:bg-red-600 text-white p-3 rounded-lg font-bold transition-colors">
-                  ストップ
-                </button>
-                <button onClick={timerReset} className="flex-1 bg-orange-500 hover:bg-orange-600 text-white p-3 rounded-lg font-bold transition-colors">
-                  リセット
-                </button>
-              </div>
-
-              {/* 時間調整ボタン */}
-              <TimerAdjustButtons size="desktop" onAdjust={timerAdjust} />
-            </div>
+            <MainTimerControl
+              size="desktop"
+              timerInputMinutes={timerInputMinutes}
+              timerInputSeconds={timerInputSeconds}
+              onTimerInputMinutesChange={setTimerInputMinutes}
+              onTimerInputSecondsChange={setTimerInputSeconds}
+              onTimerSet={timerSet}
+              onTimerStart={timerStart}
+              onTimerPause={timerPause}
+              onTimerReset={timerReset}
+              onTimerAdjust={timerAdjust}
+            />
 
             {/* サブタイマー操作 */}
             <SubTimerControl
@@ -397,40 +376,18 @@ export function ControlPanel({
               />
 
               {/* タイマー操作 */}
-              <div className="bg-gray-50 p-3 rounded-lg">
-                <h3 className="font-bold text-base mb-3">タイマー操作</h3>
-
-                {/* 時間設定 */}
-                <div className="mb-4">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">時間設定</label>
-                  <TimerInputField
-                    size="mobile"
-                    minutes={timerInputMinutes}
-                    seconds={timerInputSeconds}
-                    onMinutesChange={setTimerInputMinutes}
-                    onSecondsChange={setTimerInputSeconds}
-                    onSet={() => timerSet(timerInputMinutes, timerInputSeconds)}
-                  />
-                  {/* プリセット */}
-                  <TimerPresetButtons size="mobile" onSetTimer={timerSet} />
-                </div>
-
-                {/* スタート/ストップ/リセット */}
-                <div className="mb-4 flex space-x-2">
-                  <button onClick={timerStart} className="flex-1 bg-green-500 hover:bg-green-600 text-white p-4 rounded-lg font-bold text-lg transition-colors">
-                    スタート
-                  </button>
-                  <button onClick={timerPause} className="flex-1 bg-red-500 hover:bg-red-600 text-white p-4 rounded-lg font-bold text-lg transition-colors">
-                    ストップ
-                  </button>
-                  <button onClick={timerReset} className="flex-1 bg-orange-500 hover:bg-orange-600 text-white p-4 rounded-lg font-bold text-lg transition-colors">
-                    リセット
-                  </button>
-                </div>
-
-                {/* 時間調整ボタン */}
-                <TimerAdjustButtons size="mobile" onAdjust={timerAdjust} />
-              </div>
+              <MainTimerControl
+                size="mobile"
+                timerInputMinutes={timerInputMinutes}
+                timerInputSeconds={timerInputSeconds}
+                onTimerInputMinutesChange={setTimerInputMinutes}
+                onTimerInputSecondsChange={setTimerInputSeconds}
+                onTimerSet={timerSet}
+                onTimerStart={timerStart}
+                onTimerPause={timerPause}
+                onTimerReset={timerReset}
+                onTimerAdjust={timerAdjust}
+              />
 
               {/* サブタイマー操作 */}
               <SubTimerControl
