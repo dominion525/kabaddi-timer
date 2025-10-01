@@ -41,13 +41,13 @@ function goToTimer(): void {
 }
 
 /**
- * 技術情報モーダルを開く
+ * クレジットモーダルを開く
  */
-function openTechModal(): void {
-  const modal = document.getElementById('techModal');
+function openCreditsModal(): void {
+  const modal = document.getElementById('creditsModal');
   if (modal) {
     modal.classList.remove('hidden');
-    // Lucide icons in modal
+    // Lucideアイコンの初期化
     if (typeof lucide !== 'undefined') {
       lucide.createIcons();
     }
@@ -55,10 +55,10 @@ function openTechModal(): void {
 }
 
 /**
- * 技術情報モーダルを閉じる
+ * クレジットモーダルを閉じる
  */
-function closeTechModal(): void {
-  const modal = document.getElementById('techModal');
+function closeCreditsModal(): void {
+  const modal = document.getElementById('creditsModal');
   if (modal) {
     modal.classList.add('hidden');
   }
@@ -80,27 +80,34 @@ document.addEventListener('DOMContentLoaded', function() {
   if (typeof lucide !== 'undefined') {
     lucide.createIcons();
   }
-});
 
-// ESCキーでモーダルを閉じる
-document.addEventListener('keydown', function(e: KeyboardEvent) {
-  if (e.key === 'Escape') {
-    closeTechModal();
+  // クレジットモーダルのESCキーと背景クリックハンドラー
+  const modal = document.getElementById('creditsModal');
+  if (modal) {
+    // ESCキーで閉じる
+    document.addEventListener('keydown', function(e: KeyboardEvent) {
+      if (e.key === 'Escape' && !modal.classList.contains('hidden')) {
+        closeCreditsModal();
+      }
+    });
+
+    // 背景クリックで閉じる
+    modal.addEventListener('click', function(e: MouseEvent) {
+      if (e.target === modal) {
+        closeCreditsModal();
+      }
+    });
+
+    // 閉じるボタンのクリックハンドラー
+    const closeBtn = document.getElementById('creditsModalCloseBtn');
+    if (closeBtn) {
+      closeBtn.addEventListener('click', closeCreditsModal);
+    }
   }
 });
-
-// モーダル背景クリックで閉じる
-const techModal = document.getElementById('techModal');
-if (techModal) {
-  techModal.addEventListener('click', function(e: MouseEvent) {
-    if (e.target === techModal) {
-      closeTechModal();
-    }
-  });
-}
 
 // グローバル関数として公開（HTML onclick属性から呼び出すため）
 (window as any).createNewTimer = createNewTimer;
 (window as any).goToTimer = goToTimer;
-(window as any).openTechModal = openTechModal;
-(window as any).closeTechModal = closeTechModal;
+(window as any).openCreditsModal = openCreditsModal;
+(window as any).closeCreditsModal = closeCreditsModal;

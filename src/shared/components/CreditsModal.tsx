@@ -1,24 +1,16 @@
+/** @jsxImportSource preact */
 import { useEffect } from 'preact/hooks';
 import { JSX } from 'preact';
-
-// グローバル変数の型定義
-declare global {
-  interface Window {
-    APP_REVISION?: string;
-  }
-}
 
 interface Props {
   isOpen: boolean;
   onClose: () => void;
+  revision: string;
+  fullRevision: string;
 }
 
-export function CreditsModal({ isOpen, onClose }: Props) {
-  if (!isOpen) return null;
-
-  // リビジョン情報を取得
-  const fullRevision = window.APP_REVISION || 'unknown';
-  const shortRevision = fullRevision.substring(0, 7);
+export function CreditsModal({ isOpen, onClose, revision, fullRevision }: Props) {
+  const shortRevision = revision.substring(0, 7);
 
   const handleBackgroundClick = (e: JSX.TargetedMouseEvent<HTMLDivElement>) => {
     if (e.target === e.currentTarget) {
@@ -34,21 +26,24 @@ export function CreditsModal({ isOpen, onClose }: Props) {
 
   // エスケープキーのリスナーを追加とLucideアイコンの初期化
   useEffect(() => {
-    document.addEventListener('keydown', handleKeyDown);
+    if (isOpen) {
+      document.addEventListener('keydown', handleKeyDown);
 
-    // Lucideアイコンの初期化
-    if (typeof lucide !== 'undefined') {
-      lucide.createIcons();
+      // Lucideアイコンの初期化
+      if (typeof lucide !== 'undefined') {
+        lucide.createIcons();
+      }
+
+      return () => {
+        document.removeEventListener('keydown', handleKeyDown);
+      };
     }
-
-    return () => {
-      document.removeEventListener('keydown', handleKeyDown);
-    };
-  }, []);
+  }, [isOpen]);
 
   return (
     <div
-      className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+      id="creditsModal"
+      className={`fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 ${!isOpen ? 'hidden' : ''}`}
       onClick={handleBackgroundClick}
     >
       <div className="bg-white rounded-lg p-6 m-4 max-w-md w-full">
@@ -57,7 +52,7 @@ export function CreditsModal({ isOpen, onClose }: Props) {
             <i data-lucide="hammer" className="w-5 h-5"></i>
             <span style={{ fontFamily: "'DotGothic16', monospace" }}>About</span>
           </h3>
-          <button onClick={onClose} className="text-gray-500 hover:text-gray-700">
+          <button id="creditsModalCloseBtn" onClick={onClose} className="text-gray-500 hover:text-gray-700">
             <i data-lucide="x" className="w-5 h-5"></i>
           </button>
         </div>

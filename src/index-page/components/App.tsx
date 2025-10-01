@@ -1,6 +1,5 @@
 /** @jsxImportSource preact */
-
-import { TechModal } from './TechModal';
+import { CreditsModal } from '../../shared/components/CreditsModal';
 
 interface AppProps {
   revision: string;
@@ -93,14 +92,19 @@ export function App({ revision, fullRevision }: AppProps) {
         </p>
         <p class="text-gray-500 text-sm flex items-center justify-center gap-1">
           Powered by <a href="https://dominion525.com" target="_blank" class="text-blue-600 hover:underline">Dominion525.com</a> /
-          <button onclick="openTechModal()" class="text-gray-500 hover:text-gray-700 transition-colors">
+          <button onclick="openCreditsModal()" class="text-gray-500 hover:text-gray-700 transition-colors">
             <i data-lucide="hammer" class="w-4 h-4"></i>
           </button>
         </p>
       </div>
 
-      {/* 技術情報モーダル */}
-      <TechModal revision={revision} fullRevision={fullRevision} />
+      {/* クレジットモーダル */}
+      <CreditsModal
+        isOpen={false}
+        onClose={() => {}}
+        revision={revision}
+        fullRevision={fullRevision}
+      />
     </div>
   );
 }

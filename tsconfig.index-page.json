@@ -13,6 +13,7 @@
   "include": [
     "src/index-page/**/*.ts",
     "src/index-page/**/*.tsx",
+    "src/shared/**/*.tsx",
     "scripts/build-index-page.ts"
   ],
   "exclude": [

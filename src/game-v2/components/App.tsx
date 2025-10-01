@@ -4,7 +4,7 @@ import { MainTimer } from './Timer/MainTimer';
 import { SubTimer } from './Timer/SubTimer';
 import { StatusBar } from './StatusBar';
 import { VersusIndicator } from './VersusIndicator';
-import { CreditsModal } from './CreditsModal';
+import { CreditsModal } from '../../shared/components/CreditsModal';
 import { QRModal } from './QRModal';
 import { TimeSyncModal } from './TimeSyncModal';
 import { ControlPanel } from './ControlPanel';
@@ -17,6 +17,8 @@ interface Props {
 }
 
 export function App({ gameId }: Props) {
+  // リビジョン情報を取得
+  const fullRevision = (window as any).APP_REVISION || 'unknown';
   // ゲーム状態とWebSocket通信
   const {
     gameState,
@@ -269,6 +271,8 @@ export function App({ gameId }: Props) {
       <CreditsModal
         isOpen={showCreditsModal}
         onClose={handleCloseCreditsModal}
+        revision={fullRevision}
+        fullRevision={fullRevision}
       />
 
       {/* QRモーダル */}
