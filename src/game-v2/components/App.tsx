@@ -165,7 +165,7 @@ export function App({ gameId }: Props) {
             <div className={`p-4 ${leftTeam.color === 'red' ? 'bg-red-600' : 'bg-blue-600'}`}>
               <h1 className="text-3xl font-bold text-center">{leftTeam.name}</h1>
             </div>
-            <VersusIndicator onClick={toggleDisplayFlip} />
+            <VersusIndicator onClick={toggleDisplayFlip} displayFlipped={displayFlipped} />
             <div className={`p-4 ${rightTeam.color === 'blue' ? 'bg-blue-600' : 'bg-red-600'}`}>
               <h1 className="text-3xl font-bold text-center">{rightTeam.name}</h1>
             </div>
@@ -218,7 +218,7 @@ export function App({ gameId }: Props) {
             <div className={`p-2 ${leftTeam.color === 'red' ? 'bg-red-600' : 'bg-blue-600'}`}>
               <h1 className="text-lg font-bold text-center">{leftTeam.name}</h1>
             </div>
-            <VersusIndicator onClick={toggleDisplayFlip} />
+            <VersusIndicator onClick={toggleDisplayFlip} displayFlipped={displayFlipped} />
             <div className={`p-2 ${rightTeam.color === 'blue' ? 'bg-blue-600' : 'bg-red-600'}`}>
               <h1 className="text-lg font-bold text-center">{rightTeam.name}</h1>
             </div>
