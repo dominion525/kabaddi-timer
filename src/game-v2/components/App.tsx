@@ -57,6 +57,9 @@ export function App({ gameId }: Props) {
   const [showTimeSyncModal, setShowTimeSyncModal] = useState(false);
   const [showControlPanel, setShowControlPanel] = useState(false);
 
+  // ステータスバー表示制御
+  const [showStatusBar, setShowStatusBar] = useState(true);
+
   const handleOpenCreditsModal = () => {
     setShowCreditsModal(true);
   };
@@ -87,6 +90,10 @@ export function App({ gameId }: Props) {
 
   const handleCloseControlPanel = () => {
     setShowControlPanel(false);
+  };
+
+  const toggleStatusBar = () => {
+    setShowStatusBar(prev => !prev);
   };
 
   // ゲーム状態が読み込まれるまで、または接続中はLoadingModalを表示
@@ -140,7 +147,10 @@ export function App({ gameId }: Props) {
           />
 
           {/* 上段：サブタイマー */}
-          <div className="bg-gray-800 text-white flex flex-col items-center justify-center py-1 px-4">
+          <div
+            className="bg-gray-800 text-white flex flex-col items-center justify-center py-1 px-4 cursor-pointer"
+            onClick={toggleStatusBar}
+          >
             <SubTimer seconds={subTimerSeconds} isRunning={subTimerIsRunning} />
           </div>
 
@@ -161,7 +171,9 @@ export function App({ gameId }: Props) {
         </div>
 
         {/* ステータスバー */}
-        <StatusBar gameId={gameId} onCreditsClick={handleOpenCreditsModal} onQRClick={handleOpenQRModal} onTimeSyncClick={handleOpenTimeSyncModal} onControlPanelClick={handleOpenControlPanel} />
+        {showStatusBar && (
+          <StatusBar gameId={gameId} onCreditsClick={handleOpenCreditsModal} onQRClick={handleOpenQRModal} onTimeSyncClick={handleOpenTimeSyncModal} onControlPanelClick={handleOpenControlPanel} />
+        )}
       </div>
 
       {/* モバイル表示用 (md未満) */}
@@ -188,7 +200,10 @@ export function App({ gameId }: Props) {
           />
 
           {/* 上段：サブタイマー */}
-          <div className="bg-gray-800 text-white flex flex-col items-center justify-center py-0.5 px-1">
+          <div
+            className="bg-gray-800 text-white flex flex-col items-center justify-center py-0.5 px-1 cursor-pointer"
+            onClick={toggleStatusBar}
+          >
             <SubTimer seconds={subTimerSeconds} isRunning={subTimerIsRunning} />
           </div>
 
@@ -209,7 +224,9 @@ export function App({ gameId }: Props) {
         </div>
 
         {/* ステータスバー */}
-        <StatusBar gameId={gameId} onCreditsClick={handleOpenCreditsModal} onQRClick={handleOpenQRModal} onTimeSyncClick={handleOpenTimeSyncModal} onControlPanelClick={handleOpenControlPanel} />
+        {showStatusBar && (
+          <StatusBar gameId={gameId} onCreditsClick={handleOpenCreditsModal} onQRClick={handleOpenQRModal} onTimeSyncClick={handleOpenTimeSyncModal} onControlPanelClick={handleOpenControlPanel} />
+        )}
       </div>
 
       {/* クレジットモーダル */}
