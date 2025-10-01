@@ -63,7 +63,7 @@ export function CreditsModal({ isOpen, onClose, revision, fullRevision }: Props)
             <div className="bg-gray-50 rounded-lg p-4 ml-4">
               <div className="flex items-center space-x-4">
                 {/* 左側：アプリアイコン */}
-                <div className="w-16 h-16 rounded-lg overflow-hidden border-2 border-gray-200 bg-white flex-shrink-0 flex items-center justify-center">
+                <div className="w-16 h-16 flex-shrink-0 flex items-center justify-center">
                   <img src="/images/kabaddi-timer-app-icon.png" alt="Kabaddi Timer Icon" className="w-full h-full object-cover" />
                 </div>
 
