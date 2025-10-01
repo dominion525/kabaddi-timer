@@ -45,6 +45,7 @@ export function App({ gameId }: Props) {
     subTimerStart,
     subTimerPause,
     subTimerReset,
+    courtChange,
     reconnect,
     requestTimeSync
   } = useGameState({ gameId });
@@ -100,8 +101,14 @@ export function App({ gameId }: Props) {
     );
   }
 
-  const teamA = { ...gameState.teamA, color: 'red' };
-  const teamB = { ...gameState.teamB, color: 'blue' };
+  // leftSideTeamに基づいて左右のチームを決定
+  const leftTeam = gameState.leftSideTeam === 'teamA'
+    ? { ...gameState.teamA, color: 'red' as const }
+    : { ...gameState.teamB, color: 'blue' as const };
+
+  const rightTeam = gameState.leftSideTeam === 'teamA'
+    ? { ...gameState.teamB, color: 'blue' as const }
+    : { ...gameState.teamA, color: 'red' as const };
 
   // タイマーアニメーション: V1と同じrequestAnimationFrameループで毎フレーム更新
   const { mainTimerSeconds, subTimerSeconds, subTimerIsRunning } = useTimerAnimation(gameState, serverTimeOffset);
@@ -113,12 +120,12 @@ export function App({ gameId }: Props) {
         {/* ヘッダー */}
         <div className="text-white">
           <div className="grid w-full" style={{ gridTemplateColumns: '2fr 1fr 2fr' }}>
-            <div className="p-4 bg-red-600">
-              <h1 className="text-3xl font-bold text-center">{teamA.name}</h1>
+            <div className={`p-4 ${leftTeam.color === 'red' ? 'bg-red-600' : 'bg-blue-600'}`}>
+              <h1 className="text-3xl font-bold text-center">{leftTeam.name}</h1>
             </div>
             <VersusIndicator />
-            <div className="p-4 bg-blue-600">
-              <h1 className="text-3xl font-bold text-center">{teamB.name}</h1>
+            <div className={`p-4 ${rightTeam.color === 'blue' ? 'bg-blue-600' : 'bg-red-600'}`}>
+              <h1 className="text-3xl font-bold text-center">{rightTeam.name}</h1>
             </div>
           </div>
         </div>
@@ -127,7 +134,7 @@ export function App({ gameId }: Props) {
         <div className="flex-1 grid grid-cols-3 gap-0 pb-16" style={{ gridTemplateRows: '1fr 1.5fr' }}>
           {/* 上段：左側チーム */}
           <ScoreBoard
-            team={teamA}
+            team={leftTeam}
             position="left"
           />
 
@@ -138,7 +145,7 @@ export function App({ gameId }: Props) {
 
           {/* 上段：右側チーム */}
           <ScoreBoard
-            team={teamB}
+            team={rightTeam}
             position="right"
           />
 
@@ -161,12 +168,12 @@ export function App({ gameId }: Props) {
         {/* ヘッダー */}
         <div className="text-white">
           <div className="grid w-full" style={{ gridTemplateColumns: '2fr 1fr 2fr' }}>
-            <div className="p-2 bg-red-600">
-              <h1 className="text-lg font-bold text-center">{teamA.name}</h1>
+            <div className={`p-2 ${leftTeam.color === 'red' ? 'bg-red-600' : 'bg-blue-600'}`}>
+              <h1 className="text-lg font-bold text-center">{leftTeam.name}</h1>
             </div>
             <VersusIndicator />
-            <div className="p-2 bg-blue-600">
-              <h1 className="text-lg font-bold text-center">{teamB.name}</h1>
+            <div className={`p-2 ${rightTeam.color === 'blue' ? 'bg-blue-600' : 'bg-red-600'}`}>
+              <h1 className="text-lg font-bold text-center">{rightTeam.name}</h1>
             </div>
           </div>
         </div>
@@ -175,7 +182,7 @@ export function App({ gameId }: Props) {
         <div className="flex-1 grid grid-cols-3 gap-0 pb-16" style={{ gridTemplateRows: '0.7fr 0.6fr', maxHeight: '45vh' }}>
           {/* 上段：左側チーム */}
           <ScoreBoard
-            team={teamA}
+            team={leftTeam}
             position="left"
           />
 
@@ -186,7 +193,7 @@ export function App({ gameId }: Props) {
 
           {/* 上段：右側チーム */}
           <ScoreBoard
-            team={teamB}
+            team={rightTeam}
             position="right"
           />
 
@@ -249,6 +256,7 @@ export function App({ gameId }: Props) {
         subTimerStart={subTimerStart}
         subTimerPause={subTimerPause}
         subTimerReset={subTimerReset}
+        courtChange={courtChange}
       />
     </>
   );

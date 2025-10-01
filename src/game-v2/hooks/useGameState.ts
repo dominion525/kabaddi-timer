@@ -36,6 +36,7 @@ interface UseGameStateResult {
   subTimerStart: () => void;
   subTimerPause: () => void;
   subTimerReset: () => void;
+  courtChange: () => void;
   reconnect: () => void;
   requestTimeSync: () => void;
 }
@@ -351,6 +352,12 @@ export function useGameState({ gameId }: UseGameStateOptions): UseGameStateResul
     });
   }, [sendAction]);
 
+  const courtChange = useCallback(() => {
+    sendAction({
+      type: 'COURT_CHANGE',
+    });
+  }, [sendAction]);
+
   return {
     gameState,
     isConnected,
@@ -378,6 +385,7 @@ export function useGameState({ gameId }: UseGameStateOptions): UseGameStateResul
     subTimerStart,
     subTimerPause,
     subTimerReset,
+    courtChange,
     reconnect,
     requestTimeSync,
   };

@@ -19,6 +19,7 @@ interface Props {
   subTimerStart: () => void;
   subTimerPause: () => void;
   subTimerReset: () => void;
+  courtChange: () => void;
 }
 
 export function ControlPanel({
@@ -38,7 +39,8 @@ export function ControlPanel({
   timerAdjust,
   subTimerStart,
   subTimerPause,
-  subTimerReset
+  subTimerReset,
+  courtChange
 }: Props) {
   const [isVisible, setIsVisible] = useState(false);
   const [isAnimating, setIsAnimating] = useState(false);
@@ -431,7 +433,7 @@ export function ControlPanel({
             <div className="bg-gray-50 p-4 rounded-lg lg:col-span-2">
               <h3 className="font-bold text-lg mb-4">全体コントロール</h3>
               <div className="flex space-x-4 justify-center">
-                <button className="bg-orange-500 hover:bg-orange-600 text-white px-3 py-1 rounded-lg font-bold text-lg transition-colors">
+                <button onClick={courtChange} className="bg-orange-500 hover:bg-orange-600 text-white px-3 py-1 rounded-lg font-bold text-lg transition-colors">
                   コートチェンジ
                 </button>
                 <button
@@ -794,7 +796,7 @@ export function ControlPanel({
               <div className="bg-gray-50 p-3 rounded-lg">
                 <h3 className="font-bold text-base mb-3">全体コントロール</h3>
                 <div className="grid grid-cols-2 gap-3">
-                  <button className="bg-orange-500 hover:bg-orange-600 text-white px-4 py-1 rounded-lg font-bold text-base transition-colors">
+                  <button onClick={courtChange} className="bg-orange-500 hover:bg-orange-600 text-white px-4 py-1 rounded-lg font-bold text-base transition-colors">
                     コートチェンジ
                   </button>
                   <button
