@@ -37,6 +37,11 @@ export function App({ gameId }: Props) {
     doOrDieUpdate,
     doOrDieReset,
     setTeamName,
+    timerStart,
+    timerPause,
+    timerReset,
+    timerSet,
+    timerAdjust,
     subTimerStart,
     subTimerPause,
     subTimerReset,
@@ -236,6 +241,11 @@ export function App({ gameId }: Props) {
         doOrDieUpdate={doOrDieUpdate}
         doOrDieReset={doOrDieReset}
         setTeamName={setTeamName}
+        timerStart={timerStart}
+        timerPause={timerPause}
+        timerReset={timerReset}
+        timerSet={timerSet}
+        timerAdjust={timerAdjust}
         subTimerStart={subTimerStart}
         subTimerPause={subTimerPause}
         subTimerReset={subTimerReset}

@@ -28,6 +28,11 @@ interface UseGameStateResult {
   doOrDieUpdate: (team: 'teamA' | 'teamB', delta: number) => void;
   doOrDieReset: () => void;
   setTeamName: (team: 'teamA' | 'teamB', name: string) => void;
+  timerStart: () => void;
+  timerPause: () => void;
+  timerReset: () => void;
+  timerSet: (minutes: number, seconds: number) => void;
+  timerAdjust: (seconds: number) => void;
   subTimerStart: () => void;
   subTimerPause: () => void;
   subTimerReset: () => void;
@@ -313,6 +318,39 @@ export function useGameState({ gameId }: UseGameStateOptions): UseGameStateResul
     });
   }, [sendAction]);
 
+  const timerStart = useCallback(() => {
+    sendAction({
+      type: 'TIMER_START',
+    });
+  }, [sendAction]);
+
+  const timerPause = useCallback(() => {
+    sendAction({
+      type: 'TIMER_PAUSE',
+    });
+  }, [sendAction]);
+
+  const timerReset = useCallback(() => {
+    sendAction({
+      type: 'TIMER_RESET',
+    });
+  }, [sendAction]);
+
+  const timerSet = useCallback((minutes: number, seconds: number) => {
+    const totalSeconds = minutes * 60 + seconds;
+    sendAction({
+      type: 'TIMER_SET',
+      duration: totalSeconds,
+    });
+  }, [sendAction]);
+
+  const timerAdjust = useCallback((seconds: number) => {
+    sendAction({
+      type: 'TIMER_ADJUST',
+      seconds,
+    });
+  }, [sendAction]);
+
   return {
     gameState,
     isConnected,
@@ -332,6 +370,11 @@ export function useGameState({ gameId }: UseGameStateOptions): UseGameStateResul
     doOrDieUpdate,
     doOrDieReset,
     setTeamName,
+    timerStart,
+    timerPause,
+    timerReset,
+    timerSet,
+    timerAdjust,
     subTimerStart,
     subTimerPause,
     subTimerReset,
