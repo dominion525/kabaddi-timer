@@ -173,7 +173,7 @@ export function App({ gameId }: Props) {
         </div>
 
         {/* メインスコア表示 */}
-        <div className="flex-1 grid grid-cols-3 gap-0 pb-16" style={{ gridTemplateRows: '1fr 1.5fr' }}>
+        <div className="flex-1 grid grid-cols-3 gap-0 pb-16 touch-none" style={{ gridTemplateRows: '1fr 1.5fr' }}>
           {/* 上段：左側チーム */}
           <ScoreBoard
             team={leftTeam}
@@ -211,7 +211,7 @@ export function App({ gameId }: Props) {
       </div>
 
       {/* モバイル表示用 (md未満) */}
-      <div className="md:hidden h-screen flex flex-col bg-gray-900 touch-manipulation overflow-hidden fixed inset-0">
+      <div className="md:hidden h-screen flex flex-col bg-gray-900 touch-manipulation overflow-hidden">
         {/* ヘッダー */}
         <div className="text-white">
           <div className="grid w-full" style={{ gridTemplateColumns: '2fr 1fr 2fr' }}>
@@ -226,7 +226,7 @@ export function App({ gameId }: Props) {
         </div>
 
         {/* メインスコア表示 */}
-        <div className="flex-1 grid grid-cols-3 gap-0 pb-16" style={{ gridTemplateRows: '0.7fr 0.6fr', maxHeight: '45vh' }}>
+        <div className="flex-1 grid grid-cols-3 gap-0 pb-16 touch-none" style={{ gridTemplateRows: '0.7fr 0.6fr', maxHeight: '45vh' }}>
           {/* 上段：左側チーム */}
           <ScoreBoard
             team={leftTeam}

@@ -202,7 +202,7 @@ export function ControlPanel({
       {/* デスクトップ版コントロールパネル */}
       {isVisible && (
         <div
-          className={`hidden md:block fixed inset-x-0 bottom-0 bg-white shadow-2xl z-50 transition-transform duration-200 ease-in-out ${
+          className={`hidden md:block fixed inset-x-0 bottom-0 bg-white shadow-2xl z-50 transition-transform duration-200 ease-in-out touch-manipulation ${
             isAnimating ? 'transform translate-y-0' : 'transform translate-y-full'
           }`}
           style={{ height: '50vh' }}
@@ -520,7 +520,7 @@ export function ControlPanel({
       {/* モバイル版コントロールパネル */}
       {isOpen && (
         <div
-          className={`md:hidden fixed inset-x-0 bottom-0 bg-white shadow-2xl z-50 transition-transform duration-200 ease-in-out ${
+          className={`md:hidden fixed inset-x-0 bottom-0 bg-white shadow-2xl z-50 transition-transform duration-200 ease-in-out touch-manipulation ${
             isAnimating ? 'transform translate-y-0' : 'transform translate-y-full'
           }`}
           style={{ height: '50vh' }}

@@ -28,7 +28,7 @@ gameV2Router.get('/game-v2/:gameId', async (c) => {
 <html lang="ja">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, minimum-scale=1.0">
   <title>Game V2 - ${gameId}</title>
 
   <!-- PWA Manifest -->
@@ -59,6 +59,22 @@ gameV2Router.get('/game-v2/:gameId', async (c) => {
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
   <script src="https://unpkg.com/qrious@4.0.2/dist/qrious.min.js"></script>
+  <style>
+    html, body {
+      overflow-x: hidden;
+      max-width: 100vw;
+      overflow-y: hidden;
+      height: 100vh;
+      max-height: 100vh;
+      overscroll-behavior: none;
+      position: fixed;
+      width: 100%;
+    }
+
+    body {
+      touch-action: manipulation;
+    }
+  </style>
 </head>
 <body>
   <div id="app" data-game-id="${gameId}"></div>
