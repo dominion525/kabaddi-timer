@@ -54,3 +54,6 @@ coverage-*/
 # Logs
 logs/
 *.log
+
+# Generated static files
+generated/

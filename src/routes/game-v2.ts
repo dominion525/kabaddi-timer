@@ -1,14 +1,18 @@
 import { Hono } from 'hono';
 import { Env } from '../types/game';
+import * as fs from 'fs';
+import * as path from 'path';
 
-// リビジョン情報を取得する関数
-function getRevision(): string {
+// リビジョン情報を取得
+function getRevision(): { revision: string; fullRevision: string } {
   try {
-    const revisionData = require('../revision.json');
-    return revisionData.revision || 'unknown';
+    const revisionPath = path.join(__dirname, '../revision.json');
+    const revisionData = JSON.parse(fs.readFileSync(revisionPath, 'utf-8'));
+    const fullRevision = revisionData.revision || 'unknown';
+    const revision = fullRevision.substring(0, 7);
+    return { revision, fullRevision };
   } catch (error) {
-    // ファイルが存在しない場合はunknownを返す
-    return 'unknown';
+    return { revision: 'unknown', fullRevision: 'unknown' };
   }
 }
 
@@ -35,7 +39,7 @@ gameV2Router.get('/game-v2/:gameId', async (c) => {
   }
 
   // リビジョン情報を取得
-  const revision = getRevision();
+  const { revision, fullRevision } = getRevision();
 
   // シンプルなHTML（動的生成）
   const html = `<!DOCTYPE html>
@@ -46,7 +50,10 @@ gameV2Router.get('/game-v2/:gameId', async (c) => {
   <title>Game V2 - ${gameId}</title>
 
   <!-- リビジョン情報をグローバル変数として注入 -->
-  <script>window.APP_REVISION = '${revision}';</script>
+  <script>
+    window.APP_REVISION = '${revision}';
+    window.APP_FULL_REVISION = '${fullRevision}';
+  </script>
 
   <!-- PWA Manifest -->
   <link rel="manifest" href="/manifest.json">

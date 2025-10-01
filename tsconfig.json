@@ -24,5 +24,5 @@
     "types": ["@cloudflare/workers-types", "node"]
   },
   "include": ["src/**/*", "public/src/**/*"],
-  "exclude": ["node_modules", "dist", "public/dist", "src/game-v2", "**/*.test.ts", "**/test/**/*", "**/__tests__/**/*"]
+  "exclude": ["node_modules", "dist", "public/dist", "src/game-v2", "src/index-page", "scripts/build-index-page.ts", "**/*.test.ts", "**/test/**/*", "**/__tests__/**/*"]
 }
