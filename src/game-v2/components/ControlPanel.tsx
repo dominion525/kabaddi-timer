@@ -10,6 +10,8 @@ import { TimerPresetButtons } from './TimerPresetButtons';
 import { TimerInputField } from './TimerInputField';
 import { TimerAdjustButtons } from './TimerAdjustButtons';
 import { MainTimerControl } from './MainTimerControl';
+import { SimpleTimerControl } from './SimpleTimerControl';
+import { SimpleTimerPresetControl } from './SimpleTimerPresetControl';
 
 // localStorage キー
 const STORAGE_KEY_SIMPLE_MODE = 'v2_kabaddi_simple_mode';
@@ -429,38 +431,14 @@ export function ControlPanel({
               style={{ backgroundColor: '#7F7F7F' }}
             >
               {/* タイマー制御 */}
-              <div className="bg-gray-50 p-2 rounded-lg">
-                <div className="flex gap-1">
-                  {/* メインタイマー */}
-                  <div className="flex gap-1 flex-1">
-                    <button onClick={timerStart} className="bg-green-500 hover:bg-green-600 text-white py-2 px-1 rounded text-xs font-bold transition-colors flex-1">
-                      開始
-                    </button>
-                    <button onClick={timerPause} className="bg-yellow-500 hover:bg-yellow-600 text-white py-2 px-1 rounded text-xs font-bold transition-colors flex-1">
-                      停止
-                    </button>
-                    <button onClick={timerReset} className="bg-red-500 hover:bg-red-600 text-white py-2 px-1 rounded text-xs font-bold transition-colors flex-1 whitespace-nowrap">
-                      リセット
-                    </button>
-                  </div>
-
-                  {/* セパレーター */}
-                  <div className="w-px bg-gray-300 mx-1"></div>
-
-                  {/* サブタイマー */}
-                  <div className="flex gap-1 flex-1">
-                    <button onClick={subTimerStart} className="bg-green-500 hover:bg-green-600 text-white py-2 px-1 rounded text-xs font-bold transition-colors flex-1">
-                      30秒<br />開始
-                    </button>
-                    <button onClick={subTimerPause} className="bg-yellow-500 hover:bg-yellow-600 text-white py-2 px-1 rounded text-xs font-bold transition-colors flex-1">
-                      30秒<br />停止
-                    </button>
-                    <button onClick={subTimerReset} className="bg-red-500 hover:bg-red-600 text-white py-2 px-1 rounded text-xs font-bold transition-colors flex-1">
-                      30秒<br />リセット
-                    </button>
-                  </div>
-                </div>
-              </div>
+              <SimpleTimerControl
+                onTimerStart={timerStart}
+                onTimerPause={timerPause}
+                onTimerReset={timerReset}
+                onSubTimerStart={subTimerStart}
+                onSubTimerPause={subTimerPause}
+                onSubTimerReset={subTimerReset}
+              />
 
               {/* チーム操作グリッド */}
               <TeamOperationGrid
@@ -476,28 +454,11 @@ export function ControlPanel({
               />
 
               {/* タイマープリセット */}
-              <div className="bg-blue-50 p-2 rounded-lg border border-blue-200">
-                <div className="flex gap-1">
-                  {/* 左側プリセット */}
-                  <TimerPresetButtons size="mobile-simple" onSetTimer={timerSet} />
-
-                  {/* セパレーター */}
-                  <div className="w-px bg-blue-300 mx-1"></div>
-
-                  {/* 右側操作ボタン */}
-                  <div className="flex gap-1 flex-1">
-                    <button onClick={() => timerAdjust(1)} className="bg-green-500 hover:bg-green-600 text-white py-2 px-1 rounded text-xs font-bold transition-colors flex-1">
-                      +1秒
-                    </button>
-                    <button onClick={() => timerAdjust(-1)} className="bg-red-500 hover:bg-red-600 text-white py-2 px-1 rounded text-xs font-bold transition-colors flex-1">
-                      -1秒
-                    </button>
-                    <button onClick={courtChange} className="bg-gray-400 hover:bg-gray-500 text-white py-2 px-1 rounded text-xs font-bold transition-colors flex-1">
-                      コート<br />チェンジ
-                    </button>
-                  </div>
-                </div>
-              </div>
+              <SimpleTimerPresetControl
+                onTimerSet={timerSet}
+                onTimerAdjust={timerAdjust}
+                onCourtChange={courtChange}
+              />
             </div>
           )}
         </div>
