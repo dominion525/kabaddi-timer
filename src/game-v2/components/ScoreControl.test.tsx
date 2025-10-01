@@ -48,16 +48,16 @@ describe('ScoreIncrementButton', () => {
     expect(button.className).toContain('rounded-lg');
   });
 
-  it('tabletサイズで適切なスタイルが適用される', () => {
-    render(<ScoreIncrementButton teamId="teamA" teamColor="red" onUpdate={mockOnUpdate} size="tablet" />);
+  it('mobile-basicサイズで適切なスタイルが適用される', () => {
+    render(<ScoreIncrementButton teamId="teamA" teamColor="red" onUpdate={mockOnUpdate} size="mobile-basic" />);
     const button = screen.getByTestId('score-increment');
     expect(button.className).toContain('h-12');
     expect(button.className).toContain('text-base');
     expect(button.className).toContain('rounded-lg');
   });
 
-  it('mobileサイズで適切なスタイルが適用される', () => {
-    render(<ScoreIncrementButton teamId="teamA" teamColor="red" onUpdate={mockOnUpdate} size="mobile" />);
+  it('mobile-simpleサイズで適切なスタイルが適用される', () => {
+    render(<ScoreIncrementButton teamId="teamA" teamColor="red" onUpdate={mockOnUpdate} size="mobile-simple" />);
     const button = screen.getByTestId('score-increment');
     expect(button.className).toContain('h-8');
     expect(button.className).toContain('text-xs');
@@ -79,14 +79,14 @@ describe('ScoreIncrementButton', () => {
   });
 
   it('赤チーム（tablet）で適切な背景色が適用される', () => {
-    render(<ScoreIncrementButton teamId="teamA" teamColor="red" onUpdate={mockOnUpdate} size="tablet" />);
+    render(<ScoreIncrementButton teamId="teamA" teamColor="red" onUpdate={mockOnUpdate} size="mobile-basic" />);
     const button = screen.getByTestId('score-increment');
     expect(button.className).toContain('bg-red-500');
     expect(button.className).toContain('hover:bg-red-600');
   });
 
   it('青チーム（mobile）で適切な背景色が適用される', () => {
-    render(<ScoreIncrementButton teamId="teamA" teamColor="blue" onUpdate={mockOnUpdate} size="mobile" />);
+    render(<ScoreIncrementButton teamId="teamA" teamColor="blue" onUpdate={mockOnUpdate} size="mobile-simple" />);
     const button = screen.getByTestId('score-increment');
     expect(button.className).toContain('bg-blue-500');
     expect(button.className).toContain('hover:bg-blue-600');
@@ -134,16 +134,16 @@ describe('ScoreDecrementButton', () => {
     expect(button.className).toContain('rounded-lg');
   });
 
-  it('tabletサイズで適切なスタイルが適用される', () => {
-    render(<ScoreDecrementButton teamId="teamA" teamColor="red" onUpdate={mockOnUpdate} size="tablet" />);
+  it('mobile-basicサイズで適切なスタイルが適用される', () => {
+    render(<ScoreDecrementButton teamId="teamA" teamColor="red" onUpdate={mockOnUpdate} size="mobile-basic" />);
     const button = screen.getByTestId('score-decrement');
     expect(button.className).toContain('h-12');
     expect(button.className).toContain('text-base');
     expect(button.className).toContain('rounded-lg');
   });
 
-  it('mobileサイズで適切なスタイルが適用される', () => {
-    render(<ScoreDecrementButton teamId="teamA" teamColor="red" onUpdate={mockOnUpdate} size="mobile" />);
+  it('mobile-simpleサイズで適切なスタイルが適用される', () => {
+    render(<ScoreDecrementButton teamId="teamA" teamColor="red" onUpdate={mockOnUpdate} size="mobile-simple" />);
     const button = screen.getByTestId('score-decrement');
     expect(button.className).toContain('h-8');
     expect(button.className).toContain('text-xs');
@@ -167,7 +167,7 @@ describe('ScoreDecrementButton', () => {
   });
 
   it('赤チーム（tablet）で適切な背景色が適用される', () => {
-    render(<ScoreDecrementButton teamId="teamA" teamColor="red" onUpdate={mockOnUpdate} size="tablet" />);
+    render(<ScoreDecrementButton teamId="teamA" teamColor="red" onUpdate={mockOnUpdate} size="mobile-basic" />);
     const button = screen.getByTestId('score-decrement');
     expect(button.className).toContain('bg-red-300');
     expect(button.className).toContain('hover:bg-red-400');
@@ -175,7 +175,7 @@ describe('ScoreDecrementButton', () => {
   });
 
   it('青チーム（mobile）で適切な背景色が適用される', () => {
-    render(<ScoreDecrementButton teamId="teamA" teamColor="blue" onUpdate={mockOnUpdate} size="mobile" />);
+    render(<ScoreDecrementButton teamId="teamA" teamColor="blue" onUpdate={mockOnUpdate} size="mobile-simple" />);
     const button = screen.getByTestId('score-decrement');
     expect(button.className).toContain('bg-blue-300');
     expect(button.className).toContain('hover:bg-blue-400');
@@ -224,15 +224,15 @@ describe('ScoreResetButton', () => {
     expect(button.className).toContain('rounded-lg');
   });
 
-  it('tabletサイズで適切なスタイルが適用される', () => {
-    render(<ScoreResetButton teamId="teamA" onReset={mockOnReset} size="tablet" />);
+  it('mobile-basicサイズで適切なスタイルが適用される', () => {
+    render(<ScoreResetButton teamId="teamA" onReset={mockOnReset} size="mobile-basic" />);
     const button = screen.getByTestId('score-reset');
     expect(button.className).toContain('h-12');
     expect(button.className).toContain('rounded-lg');
   });
 
-  it('mobileサイズで適切なスタイルが適用される', () => {
-    render(<ScoreResetButton teamId="teamA" onReset={mockOnReset} size="mobile" />);
+  it('mobile-simpleサイズで適切なスタイルが適用される', () => {
+    render(<ScoreResetButton teamId="teamA" onReset={mockOnReset} size="mobile-simple" />);
     const button = screen.getByTestId('score-reset');
     expect(button.className).toContain('h-8');
     expect(button.className).toContain('rounded');

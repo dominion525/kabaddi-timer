@@ -4,33 +4,33 @@ interface ScoreButtonProps {
   teamId: 'teamA' | 'teamB';
   teamColor: 'red' | 'blue';
   onUpdate: (team: 'teamA' | 'teamB', points: number) => void;
-  size?: 'desktop' | 'tablet' | 'mobile';
+  size?: 'desktop' | 'mobile-basic' | 'mobile-simple';
 }
 
 interface ScoreResetButtonProps {
   teamId: 'teamA' | 'teamB';
   onReset: (team: 'teamA' | 'teamB') => void;
-  size?: 'desktop' | 'tablet' | 'mobile';
+  size?: 'desktop' | 'mobile-basic' | 'mobile-simple';
 }
 
 // +1ボタン
 export function ScoreIncrementButton({ teamId, teamColor, onUpdate, size = 'desktop' }: ScoreButtonProps) {
   const sizeStyles = {
     desktop: 'aspect-square font-bold rounded-lg',
-    tablet: 'h-12 font-bold text-base rounded-lg',
-    mobile: 'h-8 font-bold text-xs rounded',
+    'mobile-basic': 'h-12 font-bold text-base rounded-lg',
+    'mobile-simple': 'h-8 font-bold text-xs rounded',
   };
 
   const colorStyles = {
     red: {
       desktop: 'bg-red-600 hover:bg-red-700',
-      tablet: 'bg-red-500 hover:bg-red-600',
-      mobile: 'bg-red-500 hover:bg-red-600',
+      'mobile-basic': 'bg-red-500 hover:bg-red-600',
+      'mobile-simple': 'bg-red-500 hover:bg-red-600',
     },
     blue: {
       desktop: 'bg-blue-600 hover:bg-blue-700',
-      tablet: 'bg-blue-500 hover:bg-blue-600',
-      mobile: 'bg-blue-500 hover:bg-blue-600',
+      'mobile-basic': 'bg-blue-500 hover:bg-blue-600',
+      'mobile-simple': 'bg-blue-500 hover:bg-blue-600',
     },
   };
 
@@ -48,20 +48,20 @@ export function ScoreIncrementButton({ teamId, teamColor, onUpdate, size = 'desk
 export function ScoreDecrementButton({ teamId, teamColor, onUpdate, size = 'desktop' }: ScoreButtonProps) {
   const sizeStyles = {
     desktop: 'aspect-square font-bold rounded-lg',
-    tablet: 'h-12 font-bold text-base rounded-lg',
-    mobile: 'h-8 font-bold text-xs rounded',
+    'mobile-basic': 'h-12 font-bold text-base rounded-lg',
+    'mobile-simple': 'h-8 font-bold text-xs rounded',
   };
 
   const colorStyles = {
     red: {
       desktop: 'bg-red-100 hover:bg-red-200 text-red-600',
-      tablet: 'bg-red-300 hover:bg-red-400 text-red-800',
-      mobile: 'bg-red-300 hover:bg-red-400 text-red-800',
+      'mobile-basic': 'bg-red-300 hover:bg-red-400 text-red-800',
+      'mobile-simple': 'bg-red-300 hover:bg-red-400 text-red-800',
     },
     blue: {
       desktop: 'bg-blue-100 hover:bg-blue-200 text-blue-600',
-      tablet: 'bg-blue-300 hover:bg-blue-400 text-blue-800',
-      mobile: 'bg-blue-300 hover:bg-blue-400 text-blue-800',
+      'mobile-basic': 'bg-blue-300 hover:bg-blue-400 text-blue-800',
+      'mobile-simple': 'bg-blue-300 hover:bg-blue-400 text-blue-800',
     },
   };
 
@@ -79,8 +79,8 @@ export function ScoreDecrementButton({ teamId, teamColor, onUpdate, size = 'desk
 export function ScoreResetButton({ teamId, onReset, size = 'desktop' }: ScoreResetButtonProps) {
   const sizeStyles = {
     desktop: 'h-12 rounded-lg',
-    tablet: 'h-12 rounded-lg',
-    mobile: 'h-8 rounded',
+    'mobile-basic': 'h-12 rounded-lg',
+    'mobile-simple': 'h-8 rounded',
   };
 
   return (

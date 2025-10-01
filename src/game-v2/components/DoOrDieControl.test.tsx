@@ -48,16 +48,16 @@ describe('DoOrDieIncrementButton', () => {
     expect(button.className).toContain('rounded-lg');
   });
 
-  it('tabletサイズで適切なスタイルが適用される', () => {
-    render(<DoOrDieIncrementButton teamId="teamA" onUpdate={mockOnUpdate} size="tablet" />);
+  it('mobile-basicサイズで適切なスタイルが適用される', () => {
+    render(<DoOrDieIncrementButton teamId="teamA" onUpdate={mockOnUpdate} size="mobile-basic" />);
     const button = screen.getByTestId('dod-increment');
     expect(button.className).toContain('h-12');
     expect(button.className).toContain('text-base');
     expect(button.className).toContain('rounded-lg');
   });
 
-  it('mobileサイズで適切なスタイルが適用される', () => {
-    render(<DoOrDieIncrementButton teamId="teamA" onUpdate={mockOnUpdate} size="mobile" />);
+  it('mobile-simpleサイズで適切なスタイルが適用される', () => {
+    render(<DoOrDieIncrementButton teamId="teamA" onUpdate={mockOnUpdate} size="mobile-simple" />);
     const button = screen.getByTestId('dod-increment');
     expect(button.className).toContain('h-8');
     expect(button.className).toContain('text-xs');
@@ -113,16 +113,16 @@ describe('DoOrDieDecrementButton', () => {
     expect(button.className).toContain('rounded-lg');
   });
 
-  it('tabletサイズで適切なスタイルが適用される', () => {
-    render(<DoOrDieDecrementButton teamId="teamA" onUpdate={mockOnUpdate} size="tablet" />);
+  it('mobile-basicサイズで適切なスタイルが適用される', () => {
+    render(<DoOrDieDecrementButton teamId="teamA" onUpdate={mockOnUpdate} size="mobile-basic" />);
     const button = screen.getByTestId('dod-decrement');
     expect(button.className).toContain('h-12');
     expect(button.className).toContain('text-base');
     expect(button.className).toContain('rounded-lg');
   });
 
-  it('mobileサイズで適切なスタイルが適用される', () => {
-    render(<DoOrDieDecrementButton teamId="teamA" onUpdate={mockOnUpdate} size="mobile" />);
+  it('mobile-simpleサイズで適切なスタイルが適用される', () => {
+    render(<DoOrDieDecrementButton teamId="teamA" onUpdate={mockOnUpdate} size="mobile-simple" />);
     const button = screen.getByTestId('dod-decrement');
     expect(button.className).toContain('h-8');
     expect(button.className).toContain('text-xs');
@@ -195,16 +195,16 @@ describe('DoOrDieResetButton', () => {
     expect(button.className).toContain('rounded-lg');
   });
 
-  it('tabletサイズで適切なスタイルが適用される', () => {
-    render(<DoOrDieResetButton teamId="teamA" currentCount={2} onUpdate={mockOnUpdate} size="tablet" />);
+  it('mobile-basicサイズで適切なスタイルが適用される', () => {
+    render(<DoOrDieResetButton teamId="teamA" currentCount={2} onUpdate={mockOnUpdate} size="mobile-basic" />);
     const button = screen.getByTestId('dod-reset');
     expect(button.className).toContain('h-12');
     expect(button.className).toContain('text-base');
     expect(button.className).toContain('rounded-lg');
   });
 
-  it('mobileサイズで適切なスタイルが適用される', () => {
-    render(<DoOrDieResetButton teamId="teamA" currentCount={2} onUpdate={mockOnUpdate} size="mobile" />);
+  it('mobile-simpleサイズで適切なスタイルが適用される', () => {
+    render(<DoOrDieResetButton teamId="teamA" currentCount={2} onUpdate={mockOnUpdate} size="mobile-simple" />);
     const button = screen.getByTestId('dod-reset');
     expect(button.className).toContain('h-8');
     expect(button.className).toContain('text-xs');

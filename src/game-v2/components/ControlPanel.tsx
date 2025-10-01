@@ -770,12 +770,12 @@ export function ControlPanel({
                         teamId={leftTeamId}
                         teamColor={leftTeam.color}
                         onUpdate={scoreUpdate}
-                        size="tablet"
+                        size="mobile-basic"
                       />
                       <DoOrDieIncrementButton
                         teamId={leftTeamId}
                         onUpdate={doOrDieUpdate}
-                        size="tablet"
+                        size="mobile-basic"
                       />
                     </div>
                     {/* -1ボタン行 */}
@@ -784,12 +784,12 @@ export function ControlPanel({
                         teamId={leftTeamId}
                         teamColor={leftTeam.color}
                         onUpdate={scoreUpdate}
-                        size="tablet"
+                        size="mobile-basic"
                       />
                       <DoOrDieDecrementButton
                         teamId={leftTeamId}
                         onUpdate={doOrDieUpdate}
-                        size="tablet"
+                        size="mobile-basic"
                       />
                     </div>
                     {/* リセットボタン行 */}
@@ -797,13 +797,13 @@ export function ControlPanel({
                       <ScoreResetButton
                         teamId={leftTeamId}
                         onReset={resetTeamScore}
-                        size="tablet"
+                        size="mobile-basic"
                       />
                       <DoOrDieResetButton
                         teamId={leftTeamId}
                         currentCount={leftTeamId === 'teamA' ? gameState.teamA.doOrDieCount : gameState.teamB.doOrDieCount}
                         onUpdate={doOrDieUpdate}
-                        size="tablet"
+                        size="mobile-basic"
                       />
                     </div>
                   </div>
@@ -815,13 +815,13 @@ export function ControlPanel({
                       <DoOrDieIncrementButton
                         teamId={rightTeamId}
                         onUpdate={doOrDieUpdate}
-                        size="tablet"
+                        size="mobile-basic"
                       />
                       <ScoreIncrementButton
                         teamId={rightTeamId}
                         teamColor={rightTeam.color}
                         onUpdate={scoreUpdate}
-                        size="tablet"
+                        size="mobile-basic"
                       />
                     </div>
                     {/* -1ボタン行 */}
@@ -829,13 +829,13 @@ export function ControlPanel({
                       <DoOrDieDecrementButton
                         teamId={rightTeamId}
                         onUpdate={doOrDieUpdate}
-                        size="tablet"
+                        size="mobile-basic"
                       />
                       <ScoreDecrementButton
                         teamId={rightTeamId}
                         teamColor={rightTeam.color}
                         onUpdate={scoreUpdate}
-                        size="tablet"
+                        size="mobile-basic"
                       />
                     </div>
                     {/* リセットボタン行 */}
@@ -844,12 +844,12 @@ export function ControlPanel({
                         teamId={rightTeamId}
                         currentCount={rightTeamId === 'teamA' ? gameState.teamA.doOrDieCount : gameState.teamB.doOrDieCount}
                         onUpdate={doOrDieUpdate}
-                        size="tablet"
+                        size="mobile-basic"
                       />
                       <ScoreResetButton
                         teamId={rightTeamId}
                         onReset={resetTeamScore}
-                        size="tablet"
+                        size="mobile-basic"
                       />
                     </div>
                   </div>
@@ -963,12 +963,12 @@ export function ControlPanel({
                         teamId={leftTeamId}
                         teamColor={leftTeam.color}
                         onUpdate={scoreUpdate}
-                        size="mobile"
+                        size="mobile-simple"
                       />
                       <DoOrDieIncrementButton
                         teamId={leftTeamId}
                         onUpdate={doOrDieUpdate}
-                        size="mobile"
+                        size="mobile-simple"
                       />
                     </div>
                     {/* -1ボタン行 */}
@@ -977,12 +977,12 @@ export function ControlPanel({
                         teamId={leftTeamId}
                         teamColor={leftTeam.color}
                         onUpdate={scoreUpdate}
-                        size="mobile"
+                        size="mobile-simple"
                       />
                       <DoOrDieDecrementButton
                         teamId={leftTeamId}
                         onUpdate={doOrDieUpdate}
-                        size="mobile"
+                        size="mobile-simple"
                       />
                     </div>
                     {/* リセットボタン行 */}
@@ -990,13 +990,13 @@ export function ControlPanel({
                       <ScoreResetButton
                         teamId={leftTeamId}
                         onReset={resetTeamScore}
-                        size="mobile"
+                        size="mobile-simple"
                       />
                       <DoOrDieResetButton
                         teamId={leftTeamId}
                         currentCount={leftTeamId === 'teamA' ? gameState.teamA.doOrDieCount : gameState.teamB.doOrDieCount}
                         onUpdate={doOrDieUpdate}
-                        size="mobile"
+                        size="mobile-simple"
                       />
                     </div>
                   </div>
@@ -1008,13 +1008,13 @@ export function ControlPanel({
                       <DoOrDieIncrementButton
                         teamId={rightTeamId}
                         onUpdate={doOrDieUpdate}
-                        size="mobile"
+                        size="mobile-simple"
                       />
                       <ScoreIncrementButton
                         teamId={rightTeamId}
                         teamColor={rightTeam.color}
                         onUpdate={scoreUpdate}
-                        size="mobile"
+                        size="mobile-simple"
                       />
                     </div>
                     {/* -1ボタン行 */}
@@ -1022,13 +1022,13 @@ export function ControlPanel({
                       <DoOrDieDecrementButton
                         teamId={rightTeamId}
                         onUpdate={doOrDieUpdate}
-                        size="mobile"
+                        size="mobile-simple"
                       />
                       <ScoreDecrementButton
                         teamId={rightTeamId}
                         teamColor={rightTeam.color}
                         onUpdate={scoreUpdate}
-                        size="mobile"
+                        size="mobile-simple"
                       />
                     </div>
                     {/* リセットボタン行 */}
@@ -1037,12 +1037,12 @@ export function ControlPanel({
                         teamId={rightTeamId}
                         currentCount={rightTeamId === 'teamA' ? gameState.teamA.doOrDieCount : gameState.teamB.doOrDieCount}
                         onUpdate={doOrDieUpdate}
-                        size="mobile"
+                        size="mobile-simple"
                       />
                       <ScoreResetButton
                         teamId={rightTeamId}
                         onReset={resetTeamScore}
-                        size="mobile"
+                        size="mobile-simple"
                       />
                     </div>
                   </div>
@@ -1076,7 +1076,7 @@ export function ControlPanel({
                     <button onClick={() => timerAdjust(-1)} className="bg-red-500 hover:bg-red-600 text-white py-2 px-1 rounded text-xs font-bold transition-colors flex-1">
                       -1秒
                     </button>
-                    <button className="bg-gray-400 hover:bg-gray-500 text-white py-2 px-1 rounded text-xs font-bold transition-colors flex-1">
+                    <button onClick={courtChange} className="bg-gray-400 hover:bg-gray-500 text-white py-2 px-1 rounded text-xs font-bold transition-colors flex-1">
                       コート<br />チェンジ
                     </button>
                   </div>
