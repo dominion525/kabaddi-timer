@@ -1,15 +1,6 @@
 import { vi } from 'vitest';
 import '@testing-library/jest-dom';
 
-// windowオブジェクトのモック（jsdomで提供されるが、一部追加設定）
-Object.defineProperty(global, 'window', {
-  value: global,
-  writable: true
-});
-
-// グローバルなwindowオブジェクトを設定
-(global as any).window = global;
-
 // localStorage, sessionStorageのモック
 if (typeof (global as any).localStorage === 'undefined') {
   (global as any).localStorage = {

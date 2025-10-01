@@ -1,8 +1,10 @@
 import { defineConfig } from 'vitest/config';
+import preact from '@preact/preset-vite';
 
 export default defineConfig({
+  plugins: [preact()],
   test: {
-    include: ['src/game-v2/**/*.test.ts'],
+    include: ['src/game-v2/**/*.test.{ts,tsx}'],
     exclude: ['**/node_modules/**', '**/dist/**'],
     globals: true,
     environment: 'jsdom',  // ブラウザ環境のシミュレーション（Preactコンポーネント用）
@@ -27,12 +29,5 @@ export default defineConfig({
   },
   esbuild: {
     target: 'es2022'
-  },
-  // Preactのエイリアス設定
-  resolve: {
-    alias: {
-      'react': 'preact/compat',
-      'react-dom': 'preact/compat'
-    }
   }
 });

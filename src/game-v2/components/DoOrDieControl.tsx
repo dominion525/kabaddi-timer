@@ -1,3 +1,5 @@
+import { h } from 'preact';
+
 interface DoOrDieButtonProps {
   teamId: 'teamA' | 'teamB';
   onUpdate: (team: 'teamA' | 'teamB', delta: number) => void;
@@ -56,7 +58,7 @@ export function DoOrDieResetButton({ teamId, currentCount, onUpdate, size = 'des
 
   return (
     <button
-      onClick={() => onUpdate(teamId, -currentCount)}
+      onClick={() => onUpdate(teamId, currentCount === 0 ? 0 : -currentCount)}
       className={`${styles.button} bg-gray-400 hover:bg-gray-500 text-white ${styles.rounded} font-bold ${styles.text} transition-colors active:scale-95`}
       data-testid="dod-reset">
       リセット
