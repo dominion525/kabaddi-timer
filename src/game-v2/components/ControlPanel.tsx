@@ -12,6 +12,7 @@ import { TimerAdjustButtons } from './TimerAdjustButtons';
 import { MainTimerControl } from './MainTimerControl';
 import { SimpleTimerControl } from './SimpleTimerControl';
 import { SimpleTimerPresetControl } from './SimpleTimerPresetControl';
+import { MobileHandleSection } from './MobileHandleSection';
 
 // localStorage キー
 const STORAGE_KEY_SIMPLE_MODE = 'v2_kabaddi_simple_mode';
@@ -312,52 +313,13 @@ export function ControlPanel({
         {/* パネル内容 */}
         <div className="relative z-50 h-full flex flex-col">
           {/* ハンドル */}
-          <div className="bg-gray-200 p-3 relative">
-            {/* 左側トグル */}
-            {simpleMode && (
-              <div className="absolute left-3 top-1/2 transform -translate-y-1/2 flex items-center space-x-1">
-                <button
-                  onClick={toggleScrollLock}
-                  className={`relative inline-flex h-4 w-7 items-center rounded-full transition-colors ${
-                    scrollLockEnabled ? 'bg-blue-500' : 'bg-gray-300'
-                  }`}
-                >
-                  <span
-                    className={`inline-block h-2.5 w-2.5 transform rounded-full bg-white transition-transform ${
-                      scrollLockEnabled ? 'translate-x-3' : 'translate-x-0.5'
-                    }`}
-                  ></span>
-                </button>
-                <span className="text-xs text-gray-600" style={{ fontSize: '10px' }}>
-                  スクロールロック
-                </span>
-              </div>
-            )}
-
-            {/* 中央ハンドル（完全中央固定） */}
-            <div className="flex justify-center items-center" onClick={onClose}>
-              <div className="w-12 h-1 bg-gray-400 rounded-full cursor-pointer"></div>
-            </div>
-
-            {/* 右側トグル */}
-            <div className="absolute right-3 top-1/2 transform -translate-y-1/2 flex items-center space-x-1">
-              <span className="text-xs text-gray-600" style={{ fontSize: '10px' }}>
-                シンプル
-              </span>
-              <button
-                onClick={toggleSimpleMode}
-                className={`relative inline-flex h-4 w-7 items-center rounded-full transition-colors ${
-                  simpleMode ? 'bg-blue-500' : 'bg-gray-300'
-                }`}
-              >
-                <span
-                  className={`inline-block h-2.5 w-2.5 transform rounded-full bg-white transition-transform ${
-                    simpleMode ? 'translate-x-3' : 'translate-x-0.5'
-                  }`}
-                ></span>
-              </button>
-            </div>
-          </div>
+          <MobileHandleSection
+            simpleMode={simpleMode}
+            scrollLockEnabled={scrollLockEnabled}
+            onClose={onClose}
+            onToggleSimpleMode={toggleSimpleMode}
+            onToggleScrollLock={toggleScrollLock}
+          />
 
           {/* コンテンツエリア - 通常モード */}
           {!simpleMode && (
