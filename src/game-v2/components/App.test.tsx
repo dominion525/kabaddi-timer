@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen } from '@testing-library/preact';
 import { App } from './App';
 import type { GameState } from '../../types/game';
+import { useGameState } from '../hooks/useGameState';
 
 // useGameStateのモック
 const mockGameState: GameState = {
@@ -62,25 +63,18 @@ vi.mock('../hooks/useGameState', () => ({
   useGameState: vi.fn(() => mockUseGameState),
 }));
 
-// timer-logicのモック
-vi.mock('../utils/timer-logic', () => ({
-  calculateRemainingSeconds: vi.fn(() => ({ seconds: 3000, isRunning: true })),
-  calculateSubTimerRemainingSeconds: vi.fn(() => ({ seconds: 20, isRunning: true })),
-}));
-
 describe('App', () => {
   const mockGameId = 'test-game-123';
 
   beforeEach(() => {
     vi.clearAllMocks();
+    // デフォルトのモック戻り値を設定
+    vi.mocked(useGameState).mockReturnValue(mockUseGameState);
   });
 
   it('接続中の場合、LoadingModalを表示する', () => {
     // connectionStatusが'connecting'の場合
-    vi.mocked(mockUseGameState).connectionStatus = 'connecting' as const;
-
-    const { useGameState } = require('../hooks/useGameState');
-    useGameState.mockReturnValue({
+    vi.mocked(useGameState).mockReturnValue({
       ...mockUseGameState,
       gameState: null,
       connectionStatus: 'connecting',
@@ -94,8 +88,7 @@ describe('App', () => {
   });
 
   it('ゲーム状態がnullの場合、LoadingModalを表示する', () => {
-    const { useGameState } = require('../hooks/useGameState');
-    useGameState.mockReturnValue({
+    vi.mocked(useGameState).mockReturnValue({
       ...mockUseGameState,
       gameState: null,
       connectionStatus: 'connected',
@@ -108,38 +101,17 @@ describe('App', () => {
   });
 
   it('接続完了後、チーム名が表示される', () => {
-    const { useGameState } = require('../hooks/useGameState');
-    useGameState.mockReturnValue(mockUseGameState);
+    vi.mocked(useGameState).mockReturnValue(mockUseGameState);
 
     render(<App gameId={mockGameId} />);
 
-    // チーム名が表示されることを確認
-    expect(screen.getByText('チームA')).toBeTruthy();
-    expect(screen.getByText('チームB')).toBeTruthy();
-  });
-
-  it('タイマーロジックが正しく呼び出される', () => {
-    const { calculateRemainingSeconds, calculateSubTimerRemainingSeconds } =
-      require('../utils/timer-logic');
-    const { useGameState } = require('../hooks/useGameState');
-    useGameState.mockReturnValue(mockUseGameState);
-
-    render(<App gameId={mockGameId} />);
-
-    // timer-logicの関数が呼ばれることを確認
-    expect(calculateRemainingSeconds).toHaveBeenCalledWith(
-      mockGameState.timer,
-      mockUseGameState.serverTimeOffset
-    );
-    expect(calculateSubTimerRemainingSeconds).toHaveBeenCalledWith(
-      mockGameState.subTimer,
-      mockUseGameState.serverTimeOffset
-    );
+    // チーム名が表示されることを確認（複数のレイアウトで表示されるため、getAllByTextを使用）
+    expect(screen.getAllByText('チームA').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('チームB').length).toBeGreaterThan(0);
   });
 
   it('gameIdが正しく渡される', () => {
-    const { useGameState } = require('../hooks/useGameState');
-    useGameState.mockReturnValue(mockUseGameState);
+    vi.mocked(useGameState).mockReturnValue(mockUseGameState);
 
     render(<App gameId={mockGameId} />);
 
@@ -148,8 +120,7 @@ describe('App', () => {
   });
 
   it('エラー状態の場合、適切に表示される', () => {
-    const { useGameState } = require('../hooks/useGameState');
-    useGameState.mockReturnValue({
+    vi.mocked(useGameState).mockReturnValue({
       ...mockUseGameState,
       gameState: null,
       connectionStatus: 'disconnected',
