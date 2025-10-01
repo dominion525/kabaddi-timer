@@ -1,6 +1,13 @@
 import { useEffect } from 'preact/hooks';
 import { JSX } from 'preact';
 
+// グローバル変数の型定義
+declare global {
+  interface Window {
+    APP_REVISION?: string;
+  }
+}
+
 interface Props {
   isOpen: boolean;
   onClose: () => void;
@@ -8,6 +15,10 @@ interface Props {
 
 export function CreditsModal({ isOpen, onClose }: Props) {
   if (!isOpen) return null;
+
+  // リビジョン情報を取得
+  const fullRevision = window.APP_REVISION || 'unknown';
+  const shortRevision = fullRevision.substring(0, 7);
 
   const handleBackgroundClick = (e: JSX.TargetedMouseEvent<HTMLDivElement>) => {
     if (e.target === e.currentTarget) {
@@ -119,8 +130,8 @@ export function CreditsModal({ isOpen, onClose }: Props) {
                 dominion525/kabaddi-timer
               </a>
               {' (rev: '}
-              <a href="https://github.com/dominion525/kabaddi-timer/commit/unknown" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:text-blue-800 transition-colors">
-                unknown
+              <a href={`https://github.com/dominion525/kabaddi-timer/commit/${fullRevision}`} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:text-blue-800 transition-colors">
+                {shortRevision}
               </a>
               {')'}
             </span>

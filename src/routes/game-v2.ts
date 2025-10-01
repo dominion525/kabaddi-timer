@@ -1,6 +1,17 @@
 import { Hono } from 'hono';
 import { Env } from '../types/game';
 
+// リビジョン情報を取得する関数
+function getRevision(): string {
+  try {
+    const revisionData = require('../revision.json');
+    return revisionData.revision || 'unknown';
+  } catch (error) {
+    // ファイルが存在しない場合はunknownを返す
+    return 'unknown';
+  }
+}
+
 const gameV2Router = new Hono<{ Bindings: Env }>();
 
 gameV2Router.get('/game-v2/:gameId', async (c) => {
@@ -23,6 +34,9 @@ gameV2Router.get('/game-v2/:gameId', async (c) => {
     return c.text('Invalid game ID', 400);
   }
 
+  // リビジョン情報を取得
+  const revision = getRevision();
+
   // シンプルなHTML（動的生成）
   const html = `<!DOCTYPE html>
 <html lang="ja">
@@ -30,6 +44,9 @@ gameV2Router.get('/game-v2/:gameId', async (c) => {
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, minimum-scale=1.0">
   <title>Game V2 - ${gameId}</title>
+
+  <!-- リビジョン情報をグローバル変数として注入 -->
+  <script>window.APP_REVISION = '${revision}';</script>
 
   <!-- PWA Manifest -->
   <link rel="manifest" href="/manifest.json">
