@@ -18,6 +18,8 @@ interface UseWebSocketResult {
   reconnectAttempts: number;
   maxReconnectAttempts: number;
   errorMessage: string | null;
+  sendingData: boolean;
+  receivingData: boolean;
   reconnect: () => void;
 }
 
@@ -31,6 +33,10 @@ class WebSocketManager {
     reconnectAttempts: number;
     maxReconnectAttempts: number;
     errorMessage: string | null;
+    sendingData: boolean;
+    receivingData: boolean;
+    sendingAnimationTimeout: number | null;
+    receivingAnimationTimeout: number | null;
     subscribers: Set<{
       onMessage?: (message: GameMessage) => void;
       onConnected?: () => void;
@@ -40,6 +46,8 @@ class WebSocketManager {
       setConnectionStatus?: (status: ConnectionStatus) => void;
       setReconnectAttempts?: (attempts: number) => void;
       setErrorMessage?: (message: string | null) => void;
+      setSendingData?: (sending: boolean) => void;
+      setReceivingData?: (receiving: boolean) => void;
     }>;
     reconnectTimeout: number | null;
     didUnmount: boolean;
@@ -54,6 +62,8 @@ class WebSocketManager {
     setConnectionStatus?: (status: ConnectionStatus) => void;
     setReconnectAttempts?: (attempts: number) => void;
     setErrorMessage?: (message: string | null) => void;
+    setSendingData?: (sending: boolean) => void;
+    setReceivingData?: (receiving: boolean) => void;
   }) {
     console.log(`[WebSocketManager] Connect request for gameId: ${gameId}`);
 
@@ -90,6 +100,10 @@ class WebSocketManager {
       reconnectAttempts: 0,
       maxReconnectAttempts: 10,
       errorMessage: null,
+      sendingData: false,
+      receivingData: false,
+      sendingAnimationTimeout: null,
+      receivingAnimationTimeout: null,
       subscribers: new Set([callbacks]),
       reconnectTimeout: null,
       didUnmount: false
@@ -127,6 +141,10 @@ class WebSocketManager {
     try {
       connection.ws.send(JSON.stringify({ action }));
       console.log(`[WebSocketManager] Sent action:`, action);
+
+      // 送信アニメーションをトリガー
+      this._triggerSendingAnimation(gameId);
+
       return true;
     } catch (error) {
       console.error(`[WebSocketManager] Failed to send action:`, error);
@@ -152,6 +170,62 @@ class WebSocketManager {
         this._createWebSocket(gameId);
       }
     }, 1000);
+  }
+
+  /**
+   * 送信アニメーション（フラッシュエフェクト）を開始
+   */
+  private _triggerSendingAnimation(gameId: string) {
+    const connection = this.connections.get(gameId);
+    if (!connection) return;
+
+    // 既存のアニメーションタイマーをクリア
+    if (connection.sendingAnimationTimeout) {
+      clearTimeout(connection.sendingAnimationTimeout);
+      connection.sendingAnimationTimeout = null;
+    }
+
+    // フラグを設定（300ms間）
+    connection.sendingData = true;
+    connection.subscribers.forEach(subscriber => {
+      subscriber.setSendingData?.(true);
+    });
+
+    connection.sendingAnimationTimeout = window.setTimeout(() => {
+      connection.sendingData = false;
+      connection.sendingAnimationTimeout = null;
+      connection.subscribers.forEach(subscriber => {
+        subscriber.setSendingData?.(false);
+      });
+    }, 300);
+  }
+
+  /**
+   * 受信アニメーション（フラッシュエフェクト）を開始
+   */
+  private _triggerReceivingAnimation(gameId: string) {
+    const connection = this.connections.get(gameId);
+    if (!connection) return;
+
+    // 既存のアニメーションタイマーをクリア
+    if (connection.receivingAnimationTimeout) {
+      clearTimeout(connection.receivingAnimationTimeout);
+      connection.receivingAnimationTimeout = null;
+    }
+
+    // フラグを設定（200ms間）
+    connection.receivingData = true;
+    connection.subscribers.forEach(subscriber => {
+      subscriber.setReceivingData?.(true);
+    });
+
+    connection.receivingAnimationTimeout = window.setTimeout(() => {
+      connection.receivingData = false;
+      connection.receivingAnimationTimeout = null;
+      connection.subscribers.forEach(subscriber => {
+        subscriber.setReceivingData?.(false);
+      });
+    }, 200);
   }
 
   private _createWebSocket(gameId: string) {
@@ -200,6 +274,9 @@ class WebSocketManager {
       try {
         const message: GameMessage = JSON.parse(event.data);
         console.log(`[WebSocketManager] ← Received:`, message.type);
+
+        // 受信アニメーションをトリガー
+        this._triggerReceivingAnimation(gameId);
 
         connection.subscribers.forEach(subscriber => {
           subscriber.onMessage?.(message);
@@ -281,6 +358,17 @@ class WebSocketManager {
       connection.reconnectTimeout = null;
     }
 
+    // アニメーションタイマーをクリア
+    if (connection.sendingAnimationTimeout) {
+      clearTimeout(connection.sendingAnimationTimeout);
+      connection.sendingAnimationTimeout = null;
+    }
+
+    if (connection.receivingAnimationTimeout) {
+      clearTimeout(connection.receivingAnimationTimeout);
+      connection.receivingAnimationTimeout = null;
+    }
+
     if (connection.ws) {
       // 正常に閉じるため、1000コードで閉じる
       if (connection.ws.readyState === WebSocket.OPEN || connection.ws.readyState === WebSocket.CONNECTING) {
@@ -312,6 +400,8 @@ export function useWebSocket({
   const [connectionStatus, setConnectionStatus] = useState<ConnectionStatus>('disconnected');
   const [reconnectAttempts, setReconnectAttempts] = useState(0);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [sendingData, setSendingData] = useState(false);
+  const [receivingData, setReceivingData] = useState(false);
   const callbacksRef = useRef({ onMessage, onConnected, onDisconnected, onError });
 
   // コールバックを最新に保つ
@@ -326,6 +416,8 @@ export function useWebSocket({
     setConnectionStatus,
     setReconnectAttempts,
     setErrorMessage,
+    setSendingData,
+    setReceivingData,
   });
 
   useEffect(() => {
@@ -341,6 +433,8 @@ export function useWebSocket({
       setConnectionStatus('disconnected');
       setReconnectAttempts(0);
       setErrorMessage(null);
+      setSendingData(false);
+      setReceivingData(false);
     };
   }, [gameId]);
 
@@ -360,6 +454,8 @@ export function useWebSocket({
     reconnectAttempts,
     maxReconnectAttempts: 10, // WebSocketManagerから取得するのが理想的だが、現状は定数として設定
     errorMessage,
+    sendingData,
+    receivingData,
     reconnect,
   };
 }

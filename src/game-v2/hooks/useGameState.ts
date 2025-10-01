@@ -17,6 +17,8 @@ interface UseGameStateResult {
   reconnectAttempts: number;
   maxReconnectAttempts: number;
   errorMessage: string | null;
+  sendingData: boolean;
+  receivingData: boolean;
   serverTimeOffset: number;
   lastRTT: number;
   timeSyncStatus: 'good' | 'warning' | 'error' | 'unknown';
@@ -227,6 +229,8 @@ export function useGameState({ gameId }: UseGameStateOptions): UseGameStateResul
     reconnectAttempts,
     maxReconnectAttempts,
     errorMessage,
+    sendingData,
+    receivingData,
     reconnect
   } = useWebSocket({
     gameId,
@@ -402,6 +406,8 @@ export function useGameState({ gameId }: UseGameStateOptions): UseGameStateResul
     reconnectAttempts,
     maxReconnectAttempts,
     errorMessage,
+    sendingData,
+    receivingData,
     serverTimeOffset,
     lastRTT,
     timeSyncStatus,

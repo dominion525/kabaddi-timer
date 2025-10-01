@@ -25,6 +25,8 @@ export function App({ gameId }: Props) {
     reconnectAttempts,
     maxReconnectAttempts,
     errorMessage,
+    sendingData,
+    receivingData,
     serverTimeOffset,
     lastRTT,
     timeSyncStatus,
@@ -206,7 +208,7 @@ export function App({ gameId }: Props) {
 
         {/* ステータスバー */}
         {showStatusBar && (
-          <StatusBar gameId={gameId} onCreditsClick={handleOpenCreditsModal} onQRClick={handleOpenQRModal} onTimeSyncClick={handleOpenTimeSyncModal} onControlPanelClick={handleOpenControlPanel} />
+          <StatusBar gameId={gameId} connectionStatus={connectionStatus} timeSyncStatus={timeSyncStatus} sendingData={sendingData} receivingData={receivingData} onCreditsClick={handleOpenCreditsModal} onQRClick={handleOpenQRModal} onTimeSyncClick={handleOpenTimeSyncModal} onControlPanelClick={handleOpenControlPanel} />
         )}
       </div>
 
@@ -259,7 +261,7 @@ export function App({ gameId }: Props) {
 
         {/* ステータスバー */}
         {showStatusBar && (
-          <StatusBar gameId={gameId} onCreditsClick={handleOpenCreditsModal} onQRClick={handleOpenQRModal} onTimeSyncClick={handleOpenTimeSyncModal} onControlPanelClick={handleOpenControlPanel} />
+          <StatusBar gameId={gameId} connectionStatus={connectionStatus} timeSyncStatus={timeSyncStatus} sendingData={sendingData} receivingData={receivingData} onCreditsClick={handleOpenCreditsModal} onQRClick={handleOpenQRModal} onTimeSyncClick={handleOpenTimeSyncModal} onControlPanelClick={handleOpenControlPanel} />
         )}
       </div>
 
