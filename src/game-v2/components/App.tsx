@@ -46,6 +46,7 @@ export function App({ gameId }: Props) {
     subTimerPause,
     subTimerReset,
     courtChange,
+    resetAll,
     reconnect,
     requestTimeSync
   } = useGameState({ gameId });
@@ -257,6 +258,7 @@ export function App({ gameId }: Props) {
         subTimerPause={subTimerPause}
         subTimerReset={subTimerReset}
         courtChange={courtChange}
+        resetAll={resetAll}
       />
     </>
   );

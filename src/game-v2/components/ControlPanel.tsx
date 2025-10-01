@@ -20,6 +20,7 @@ interface Props {
   subTimerPause: () => void;
   subTimerReset: () => void;
   courtChange: () => void;
+  resetAll: () => void;
 }
 
 export function ControlPanel({
@@ -40,7 +41,8 @@ export function ControlPanel({
   subTimerStart,
   subTimerPause,
   subTimerReset,
-  courtChange
+  courtChange,
+  resetAll
 }: Props) {
   const [isVisible, setIsVisible] = useState(false);
   const [isAnimating, setIsAnimating] = useState(false);
@@ -436,8 +438,7 @@ export function ControlPanel({
                 <button onClick={courtChange} className="bg-orange-500 hover:bg-orange-600 text-white px-3 py-1 rounded-lg font-bold text-lg transition-colors">
                   コートチェンジ
                 </button>
-                <button
-                  className="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded-lg font-bold text-lg transition-colors">
+                <button onClick={resetAll} className="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded-lg font-bold text-lg transition-colors">
                   全リセット
                 </button>
               </div>
@@ -800,6 +801,7 @@ export function ControlPanel({
                     コートチェンジ
                   </button>
                   <button
+                    onClick={resetAll}
                     className="bg-red-600 hover:bg-red-700 text-white px-4 py-1 rounded-lg font-bold text-base transition-colors">
                     全リセット
                   </button>

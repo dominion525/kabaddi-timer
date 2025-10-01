@@ -585,6 +585,10 @@ export class GameSession {
     this.gameState.teamA.doOrDieCount = 0;
     this.gameState.teamB.doOrDieCount = 0;
 
+    // チーム名もデフォルトに戻す
+    this.gameState.teamA.name = 'チームA';
+    this.gameState.teamB.name = 'チームB';
+
     this.gameState.timer.startTime = null;
     this.gameState.timer.isRunning = false;
     this.gameState.timer.isPaused = false;

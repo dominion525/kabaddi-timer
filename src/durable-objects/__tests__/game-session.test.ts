@@ -1935,6 +1935,84 @@ describe('GameSession', () => {
     });
   });
 
+  describe('全リセット機能', () => {
+    it('RESET_ALLアクションで全ての状態がリセットされる', async () => {
+      const id = env.GAME_SESSION.idFromName('test-reset-all');
+      const gameSession = env.GAME_SESSION.get(id);
+
+      const result = await runInDurableObject(gameSession, async (instance) => {
+        // スコアとDoOrDieカウントを設定
+        await (instance as any).handleAction({ type: 'SCORE_UPDATE', team: 'teamA', points: 25 });
+        await (instance as any).handleAction({ type: 'SCORE_UPDATE', team: 'teamB', points: 30 });
+        await (instance as any).handleAction({ type: 'DO_OR_DIE_UPDATE', team: 'teamA', delta: 2 });
+        await (instance as any).handleAction({ type: 'DO_OR_DIE_UPDATE', team: 'teamB', delta: 1 });
+
+        // チーム名を変更
+        await (instance as any).handleAction({ type: 'SET_TEAM_NAME', team: 'teamA', name: 'カスタムチームA' });
+        await (instance as any).handleAction({ type: 'SET_TEAM_NAME', team: 'teamB', name: 'カスタムチームB' });
+
+        // タイマー設定を変更
+        await (instance as any).handleAction({ type: 'TIMER_SET', duration: 600 });
+
+        // コート変更
+        await (instance as any).handleAction({ type: 'COURT_CHANGE' });
+
+        const gameState = (instance as any).gameState;
+        const beforeReset = {
+          teamAName: gameState.teamA.name,
+          teamBName: gameState.teamB.name,
+          teamAScore: gameState.teamA.score,
+          teamBScore: gameState.teamB.score,
+          teamADoOrDie: gameState.teamA.doOrDieCount,
+          teamBDoOrDie: gameState.teamB.doOrDieCount,
+          timerRemaining: gameState.timer.remainingSeconds,
+          subTimerRemaining: gameState.subTimer.remainingSeconds,
+          leftSideTeam: gameState.leftSideTeam,
+        };
+
+        // RESET_ALLを実行
+        await (instance as any).handleAction({ type: 'RESET_ALL' });
+
+        const afterReset = {
+          teamAName: gameState.teamA.name,
+          teamBName: gameState.teamB.name,
+          teamAScore: gameState.teamA.score,
+          teamBScore: gameState.teamB.score,
+          teamADoOrDie: gameState.teamA.doOrDieCount,
+          teamBDoOrDie: gameState.teamB.doOrDieCount,
+          timerRemaining: gameState.timer.remainingSeconds,
+          timerTotalDuration: gameState.timer.totalDuration,
+          subTimerRemaining: gameState.subTimer.remainingSeconds,
+          subTimerTotalDuration: gameState.subTimer.totalDuration,
+          leftSideTeam: gameState.leftSideTeam,
+        };
+
+        return { beforeReset, afterReset };
+      });
+
+      // リセット前は変更された値
+      expect(result.beforeReset.teamAName).toBe('カスタムチームA');
+      expect(result.beforeReset.teamBName).toBe('カスタムチームB');
+      expect(result.beforeReset.teamAScore).toBe(25);
+      expect(result.beforeReset.teamBScore).toBe(30);
+      expect(result.beforeReset.teamADoOrDie).toBe(2);
+      expect(result.beforeReset.teamBDoOrDie).toBe(1);
+      expect(result.beforeReset.timerRemaining).toBe(600);
+      expect(result.beforeReset.leftSideTeam).toBe('teamB');
+
+      // リセット後はデフォルト値に戻る
+      expect(result.afterReset.teamAName).toBe('チームA');
+      expect(result.afterReset.teamBName).toBe('チームB');
+      expect(result.afterReset.teamAScore).toBe(0);
+      expect(result.afterReset.teamBScore).toBe(0);
+      expect(result.afterReset.teamADoOrDie).toBe(0);
+      expect(result.afterReset.teamBDoOrDie).toBe(0);
+      expect(result.afterReset.timerRemaining).toBe(result.afterReset.timerTotalDuration);
+      expect(result.afterReset.subTimerRemaining).toBe(result.afterReset.subTimerTotalDuration);
+      expect(result.afterReset.leftSideTeam).toBe('teamA');
+    });
+  });
+
   describe('エラーハンドリング', () => {
     it('無効なパスを拒否する', async () => {
       const id = env.GAME_SESSION.idFromName('test-game-invalid-path');
