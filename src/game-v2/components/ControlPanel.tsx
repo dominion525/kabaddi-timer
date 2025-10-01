@@ -2,6 +2,7 @@ import { useEffect, useState } from 'preact/hooks';
 import { JSX } from 'preact';
 import { DoOrDieIncrementButton, DoOrDieDecrementButton, DoOrDieResetButton } from './DoOrDieControl';
 import { ScoreIncrementButton, ScoreDecrementButton, ScoreResetButton } from './ScoreControl';
+import { TeamOperationGrid } from './TeamOperationGrid';
 
 // localStorage キー
 const STORAGE_KEY_SIMPLE_MODE = 'v2_kabaddi_simple_mode';
@@ -356,137 +357,17 @@ export function ControlPanel({
             </div>
 
             {/* チーム操作グリッド */}
-            <div className="bg-gradient-to-r from-red-50 via-gray-50 to-blue-50 p-4 rounded-lg border border-gray-200 relative">
-              {/* 中央セパレーター */}
-              <div className="absolute inset-y-4 left-1/2 w-px bg-gray-300 transform -translate-x-px"></div>
-
-              {/* ヘッダー行 */}
-              <div className="mb-4 relative z-10">
-                {/* チーム名行 */}
-                <div className="flex justify-between gap-x-8 mb-2">
-                  <div className="text-center flex-1">
-                    <div className={`text-lg font-bold ${leftTeam.color === 'red' ? 'text-red-600' : 'text-blue-600'}`}>{leftTeam.name}</div>
-                  </div>
-                  <div className="text-center flex-1">
-                    <div className={`text-lg font-bold ${rightTeam.color === 'red' ? 'text-red-600' : 'text-blue-600'}`}>{rightTeam.name}</div>
-                  </div>
-                </div>
-                {/* カテゴリー行 */}
-                <div className="flex justify-between gap-x-8">
-                  <div className="flex-1 grid grid-cols-2 gap-x-2">
-                    <div className="text-center">
-                      <div className={`text-xs ${leftTeam.color === 'red' ? 'text-red-600' : 'text-blue-600'}`}>得点</div>
-                    </div>
-                    <div className="text-center">
-                      <div className={`text-xs ${leftTeam.color === 'red' ? 'text-red-600' : 'text-blue-600'}`}>Do or Die</div>
-                    </div>
-                  </div>
-                  <div className="flex-1 grid grid-cols-2 gap-x-2">
-                    <div className="text-center">
-                      <div className={`text-xs ${rightTeam.color === 'red' ? 'text-red-600' : 'text-blue-600'}`}>Do or Die</div>
-                    </div>
-                    <div className="text-center">
-                      <div className={`text-xs ${rightTeam.color === 'red' ? 'text-red-600' : 'text-blue-600'}`}>得点</div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* ボタングリッド */}
-              <div className="flex justify-between gap-x-8 relative z-10">
-                {/* 左側表示チーム */}
-                <div className="flex-1 space-y-3">
-                  {/* +1ボタン行 */}
-                  <div className="grid grid-cols-2 gap-x-2">
-                    <ScoreIncrementButton
-                      teamId={leftTeamId}
-                      teamColor={leftTeam.color}
-                      onUpdate={scoreUpdate}
-                      size="desktop"
-                    />
-                    <DoOrDieIncrementButton
-                      teamId={leftTeamId}
-                      onUpdate={doOrDieUpdate}
-                      size="desktop"
-                    />
-                  </div>
-                  {/* -1ボタン行 */}
-                  <div className="grid grid-cols-2 gap-x-2">
-                    <ScoreDecrementButton
-                      teamId={leftTeamId}
-                      teamColor={leftTeam.color}
-                      onUpdate={scoreUpdate}
-                      size="desktop"
-                    />
-                    <DoOrDieDecrementButton
-                      teamId={leftTeamId}
-                      onUpdate={doOrDieUpdate}
-                      size="desktop"
-                    />
-                  </div>
-                  {/* リセットボタン行 */}
-                  <div className="grid grid-cols-2 gap-x-2">
-                    <ScoreResetButton
-                      teamId={leftTeamId}
-                      onReset={resetTeamScore}
-                      size="desktop"
-                    />
-                    <DoOrDieResetButton
-                      teamId={leftTeamId}
-                      currentCount={leftTeamId === 'teamA' ? gameState.teamA.doOrDieCount : gameState.teamB.doOrDieCount}
-                      onUpdate={doOrDieUpdate}
-                      size="desktop"
-                    />
-                  </div>
-                </div>
-
-                {/* 右側表示チーム */}
-                <div className="flex-1 space-y-3">
-                  {/* +1ボタン行 */}
-                  <div className="grid grid-cols-2 gap-x-2">
-                    <DoOrDieIncrementButton
-                      teamId={rightTeamId}
-                      onUpdate={doOrDieUpdate}
-                      size="desktop"
-                    />
-                    <ScoreIncrementButton
-                      teamId={rightTeamId}
-                      teamColor={rightTeam.color}
-                      onUpdate={scoreUpdate}
-                      size="desktop"
-                    />
-                  </div>
-                  {/* -1ボタン行 */}
-                  <div className="grid grid-cols-2 gap-x-2">
-                    <DoOrDieDecrementButton
-                      teamId={rightTeamId}
-                      onUpdate={doOrDieUpdate}
-                      size="desktop"
-                    />
-                    <ScoreDecrementButton
-                      teamId={rightTeamId}
-                      teamColor={rightTeam.color}
-                      onUpdate={scoreUpdate}
-                      size="desktop"
-                    />
-                  </div>
-                  {/* リセットボタン行 */}
-                  <div className="grid grid-cols-2 gap-x-2">
-                    <DoOrDieResetButton
-                      teamId={rightTeamId}
-                      currentCount={rightTeamId === 'teamA' ? gameState.teamA.doOrDieCount : gameState.teamB.doOrDieCount}
-                      onUpdate={doOrDieUpdate}
-                      size="desktop"
-                    />
-                    <ScoreResetButton
-                      teamId={rightTeamId}
-                      onReset={resetTeamScore}
-                      size="desktop"
-                    />
-                  </div>
-                </div>
-              </div>
-            </div>
+            <TeamOperationGrid
+              size="desktop"
+              leftTeam={leftTeam}
+              rightTeam={rightTeam}
+              leftTeamId={leftTeamId}
+              rightTeamId={rightTeamId}
+              gameState={gameState}
+              scoreUpdate={scoreUpdate}
+              doOrDieUpdate={doOrDieUpdate}
+              resetTeamScore={resetTeamScore}
+            />
 
             {/* 全体コントロール */}
             <div className="bg-gray-50 p-4 rounded-lg lg:col-span-2">
@@ -724,137 +605,17 @@ export function ControlPanel({
               </div>
 
               {/* チーム操作グリッド */}
-              <div className="bg-gradient-to-r from-red-50 via-gray-50 to-blue-50 p-4 rounded-lg border border-gray-200 relative">
-                {/* 中央セパレーター */}
-                <div className="absolute inset-y-4 left-1/2 w-px bg-gray-300 transform -translate-x-px"></div>
-
-                {/* ヘッダー行 */}
-                <div className="mb-4 relative z-10">
-                  {/* チーム名行 */}
-                  <div className="flex justify-between gap-x-6 mb-2">
-                    <div className="text-center flex-1">
-                      <div className={`text-base font-bold ${leftTeam.color === 'red' ? 'text-red-700' : 'text-blue-700'}`}>{leftTeam.name}</div>
-                    </div>
-                    <div className="text-center flex-1">
-                      <div className={`text-base font-bold ${rightTeam.color === 'red' ? 'text-red-700' : 'text-blue-700'}`}>{rightTeam.name}</div>
-                    </div>
-                  </div>
-                  {/* カテゴリー行 */}
-                  <div className="flex justify-between gap-x-6">
-                    <div className="flex-1 grid grid-cols-2 gap-x-1">
-                      <div className="text-center">
-                        <div className={`text-xs ${leftTeam.color === 'red' ? 'text-red-600' : 'text-blue-600'}`}>得点</div>
-                      </div>
-                      <div className="text-center">
-                        <div className={`text-xs ${leftTeam.color === 'red' ? 'text-red-600' : 'text-blue-600'}`}>Do or Die</div>
-                      </div>
-                    </div>
-                    <div className="flex-1 grid grid-cols-2 gap-x-1">
-                      <div className="text-center">
-                        <div className={`text-xs ${rightTeam.color === 'red' ? 'text-red-600' : 'text-blue-600'}`}>Do or Die</div>
-                      </div>
-                      <div className="text-center">
-                        <div className={`text-xs ${rightTeam.color === 'red' ? 'text-red-600' : 'text-blue-600'}`}>得点</div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* ボタングリッド */}
-                <div className="flex justify-between gap-x-6 relative z-10">
-                  {/* 左側表示チーム */}
-                  <div className="flex-1 space-y-2">
-                    {/* +1ボタン行 */}
-                    <div className="grid grid-cols-2 gap-x-1">
-                      <ScoreIncrementButton
-                        teamId={leftTeamId}
-                        teamColor={leftTeam.color}
-                        onUpdate={scoreUpdate}
-                        size="mobile-basic"
-                      />
-                      <DoOrDieIncrementButton
-                        teamId={leftTeamId}
-                        onUpdate={doOrDieUpdate}
-                        size="mobile-basic"
-                      />
-                    </div>
-                    {/* -1ボタン行 */}
-                    <div className="grid grid-cols-2 gap-x-1">
-                      <ScoreDecrementButton
-                        teamId={leftTeamId}
-                        teamColor={leftTeam.color}
-                        onUpdate={scoreUpdate}
-                        size="mobile-basic"
-                      />
-                      <DoOrDieDecrementButton
-                        teamId={leftTeamId}
-                        onUpdate={doOrDieUpdate}
-                        size="mobile-basic"
-                      />
-                    </div>
-                    {/* リセットボタン行 */}
-                    <div className="grid grid-cols-2 gap-x-1">
-                      <ScoreResetButton
-                        teamId={leftTeamId}
-                        onReset={resetTeamScore}
-                        size="mobile-basic"
-                      />
-                      <DoOrDieResetButton
-                        teamId={leftTeamId}
-                        currentCount={leftTeamId === 'teamA' ? gameState.teamA.doOrDieCount : gameState.teamB.doOrDieCount}
-                        onUpdate={doOrDieUpdate}
-                        size="mobile-basic"
-                      />
-                    </div>
-                  </div>
-
-                  {/* 右側表示チーム */}
-                  <div className="flex-1 space-y-2">
-                    {/* +1ボタン行 */}
-                    <div className="grid grid-cols-2 gap-x-1">
-                      <DoOrDieIncrementButton
-                        teamId={rightTeamId}
-                        onUpdate={doOrDieUpdate}
-                        size="mobile-basic"
-                      />
-                      <ScoreIncrementButton
-                        teamId={rightTeamId}
-                        teamColor={rightTeam.color}
-                        onUpdate={scoreUpdate}
-                        size="mobile-basic"
-                      />
-                    </div>
-                    {/* -1ボタン行 */}
-                    <div className="grid grid-cols-2 gap-x-1">
-                      <DoOrDieDecrementButton
-                        teamId={rightTeamId}
-                        onUpdate={doOrDieUpdate}
-                        size="mobile-basic"
-                      />
-                      <ScoreDecrementButton
-                        teamId={rightTeamId}
-                        teamColor={rightTeam.color}
-                        onUpdate={scoreUpdate}
-                        size="mobile-basic"
-                      />
-                    </div>
-                    {/* リセットボタン行 */}
-                    <div className="grid grid-cols-2 gap-x-1">
-                      <DoOrDieResetButton
-                        teamId={rightTeamId}
-                        currentCount={rightTeamId === 'teamA' ? gameState.teamA.doOrDieCount : gameState.teamB.doOrDieCount}
-                        onUpdate={doOrDieUpdate}
-                        size="mobile-basic"
-                      />
-                      <ScoreResetButton
-                        teamId={rightTeamId}
-                        onReset={resetTeamScore}
-                        size="mobile-basic"
-                      />
-                    </div>
-                  </div>
-                </div>
-              </div>
+              <TeamOperationGrid
+                size="mobile-basic"
+                leftTeam={leftTeam}
+                rightTeam={rightTeam}
+                leftTeamId={leftTeamId}
+                rightTeamId={rightTeamId}
+                gameState={gameState}
+                scoreUpdate={scoreUpdate}
+                doOrDieUpdate={doOrDieUpdate}
+                resetTeamScore={resetTeamScore}
+              />
 
               {/* 全体コントロール */}
               <div className="bg-gray-50 p-3 rounded-lg">
@@ -917,137 +678,17 @@ export function ControlPanel({
               </div>
 
               {/* チーム操作グリッド */}
-              <div className="bg-gradient-to-r from-red-50 via-gray-50 to-blue-50 p-2 rounded-lg border border-gray-200 relative">
-                {/* 中央セパレーター */}
-                <div className="absolute inset-y-2 left-1/2 w-px bg-gray-300 transform -translate-x-px"></div>
-
-                {/* ヘッダー行 */}
-                <div className="mb-2 relative z-10">
-                  {/* チーム名行 */}
-                  <div className="flex justify-between gap-x-3 mb-1">
-                    <div className="text-center flex-1">
-                      <div className={`text-xs font-bold ${leftTeam.color === 'red' ? 'text-red-700' : 'text-blue-700'}`}>{leftTeam.name}</div>
-                    </div>
-                    <div className="text-center flex-1">
-                      <div className={`text-xs font-bold ${rightTeam.color === 'red' ? 'text-red-700' : 'text-blue-700'}`}>{rightTeam.name}</div>
-                    </div>
-                  </div>
-                  {/* カテゴリー行 */}
-                  <div className="flex justify-between gap-x-3">
-                    <div className="flex-1 grid grid-cols-2 gap-x-1">
-                      <div className="text-center">
-                        <div className={`text-xs ${leftTeam.color === 'red' ? 'text-red-600' : 'text-blue-600'}`}>得点</div>
-                      </div>
-                      <div className="text-center">
-                        <div className={`text-xs ${leftTeam.color === 'red' ? 'text-red-600' : 'text-blue-600'}`}>Do or Die</div>
-                      </div>
-                    </div>
-                    <div className="flex-1 grid grid-cols-2 gap-x-1">
-                      <div className="text-center">
-                        <div className={`text-xs ${rightTeam.color === 'red' ? 'text-red-600' : 'text-blue-600'}`}>Do or Die</div>
-                      </div>
-                      <div className="text-center">
-                        <div className={`text-xs ${rightTeam.color === 'red' ? 'text-red-600' : 'text-blue-600'}`}>得点</div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* ボタングリッド */}
-                <div className="flex justify-between gap-x-3 relative z-10">
-                  {/* 左側 */}
-                  <div className="flex-1 space-y-1">
-                    {/* +1ボタン行 */}
-                    <div className="grid grid-cols-2 gap-x-1">
-                      <ScoreIncrementButton
-                        teamId={leftTeamId}
-                        teamColor={leftTeam.color}
-                        onUpdate={scoreUpdate}
-                        size="mobile-simple"
-                      />
-                      <DoOrDieIncrementButton
-                        teamId={leftTeamId}
-                        onUpdate={doOrDieUpdate}
-                        size="mobile-simple"
-                      />
-                    </div>
-                    {/* -1ボタン行 */}
-                    <div className="grid grid-cols-2 gap-x-1">
-                      <ScoreDecrementButton
-                        teamId={leftTeamId}
-                        teamColor={leftTeam.color}
-                        onUpdate={scoreUpdate}
-                        size="mobile-simple"
-                      />
-                      <DoOrDieDecrementButton
-                        teamId={leftTeamId}
-                        onUpdate={doOrDieUpdate}
-                        size="mobile-simple"
-                      />
-                    </div>
-                    {/* リセットボタン行 */}
-                    <div className="grid grid-cols-2 gap-x-1">
-                      <ScoreResetButton
-                        teamId={leftTeamId}
-                        onReset={resetTeamScore}
-                        size="mobile-simple"
-                      />
-                      <DoOrDieResetButton
-                        teamId={leftTeamId}
-                        currentCount={leftTeamId === 'teamA' ? gameState.teamA.doOrDieCount : gameState.teamB.doOrDieCount}
-                        onUpdate={doOrDieUpdate}
-                        size="mobile-simple"
-                      />
-                    </div>
-                  </div>
-
-                  {/* 右側表示チーム */}
-                  <div className="flex-1 space-y-1">
-                    {/* +1ボタン行 */}
-                    <div className="grid grid-cols-2 gap-x-1">
-                      <DoOrDieIncrementButton
-                        teamId={rightTeamId}
-                        onUpdate={doOrDieUpdate}
-                        size="mobile-simple"
-                      />
-                      <ScoreIncrementButton
-                        teamId={rightTeamId}
-                        teamColor={rightTeam.color}
-                        onUpdate={scoreUpdate}
-                        size="mobile-simple"
-                      />
-                    </div>
-                    {/* -1ボタン行 */}
-                    <div className="grid grid-cols-2 gap-x-1">
-                      <DoOrDieDecrementButton
-                        teamId={rightTeamId}
-                        onUpdate={doOrDieUpdate}
-                        size="mobile-simple"
-                      />
-                      <ScoreDecrementButton
-                        teamId={rightTeamId}
-                        teamColor={rightTeam.color}
-                        onUpdate={scoreUpdate}
-                        size="mobile-simple"
-                      />
-                    </div>
-                    {/* リセットボタン行 */}
-                    <div className="grid grid-cols-2 gap-x-1">
-                      <DoOrDieResetButton
-                        teamId={rightTeamId}
-                        currentCount={rightTeamId === 'teamA' ? gameState.teamA.doOrDieCount : gameState.teamB.doOrDieCount}
-                        onUpdate={doOrDieUpdate}
-                        size="mobile-simple"
-                      />
-                      <ScoreResetButton
-                        teamId={rightTeamId}
-                        onReset={resetTeamScore}
-                        size="mobile-simple"
-                      />
-                    </div>
-                  </div>
-                </div>
-              </div>
+              <TeamOperationGrid
+                size="mobile-simple"
+                leftTeam={leftTeam}
+                rightTeam={rightTeam}
+                leftTeamId={leftTeamId}
+                rightTeamId={rightTeamId}
+                gameState={gameState}
+                scoreUpdate={scoreUpdate}
+                doOrDieUpdate={doOrDieUpdate}
+                resetTeamScore={resetTeamScore}
+              />
 
               {/* タイマープリセット */}
               <div className="bg-blue-50 p-2 rounded-lg border border-blue-200">
