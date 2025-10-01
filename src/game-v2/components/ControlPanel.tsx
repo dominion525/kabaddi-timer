@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'preact/hooks';
 import { JSX } from 'preact';
+import { DoOrDieIncrementButton, DoOrDieDecrementButton, DoOrDieResetButton } from './DoOrDieControl';
 
 // localStorage キー
 const STORAGE_KEY_SIMPLE_MODE = 'v2_kabaddi_simple_mode';
@@ -401,11 +402,11 @@ export function ControlPanel({
                       className={`aspect-square text-white rounded-lg font-bold transition-colors active:scale-95 ${leftTeam.color === 'red' ? 'bg-red-600 hover:bg-red-700' : 'bg-blue-600 hover:bg-blue-700'}`}>
                       +1
                     </button>
-                    <button
-                      onClick={() => doOrDieUpdate(leftTeamId, 1)}
-                      className="aspect-square bg-orange-400 hover:bg-orange-500 text-white rounded-lg font-bold transition-colors active:scale-95">
-                      +1
-                    </button>
+                    <DoOrDieIncrementButton
+                      teamId={leftTeamId}
+                      onUpdate={doOrDieUpdate}
+                      size="desktop"
+                    />
                   </div>
                   {/* -1ボタン行 */}
                   <div className="grid grid-cols-2 gap-x-2">
@@ -414,11 +415,11 @@ export function ControlPanel({
                       className={`aspect-square rounded-lg font-bold transition-colors active:scale-95 ${leftTeam.color === 'red' ? 'bg-red-100 hover:bg-red-200 text-red-600' : 'bg-blue-100 hover:bg-blue-200 text-blue-600'}`}>
                       -1
                     </button>
-                    <button
-                      onClick={() => doOrDieUpdate(leftTeamId, -1)}
-                      className="aspect-square bg-orange-200 hover:bg-orange-300 text-orange-800 rounded-lg font-bold transition-colors active:scale-95">
-                      -1
-                    </button>
+                    <DoOrDieDecrementButton
+                      teamId={leftTeamId}
+                      onUpdate={doOrDieUpdate}
+                      size="desktop"
+                    />
                   </div>
                   {/* リセットボタン行 */}
                   <div className="grid grid-cols-2 gap-x-2">
@@ -427,14 +428,12 @@ export function ControlPanel({
                       className="h-12 bg-gray-500 hover:bg-gray-600 text-white rounded-lg font-bold text-xs transition-colors active:scale-95">
                       スコア<br />リセット
                     </button>
-                    <button
-                      onClick={() => {
-                        const currentCount = leftTeamId === 'teamA' ? gameState.teamA.doOrDieCount : gameState.teamB.doOrDieCount;
-                        doOrDieUpdate(leftTeamId, -currentCount);
-                      }}
-                      className="h-12 bg-gray-400 hover:bg-gray-500 text-white rounded-lg font-bold text-xs transition-colors active:scale-95">
-                      リセット
-                    </button>
+                    <DoOrDieResetButton
+                      teamId={leftTeamId}
+                      currentCount={leftTeamId === 'teamA' ? gameState.teamA.doOrDieCount : gameState.teamB.doOrDieCount}
+                      onUpdate={doOrDieUpdate}
+                      size="desktop"
+                    />
                   </div>
                 </div>
 
@@ -442,11 +441,11 @@ export function ControlPanel({
                 <div className="flex-1 space-y-3">
                   {/* +1ボタン行 */}
                   <div className="grid grid-cols-2 gap-x-2">
-                    <button
-                      onClick={() => doOrDieUpdate(rightTeamId, 1)}
-                      className="aspect-square bg-orange-400 hover:bg-orange-500 text-white rounded-lg font-bold transition-colors active:scale-95">
-                      +1
-                    </button>
+                    <DoOrDieIncrementButton
+                      teamId={rightTeamId}
+                      onUpdate={doOrDieUpdate}
+                      size="desktop"
+                    />
                     <button
                       onClick={() => scoreUpdate(rightTeamId, 1)}
                       className={`aspect-square text-white rounded-lg font-bold transition-colors active:scale-95 ${rightTeam.color === 'red' ? 'bg-red-600 hover:bg-red-700' : 'bg-blue-600 hover:bg-blue-700'}`}>
@@ -455,11 +454,11 @@ export function ControlPanel({
                   </div>
                   {/* -1ボタン行 */}
                   <div className="grid grid-cols-2 gap-x-2">
-                    <button
-                      onClick={() => doOrDieUpdate(rightTeamId, -1)}
-                      className="aspect-square bg-orange-200 hover:bg-orange-300 text-orange-800 rounded-lg font-bold transition-colors active:scale-95">
-                      -1
-                    </button>
+                    <DoOrDieDecrementButton
+                      teamId={rightTeamId}
+                      onUpdate={doOrDieUpdate}
+                      size="desktop"
+                    />
                     <button
                       onClick={() => scoreUpdate(rightTeamId, -1)}
                       className={`aspect-square rounded-lg font-bold transition-colors active:scale-95 ${rightTeam.color === 'red' ? 'bg-red-100 hover:bg-red-200 text-red-600' : 'bg-blue-100 hover:bg-blue-200 text-blue-600'}`}>
@@ -468,14 +467,12 @@ export function ControlPanel({
                   </div>
                   {/* リセットボタン行 */}
                   <div className="grid grid-cols-2 gap-x-2">
-                    <button
-                      onClick={() => {
-                        const currentCount = rightTeamId === 'teamA' ? gameState.teamA.doOrDieCount : gameState.teamB.doOrDieCount;
-                        doOrDieUpdate(rightTeamId, -currentCount);
-                      }}
-                      className="h-12 bg-gray-400 hover:bg-gray-500 text-white rounded-lg font-bold text-xs transition-colors active:scale-95">
-                      リセット
-                    </button>
+                    <DoOrDieResetButton
+                      teamId={rightTeamId}
+                      currentCount={rightTeamId === 'teamA' ? gameState.teamA.doOrDieCount : gameState.teamB.doOrDieCount}
+                      onUpdate={doOrDieUpdate}
+                      size="desktop"
+                    />
                     <button
                       onClick={() => resetTeamScore(rightTeamId)}
                       className="h-12 bg-gray-500 hover:bg-gray-600 text-white rounded-lg font-bold text-xs transition-colors active:scale-95">
@@ -769,11 +766,11 @@ export function ControlPanel({
                         className={`h-12 text-white rounded-lg font-bold text-base transition-colors active:scale-95 ${leftTeam.color === 'red' ? 'bg-red-500 hover:bg-red-600' : 'bg-blue-500 hover:bg-blue-600'}`}>
                         +1
                       </button>
-                      <button
-                        onClick={() => doOrDieUpdate(leftTeamId, 1)}
-                        className="h-12 bg-orange-400 hover:bg-orange-500 text-white rounded-lg font-bold text-base transition-colors active:scale-95">
-                        +1
-                      </button>
+                      <DoOrDieIncrementButton
+                        teamId={leftTeamId}
+                        onUpdate={doOrDieUpdate}
+                        size="tablet"
+                      />
                     </div>
                     {/* -1ボタン行 */}
                     <div className="grid grid-cols-2 gap-x-1">
@@ -782,11 +779,11 @@ export function ControlPanel({
                         className={`h-12 rounded-lg font-bold text-base transition-colors active:scale-95 ${leftTeam.color === 'red' ? 'bg-red-300 hover:bg-red-400 text-red-800' : 'bg-blue-300 hover:bg-blue-400 text-blue-800'}`}>
                         -1
                       </button>
-                      <button
-                        onClick={() => doOrDieUpdate(leftTeamId, -1)}
-                        className="h-12 bg-orange-200 hover:bg-orange-300 text-orange-800 rounded-lg font-bold text-base transition-colors active:scale-95">
-                        -1
-                      </button>
+                      <DoOrDieDecrementButton
+                        teamId={leftTeamId}
+                        onUpdate={doOrDieUpdate}
+                        size="tablet"
+                      />
                     </div>
                     {/* リセットボタン行 */}
                     <div className="grid grid-cols-2 gap-x-1">
@@ -795,14 +792,12 @@ export function ControlPanel({
                         className="h-12 bg-gray-500 hover:bg-gray-600 text-white rounded-lg font-bold text-xs transition-colors active:scale-95">
                         スコア<br />リセット
                       </button>
-                      <button
-                        onClick={() => {
-                          const currentCount = leftTeamId === 'teamA' ? gameState.teamA.doOrDieCount : gameState.teamB.doOrDieCount;
-                          doOrDieUpdate(leftTeamId, -currentCount);
-                        }}
-                        className="h-12 bg-gray-400 hover:bg-gray-500 text-white rounded-lg font-bold text-xs transition-colors active:scale-95">
-                        リセット
-                      </button>
+                      <DoOrDieResetButton
+                        teamId={leftTeamId}
+                        currentCount={leftTeamId === 'teamA' ? gameState.teamA.doOrDieCount : gameState.teamB.doOrDieCount}
+                        onUpdate={doOrDieUpdate}
+                        size="tablet"
+                      />
                     </div>
                   </div>
 
@@ -810,11 +805,11 @@ export function ControlPanel({
                   <div className="flex-1 space-y-2">
                     {/* +1ボタン行 */}
                     <div className="grid grid-cols-2 gap-x-1">
-                      <button
-                        onClick={() => doOrDieUpdate(rightTeamId, 1)}
-                        className="h-12 bg-orange-400 hover:bg-orange-500 text-white rounded-lg font-bold text-base transition-colors active:scale-95">
-                        +1
-                      </button>
+                      <DoOrDieIncrementButton
+                        teamId={rightTeamId}
+                        onUpdate={doOrDieUpdate}
+                        size="tablet"
+                      />
                       <button
                         onClick={() => scoreUpdate(rightTeamId, 1)}
                         className={`h-12 text-white rounded-lg font-bold text-base transition-colors active:scale-95 ${rightTeam.color === 'red' ? 'bg-red-500 hover:bg-red-600' : 'bg-blue-500 hover:bg-blue-600'}`}>
@@ -823,11 +818,11 @@ export function ControlPanel({
                     </div>
                     {/* -1ボタン行 */}
                     <div className="grid grid-cols-2 gap-x-1">
-                      <button
-                        onClick={() => doOrDieUpdate(rightTeamId, -1)}
-                        className="h-12 bg-orange-200 hover:bg-orange-300 text-orange-800 rounded-lg font-bold text-base transition-colors active:scale-95">
-                        -1
-                      </button>
+                      <DoOrDieDecrementButton
+                        teamId={rightTeamId}
+                        onUpdate={doOrDieUpdate}
+                        size="tablet"
+                      />
                       <button
                         onClick={() => scoreUpdate(rightTeamId, -1)}
                         className={`h-12 rounded-lg font-bold text-base transition-colors active:scale-95 ${rightTeam.color === 'red' ? 'bg-red-300 hover:bg-red-400 text-red-800' : 'bg-blue-300 hover:bg-blue-400 text-blue-800'}`}>
@@ -836,14 +831,12 @@ export function ControlPanel({
                     </div>
                     {/* リセットボタン行 */}
                     <div className="grid grid-cols-2 gap-x-1">
-                      <button
-                        onClick={() => {
-                          const currentCount = rightTeamId === 'teamA' ? gameState.teamA.doOrDieCount : gameState.teamB.doOrDieCount;
-                          doOrDieUpdate(rightTeamId, -currentCount);
-                        }}
-                        className="h-12 bg-gray-400 hover:bg-gray-500 text-white rounded-lg font-bold text-xs transition-colors active:scale-95">
-                        リセット
-                      </button>
+                      <DoOrDieResetButton
+                        teamId={rightTeamId}
+                        currentCount={rightTeamId === 'teamA' ? gameState.teamA.doOrDieCount : gameState.teamB.doOrDieCount}
+                        onUpdate={doOrDieUpdate}
+                        size="tablet"
+                      />
                       <button
                         onClick={() => resetTeamScore(rightTeamId)}
                         className="h-12 bg-gray-500 hover:bg-gray-600 text-white rounded-lg font-bold text-xs transition-colors active:scale-95">
@@ -962,11 +955,11 @@ export function ControlPanel({
                         className={`h-8 text-white rounded text-xs font-bold transition-colors active:scale-95 ${leftTeam.color === 'red' ? 'bg-red-500 hover:bg-red-600' : 'bg-blue-500 hover:bg-blue-600'}`}>
                         +1
                       </button>
-                      <button
-                        onClick={() => doOrDieUpdate(leftTeamId, 1)}
-                        className="h-8 bg-orange-400 hover:bg-orange-500 text-white rounded text-xs font-bold transition-colors active:scale-95">
-                        +1
-                      </button>
+                      <DoOrDieIncrementButton
+                        teamId={leftTeamId}
+                        onUpdate={doOrDieUpdate}
+                        size="mobile"
+                      />
                     </div>
                     {/* -1ボタン行 */}
                     <div className="grid grid-cols-2 gap-x-1">
@@ -975,11 +968,11 @@ export function ControlPanel({
                         className={`h-8 rounded text-xs font-bold transition-colors active:scale-95 ${leftTeam.color === 'red' ? 'bg-red-300 hover:bg-red-400 text-red-800' : 'bg-blue-300 hover:bg-blue-400 text-blue-800'}`}>
                         -1
                       </button>
-                      <button
-                        onClick={() => doOrDieUpdate(leftTeamId, -1)}
-                        className="h-8 bg-orange-200 hover:bg-orange-300 text-orange-800 rounded text-xs font-bold transition-colors active:scale-95">
-                        -1
-                      </button>
+                      <DoOrDieDecrementButton
+                        teamId={leftTeamId}
+                        onUpdate={doOrDieUpdate}
+                        size="mobile"
+                      />
                     </div>
                     {/* リセットボタン行 */}
                     <div className="grid grid-cols-2 gap-x-1">
@@ -988,14 +981,12 @@ export function ControlPanel({
                         className="h-8 bg-gray-500 hover:bg-gray-600 text-white rounded text-xs font-bold transition-colors active:scale-95">
                         スコア<br />リセット
                       </button>
-                      <button
-                        onClick={() => {
-                          const currentCount = leftTeamId === 'teamA' ? gameState.teamA.doOrDieCount : gameState.teamB.doOrDieCount;
-                          doOrDieUpdate(leftTeamId, -currentCount);
-                        }}
-                        className="h-8 bg-gray-400 hover:bg-gray-500 text-white rounded text-xs font-bold transition-colors active:scale-95">
-                        リセット
-                      </button>
+                      <DoOrDieResetButton
+                        teamId={leftTeamId}
+                        currentCount={leftTeamId === 'teamA' ? gameState.teamA.doOrDieCount : gameState.teamB.doOrDieCount}
+                        onUpdate={doOrDieUpdate}
+                        size="mobile"
+                      />
                     </div>
                   </div>
 
@@ -1003,11 +994,11 @@ export function ControlPanel({
                   <div className="flex-1 space-y-1">
                     {/* +1ボタン行 */}
                     <div className="grid grid-cols-2 gap-x-1">
-                      <button
-                        onClick={() => doOrDieUpdate(rightTeamId, 1)}
-                        className="h-8 bg-orange-400 hover:bg-orange-500 text-white rounded text-xs font-bold transition-colors active:scale-95">
-                        +1
-                      </button>
+                      <DoOrDieIncrementButton
+                        teamId={rightTeamId}
+                        onUpdate={doOrDieUpdate}
+                        size="mobile"
+                      />
                       <button
                         onClick={() => scoreUpdate(rightTeamId, 1)}
                         className={`h-8 text-white rounded text-xs font-bold transition-colors active:scale-95 ${rightTeam.color === 'red' ? 'bg-red-500 hover:bg-red-600' : 'bg-blue-500 hover:bg-blue-600'}`}>
@@ -1016,11 +1007,11 @@ export function ControlPanel({
                     </div>
                     {/* -1ボタン行 */}
                     <div className="grid grid-cols-2 gap-x-1">
-                      <button
-                        onClick={() => doOrDieUpdate(rightTeamId, -1)}
-                        className="h-8 bg-orange-200 hover:bg-orange-300 text-orange-800 rounded text-xs font-bold transition-colors active:scale-95">
-                        -1
-                      </button>
+                      <DoOrDieDecrementButton
+                        teamId={rightTeamId}
+                        onUpdate={doOrDieUpdate}
+                        size="mobile"
+                      />
                       <button
                         onClick={() => scoreUpdate(rightTeamId, -1)}
                         className={`h-8 rounded text-xs font-bold transition-colors active:scale-95 ${rightTeam.color === 'red' ? 'bg-red-300 hover:bg-red-400 text-red-800' : 'bg-blue-300 hover:bg-blue-400 text-blue-800'}`}>
@@ -1029,14 +1020,12 @@ export function ControlPanel({
                     </div>
                     {/* リセットボタン行 */}
                     <div className="grid grid-cols-2 gap-x-1">
-                      <button
-                        onClick={() => {
-                          const currentCount = rightTeamId === 'teamA' ? gameState.teamA.doOrDieCount : gameState.teamB.doOrDieCount;
-                          doOrDieUpdate(rightTeamId, -currentCount);
-                        }}
-                        className="h-8 bg-gray-400 hover:bg-gray-500 text-white rounded text-xs font-bold transition-colors active:scale-95">
-                        リセット
-                      </button>
+                      <DoOrDieResetButton
+                        teamId={rightTeamId}
+                        currentCount={rightTeamId === 'teamA' ? gameState.teamA.doOrDieCount : gameState.teamB.doOrDieCount}
+                        onUpdate={doOrDieUpdate}
+                        size="mobile"
+                      />
                       <button
                         onClick={() => resetTeamScore(rightTeamId)}
                         className="h-8 bg-gray-500 hover:bg-gray-600 text-white rounded text-xs font-bold transition-colors active:scale-95">
