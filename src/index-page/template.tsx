@@ -9,7 +9,7 @@ interface TemplateProps {
 
 export function IndexPageTemplate({ revision, fullRevision }: TemplateProps) {
   return (
-    <html lang="ja">
+    <html lang="ja" prefix="og: https://ogp.me/ns#">
       <head>
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -21,12 +21,11 @@ export function IndexPageTemplate({ revision, fullRevision }: TemplateProps) {
         <meta property="og:url" content="https://kabaddi.dominion525.com/" />
         <meta property="og:title" content="カバディタイマー - スコアボードアプリケーション" />
         <meta property="og:description" content="カバディ用のリアルタイムタイマー・スコアボードアプリケーション。複数デバイスで同期、QRコード共有対応。" />
-        <meta property="og:image" content="https://kabaddi.dominion525.com/images/ogp-large.png" />
+        <meta property="og:image" content="https://kabaddi.dominion525.com/images/og-image.png" />
         <meta property="og:image:width" content="1200" />
         <meta property="og:image:height" content="630" />
-        <meta property="og:image" content="https://kabaddi.dominion525.com/images/ogp-square.png" />
-        <meta property="og:image:width" content="1200" />
-        <meta property="og:image:height" content="1200" />
+        <meta property="og:image:type" content="image/png" />
+        <meta property="og:image:alt" content="カバディタイマー アプリケーションアイコン" />
         <meta property="og:site_name" content="カバディタイマー" />
 
         {/* Twitter Cards */}
@@ -34,7 +33,7 @@ export function IndexPageTemplate({ revision, fullRevision }: TemplateProps) {
         <meta name="twitter:url" content="https://kabaddi.dominion525.com/" />
         <meta name="twitter:title" content="カバディタイマー - スコアボードアプリケーション" />
         <meta name="twitter:description" content="カバディ用のリアルタイムタイマー・スコアボードアプリケーション。複数デバイスで同期、QRコード共有対応。" />
-        <meta name="twitter:image" content="https://kabaddi.dominion525.com/images/ogp-large.png" />
+        <meta name="twitter:image" content="https://kabaddi.dominion525.com/images/og-image-large.png" />
         <meta name="twitter:creator" content="@dominion525" />
 
         <link rel="icon" href="/images/favicon.ico" type="image/x-icon" />
