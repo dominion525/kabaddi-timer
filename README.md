@@ -126,4 +126,4 @@ MIT License
 
 ## Special Thanks
 
-東京レイズ and other kabaddi teams
+[東京レイズ](https://x.com/Tokyoraids2012) and other Kabaddi communities
