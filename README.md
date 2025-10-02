@@ -2,6 +2,8 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Cloudflare Workers](https://img.shields.io/badge/platform-Cloudflare%20Workers-orange)](https://workers.cloudflare.com/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.6-blue)](https://www.typescriptlang.org/)
+[![Preact](https://img.shields.io/badge/Preact-10.27-purple)](https://preactjs.com/)
 
 カバディ用のリアルタイムタイマー・スコアボードアプリケーション。複数デバイス間でWebSocketによるリアルタイム同期を実現。
 
