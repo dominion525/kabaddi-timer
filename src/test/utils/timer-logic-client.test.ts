@@ -4,6 +4,7 @@ import {
   calculateSubTimerRemainingSeconds,
   formatTimer,
   formatSubTimer,
+  shouldUpdateDisplay,
 } from '../../utils/timer-logic-client';
 
 describe('timer-logic', () => {
@@ -238,6 +239,108 @@ describe('timer-logic', () => {
     it('負の値も文字列として扱われる', () => {
       const result = formatSubTimer(-5);
       expect(result).toBe('-5');
+    });
+  });
+
+  describe('shouldUpdateDisplay', () => {
+    describe('1秒超のズレ', () => {
+      it('1.5秒のズレで即座に補正する', () => {
+        const result = shouldUpdateDisplay(10.0, 11.5);
+        expect(result).toBe(true);
+      });
+
+      it('2秒のズレで即座に補正する', () => {
+        const result = shouldUpdateDisplay(10.0, 8.0);
+        expect(result).toBe(true);
+      });
+    });
+
+    describe('増加方向（タイマー逆行）', () => {
+      it('50ms（0.05秒）の増加は無視してちらつき防止', () => {
+        const result = shouldUpdateDisplay(10.0, 10.05);
+        expect(result).toBe(false);
+      });
+
+      it('90ms（0.09秒）の増加は無視してちらつき防止', () => {
+        const result = shouldUpdateDisplay(10.0, 10.09);
+        expect(result).toBe(false);
+      });
+
+      it('100ms（0.1秒）の増加は補正する', () => {
+        const result = shouldUpdateDisplay(10.0, 10.1);
+        expect(result).toBe(true);
+      });
+
+      it('150ms（0.15秒）の増加は補正する', () => {
+        const result = shouldUpdateDisplay(10.0, 10.15);
+        expect(result).toBe(true);
+      });
+
+      it('500ms（0.5秒）の増加は補正する', () => {
+        const result = shouldUpdateDisplay(10.0, 10.5);
+        expect(result).toBe(true);
+      });
+    });
+
+    describe('減少方向：表示値が変わらない場合', () => {
+      it('10.48→10.03（表示11→11）で補正する', () => {
+        const result = shouldUpdateDisplay(10.48, 10.03);
+        expect(result).toBe(true);
+        // Math.ceil(10.48) = 11, Math.ceil(10.03) = 11
+      });
+
+      it('9.98→9.60（表示10→10）で補正する', () => {
+        const result = shouldUpdateDisplay(9.98, 9.60);
+        expect(result).toBe(true);
+        // Math.ceil(9.98) = 10, Math.ceil(9.60) = 10
+      });
+
+      it('59.99→59.01（表示60→60）で補正する', () => {
+        const result = shouldUpdateDisplay(59.99, 59.01);
+        expect(result).toBe(true);
+        // Math.ceil(59.99) = 60, Math.ceil(59.01) = 60
+      });
+    });
+
+    describe('減少方向：表示値が変わる場合', () => {
+      it('10.48→9.97（表示11→10）で補正しない', () => {
+        const result = shouldUpdateDisplay(10.48, 9.97);
+        expect(result).toBe(false);
+        // Math.ceil(10.48) = 11, Math.ceil(9.97) = 10 → 表示が変わる
+      });
+
+      it('60.01→59.99（表示61→60）で補正しない', () => {
+        const result = shouldUpdateDisplay(60.01, 59.99);
+        expect(result).toBe(false);
+        // Math.ceil(60.01) = 61, Math.ceil(59.99) = 60 → 表示が変わる
+      });
+
+      it('1.01→0.99（表示2→1）で補正しない', () => {
+        const result = shouldUpdateDisplay(1.01, 0.99);
+        expect(result).toBe(false);
+        // Math.ceil(1.01) = 2, Math.ceil(0.99) = 1 → 表示が変わる
+      });
+    });
+
+    describe('境界値テスト', () => {
+      it('差が0の場合、表示を更新する（同値）', () => {
+        const result = shouldUpdateDisplay(10.0, 10.0);
+        expect(result).toBe(true);
+        // Math.ceil(10.0) = 10, Math.ceil(10.0) = 10 → 同じ
+      });
+
+      it('差がちょうど1.0秒の場合、補正しない（1秒以下）', () => {
+        const result = shouldUpdateDisplay(10.0, 9.0);
+        expect(result).toBe(false);
+        // diff = 1.0, 1秒超ではない
+        // 減少方向で表示値が変わる（10→9）
+      });
+
+      it('差が1.01秒の場合、即座に補正する', () => {
+        const result = shouldUpdateDisplay(10.0, 8.99);
+        expect(result).toBe(true);
+        // diff = 1.01, 1秒超
+      });
     });
   });
 });
