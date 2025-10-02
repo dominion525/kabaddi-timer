@@ -16,7 +16,7 @@ tag = "v1"
 new_sqlite_classes = [ "GameSession" ]
 
 [build]
-command = "npm run build:prod"
+command = "npm run build:worker"
 watch_dir = ["src", "!src/revision.json", "!src/game-v2", "!src/generated", "!src/index-page", "!src/shared"]
 
 [env.development]
