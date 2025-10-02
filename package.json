@@ -4,7 +4,7 @@
   "description": "カバディ用のタイマー・スコアボードアプリケーション",
   "main": "src/index.ts",
   "scripts": {
-    "dev": "npm run build:v2 && npm run build:index-page && (vite build --watch --config vite.game-v2.config.ts &) && wrangler dev",
+    "dev": "npm run build:v2 && npm run build:index-page && (vite build --watch --config vite.game-v2.config.ts &) && wrangler dev --port 8787",
     "build:v2": "vite build --config vite.game-v2.config.ts",
     "build:index-page-client": "vite build --config vite.index-page-client.config.ts",
     "build:index-page-html": "npx tsx --tsconfig tsconfig.index-page.json scripts/build-index-page.ts",
