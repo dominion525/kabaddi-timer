@@ -41,7 +41,10 @@ export function IndexPageTemplate({ revision, fullRevision }: TemplateProps) {
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link href="https://fonts.googleapis.com/css2?family=DotGothic16&display=swap" rel="stylesheet" />
-        <script src="https://cdn.tailwindcss.com"></script>
+
+        {/* Tailwind CSS */}
+        <link rel="stylesheet" href="/js/style.css" />
+
         <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
       </head>
       <body class="bg-gray-100 min-h-screen">

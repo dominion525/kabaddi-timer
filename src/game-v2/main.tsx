@@ -1,5 +1,6 @@
 import { render } from 'preact';
 import { App } from './components/App';
+import '../styles/tailwind.css';
 
 // DOMが読み込まれてから実行
 if (document.readyState !== 'loading') {

@@ -4,6 +4,7 @@
  */
 
 import { generateShortId, validateGameId } from './utils/gameId';
+import '../styles/tailwind.css';
 
 // Lucide icons初期化（TypeScript型定義なし）
 declare const lucide: {
