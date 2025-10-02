@@ -37,6 +37,14 @@
   ],
   "author": "Satoshi",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/dominion525/kabaddi-timer.git"
+  },
+  "homepage": "https://kabaddi.dominion525.com",
+  "bugs": {
+    "url": "https://github.com/dominion525/kabaddi-timer/issues"
+  },
   "devDependencies": {
     "@cloudflare/vitest-pool-workers": "^0.9.3",
     "@cloudflare/workers-types": "^4.20241127.0",

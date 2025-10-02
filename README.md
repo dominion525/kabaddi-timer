@@ -1,6 +1,13 @@
 # Kabaddi Timer
 
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![Cloudflare Workers](https://img.shields.io/badge/platform-Cloudflare%20Workers-orange)](https://workers.cloudflare.com/)
+
 カバディ用のリアルタイムタイマー・スコアボードアプリケーション。複数デバイス間でWebSocketによるリアルタイム同期を実現。
+
+## デモ
+
+🚀 **本番環境**: https://kabaddi.dominion525.com/
 
 ## 主要機能
 
