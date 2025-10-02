@@ -3,6 +3,7 @@ import preact from '@preact/preset-vite';
 
 export default defineConfig({
   plugins: [preact()],
+  publicDir: false,  // Cloudflare Workersが直接public/を配信するため無効化
   build: {
     lib: {
       entry: 'src/game-v2/main.tsx',

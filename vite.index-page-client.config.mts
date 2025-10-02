@@ -1,6 +1,7 @@
 import { defineConfig } from 'vite';
 
 export default defineConfig({
+  publicDir: false,  // Cloudflare Workersが直接public/を配信するため無効化
   build: {
     lib: {
       entry: 'src/index-page/client.ts',

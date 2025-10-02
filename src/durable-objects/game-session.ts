@@ -85,7 +85,7 @@ export class GameSession {
         throw new Error('Missing action field');
       }
 
-      await this.handleAction(parsedMessage.action);
+      await this.handleAction(parsedMessage.action, ws);
     } catch (error) {
       console.error('Message processing error:', error);
       ws.send(JSON.stringify({
@@ -310,7 +310,7 @@ export class GameSession {
     }
   }
 
-  private async handleGameManagementActions(action: GameAction): Promise<void> {
+  private async handleGameManagementActions(action: GameAction, ws?: WebSocket): Promise<boolean> {
     switch (action.type) {
       case ACTION_TYPES.COURT_CHANGE:
         this.changeCourtSides();
@@ -325,10 +325,18 @@ export class GameSession {
         break;
 
       case ACTION_TYPES.GET_GAME_STATE:
-        // 状態を変更せず、現在の状態をブロードキャスト
-        await this.broadcastState();
-        return; // 状態変更がないため、saveAndBroadcastは呼ばない
+        // 状態を変更せず、リクエスト元クライアントにのみ応答
+        if (ws) {
+          this.gameState.serverTime = Date.now();
+          this.sendToClient(ws, {
+            type: MESSAGE_TYPES.GAME_STATE,
+            data: this.gameState,
+            timestamp: Date.now()
+          });
+        }
+        return true; // 処理済み、状態変更がないため以降の処理は不要
     }
+    return false; // 通常のアクションとして処理を続ける
   }
 
   private async handleTimerActions(action: GameAction): Promise<boolean> {
@@ -378,7 +386,7 @@ export class GameSession {
   }
 
 
-  private async handleAction(action: GameAction): Promise<void> {
+  private async handleAction(action: GameAction, ws?: WebSocket): Promise<void> {
     await this.loadGameState(); // 必要に応じて状態を初期化
 
 
@@ -395,7 +403,9 @@ export class GameSession {
     // その他のアクションは状態変更のみ行い、最後に保存・ブロードキャストする
     await this.handleScoreActions(action);
     await this.handleDoOrDieActions(action);
-    await this.handleGameManagementActions(action);
+    if (await this.handleGameManagementActions(action, ws)) {
+      return; // GET_GAME_STATEなど、保存・ブロードキャスト不要なアクション
+    }
 
     // 状態保存とブロードキャスト
     await this.saveGameState();
