@@ -303,10 +303,10 @@ describe('timer-logic', () => {
     });
 
     describe('減少方向：表示値が変わる場合', () => {
-      it('10.48→9.97（表示11→10）で補正しない', () => {
+      it('10.48→9.97（表示11→10）で補正する（510ms > 300ms）', () => {
         const result = shouldUpdateDisplay(10.48, 9.97);
-        expect(result).toBe(false);
-        // Math.ceil(10.48) = 11, Math.ceil(9.97) = 10 → 表示が変わる
+        expect(result).toBe(true);
+        // 差が510ms > 300msなので即座補正（大きなズレを防止）
       });
 
       it('60.01→59.99（表示61→60）で補正しない', () => {
@@ -329,17 +329,16 @@ describe('timer-logic', () => {
         // Math.ceil(10.0) = 10, Math.ceil(10.0) = 10 → 同じ
       });
 
-      it('差がちょうど1.0秒の場合、補正しない（1秒以下）', () => {
+      it('差がちょうど1.0秒の場合、補正する（1000ms > 300ms）', () => {
         const result = shouldUpdateDisplay(10.0, 9.0);
-        expect(result).toBe(false);
-        // diff = 1.0, 1秒超ではない
-        // 減少方向で表示値が変わる（10→9）
+        expect(result).toBe(true);
+        // diff = 1000ms > 300ms → 即座に補正
       });
 
       it('差が1.01秒の場合、即座に補正する', () => {
         const result = shouldUpdateDisplay(10.0, 8.99);
         expect(result).toBe(true);
-        // diff = 1.01, 1秒超
+        // diff = 1010ms > 300ms → 即座に補正
       });
     });
   });

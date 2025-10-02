@@ -130,7 +130,7 @@ export function formatSubTimer(seconds: number): string {
  * スマート補正ロジック: ちらつきを防止しつつ時刻同期を行う
  *
  * タイマーの性質（必ず減少）を活用した補正判定:
- * - 1秒超のズレ → 即座に補正（明らかな異常）
+ * - 300ms超のズレ → 即座に補正（明らかな異常）
  * - 増加方向（タイマーが逆行）:
  *   - 100ms未満 → 無視（ちらつき防止）
  *   - 100ms以上 → 補正（異常な増加）
@@ -145,8 +145,8 @@ export function shouldUpdateDisplay(currentSeconds: number, newSeconds: number):
   // ミリ秒単位に変換して丸め（浮動小数点精度問題を回避）
   const diffMs = Math.round(Math.abs((newSeconds - currentSeconds) * 1000));
 
-  // 1秒超のズレ → 即座に補正
-  if (diffMs > 1000) {
+  // 300ms超のズレ → 即座に補正
+  if (diffMs > 300) {
     return true;
   }
 
