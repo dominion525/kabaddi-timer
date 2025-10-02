@@ -1,20 +1,19 @@
 {
   "name": "kabaddi-timer",
-  "version": "0.0.2",
+  "version": "0.1.0",
   "description": "カバディ用のタイマー・スコアボードアプリケーション",
   "main": "src/index.ts",
   "scripts": {
-    "dev": "npm run build:client:dev && wrangler dev",
-    "build:websocket": "tsc -p tsconfig.websocket.json",
-    "build:client:dev": "npm run build:websocket && tsc -p tsconfig.client.json",
-    "build:client:prod": "esbuild src/client/bundle.ts --bundle --minify --target=es2020 --outfile=public/js/bundle.min.js",
-    "build:client": "npm run build:client:dev",
+    "dev": "npm run build:v2 && npm run build:index-page && (vite build --watch --config vite.game-v2.config.ts &) && wrangler dev",
+    "build:v2": "vite build --config vite.game-v2.config.ts",
+    "build:index-page-client": "vite build --config vite.index-page-client.config.ts",
+    "build:index-page-html": "npx tsx --tsconfig tsconfig.index-page.json scripts/build-index-page.ts",
+    "build:index-page": "npm run build:index-page-client && npm run build:index-page-html",
     "build:worker": "tsc",
-    "build": "node scripts/inject-revision.js && npm run build:client && npm run build:worker",
-    "build:prod": "node scripts/inject-revision.js && npm run build:client:prod && npm run build:worker",
+    "build": "node scripts/inject-revision.js && npm run build:v2 && npm run build:index-page && npm run build:worker",
+    "build:prod": "node scripts/inject-revision.js && npm run build:v2 && npm run build:index-page && npm run build:worker",
     "deploy": "npm run build:prod && NODE_ENV=production wrangler deploy --env=\"\"",
     "typecheck": "tsc --noEmit",
-    "typecheck:client": "tsc -p tsconfig.client.json --noEmit",
     "build:frontend": "vite build",
     "dev:frontend": "vite dev --port 3000",
     "test": "vitest",
@@ -24,7 +23,13 @@
     "test:coverage:ui": "vitest --coverage --ui",
     "test:client": "vitest --config vitest.client.config.ts",
     "test:client:run": "vitest run --config vitest.client.config.ts",
-    "test:client:coverage": "vitest run --config vitest.client.config.ts --coverage"
+    "test:client:coverage": "vitest run --config vitest.client.config.ts --coverage",
+    "test:game-v2": "vitest --config vitest.game-v2.config.ts",
+    "test:game-v2:run": "vitest run --config vitest.game-v2.config.ts",
+    "test:game-v2:coverage": "vitest run --config vitest.game-v2.config.ts --coverage",
+    "test:index-page": "vitest --config vitest.index-page.config.ts",
+    "test:index-page:run": "vitest run --config vitest.index-page.config.ts",
+    "test:index-page:coverage": "vitest run --config vitest.index-page.config.ts --coverage"
   },
   "keywords": [
     "kabaddi",
@@ -38,6 +43,10 @@
   "devDependencies": {
     "@cloudflare/vitest-pool-workers": "^0.9.3",
     "@cloudflare/workers-types": "^4.20241127.0",
+    "@preact/preset-vite": "^2.10.2",
+    "@testing-library/jest-dom": "^6.8.0",
+    "@testing-library/preact": "^3.2.4",
+    "@testing-library/user-event": "^14.6.1",
     "@types/node": "^22.0.0",
     "@vitest/coverage-istanbul": "^3.2.4",
     "@vitest/coverage-v8": "^3.2.4",
@@ -45,9 +54,10 @@
     "esbuild": "^0.25.10",
     "jsdom": "^27.0.0",
     "miniflare": "^4.20250917.0",
+    "preact-render-to-string": "^6.6.2",
     "tsx": "^4.20.5",
     "typescript": "^5.6.3",
-    "vite": "^5.4.8",
+    "vite": "^5.4.20",
     "vitest": "^3.2.4",
     "wrangler": "^4.38.0"
   },
@@ -56,6 +66,7 @@
     "autoprefixer": "^10.4.20",
     "hono": "^4.6.0",
     "postcss": "^8.4.47",
+    "preact": "^10.27.2",
     "tailwindcss": "^3.4.0"
   }
 }

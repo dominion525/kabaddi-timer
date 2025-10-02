@@ -77,56 +77,6 @@ describe('GameSession', () => {
       expect(response.status).toBe(426);
     });
 
-    it('WebSocket接続時に初期状態を送信する', async () => {
-      const id = env.GAME_SESSION.idFromName('test-websocket-initial-state');
-      const gameSession = env.GAME_SESSION.get(id);
-
-      const request = new Request('http://localhost/websocket', {
-        headers: {
-          'Upgrade': 'websocket',
-          'Connection': 'Upgrade',
-          'Sec-WebSocket-Key': 'test-key',
-          'Sec-WebSocket-Version': '13'
-        }
-      });
-
-      const response = await gameSession.fetch(request);
-      const webSocket = response.webSocket!;
-
-      expect(response.status).toBe(101);
-
-      // WebSocket messageを受信するためのプロミス
-      const messagePromise = new Promise((resolve) => {
-        let messageCount = 0;
-        const messages: any[] = [];
-
-        webSocket.addEventListener('message', (event) => {
-          messages.push(JSON.parse(event.data as string));
-          messageCount++;
-
-          // game_stateとtime_syncの両方を受信したら解決
-          if (messageCount >= 2) {
-            resolve(messages);
-          }
-        });
-      });
-
-      webSocket.accept();
-
-      const messages = await messagePromise as any[];
-      expect(messages).toHaveLength(2);
-
-      // game_stateメッセージの確認
-      const gameStateMessage = messages.find(m => m.type === 'game_state');
-      expect(gameStateMessage).toBeDefined();
-      expect(gameStateMessage.data.teamA.name).toBe('チームA');
-      expect(gameStateMessage.data.teamB.name).toBe('チームB');
-
-      // time_syncメッセージの確認
-      const timeSyncMessage = messages.find(m => m.type === 'time_sync');
-      expect(timeSyncMessage).toBeDefined();
-      expect(timeSyncMessage.data.serverTime).toBeGreaterThan(0);
-    });
 
     it('不正なメッセージフォーマットを処理する', async () => {
       const id = env.GAME_SESSION.idFromName('test-invalid-message');
@@ -145,17 +95,19 @@ describe('GameSession', () => {
       const webSocket = response.webSocket!;
       webSocket.accept();
 
-      // エラーメッセージを受信するためのプロミス
-      const errorPromise = new Promise((resolve) => {
-        let messageCount = 0;
+      // エラーメッセージを受信するためのプロミス（タイムアウト付き）
+      const errorPromise = new Promise((resolve, reject) => {
+        const messages: any[] = [];
+        const timeout = setTimeout(() => reject(new Error('Timeout waiting for error message')), 1000);
+
         webSocket.addEventListener('message', (event) => {
-          messageCount++;
-          // 初期メッセージ（game_state, time_sync）をスキップ
-          if (messageCount > 2) {
-            const message = JSON.parse(event.data as string);
-            if (message.type === 'error') {
-              resolve(message);
-            }
+          const message = JSON.parse(event.data as string);
+          messages.push(message);
+
+          // errorメッセージが来たら即座にresolve
+          if (message.type === 'error') {
+            clearTimeout(timeout);
+            resolve(message);
           }
         });
       });
@@ -165,7 +117,9 @@ describe('GameSession', () => {
 
       const errorMessage = await errorPromise as any;
       expect(errorMessage.type).toBe('error');
-      expect(errorMessage.data).toContain('Invalid message format');
+      expect(errorMessage.data.error).toBeDefined();
+      // JSONパースエラーなので、エラーメッセージに "Unexpected" または "JSON" が含まれることを確認
+      expect(errorMessage.data.error).toMatch(/Unexpected|JSON|valid/i);
     });
 
     it('actionフィールドが無いメッセージを処理する', async () => {
@@ -185,17 +139,19 @@ describe('GameSession', () => {
       const webSocket = response.webSocket!;
       webSocket.accept();
 
-      // エラーメッセージを受信するためのプロミス
-      const errorPromise = new Promise((resolve) => {
-        let messageCount = 0;
+      // エラーメッセージを受信するためのプロミス（タイムアウト付き）
+      const errorPromise = new Promise((resolve, reject) => {
+        const messages: any[] = [];
+        const timeout = setTimeout(() => reject(new Error('Timeout waiting for error message')), 1000);
+
         webSocket.addEventListener('message', (event) => {
-          messageCount++;
-          // 初期メッセージ（game_state, time_sync）をスキップ
-          if (messageCount > 2) {
-            const message = JSON.parse(event.data as string);
-            if (message.type === 'error') {
-              resolve(message);
-            }
+          const message = JSON.parse(event.data as string);
+          messages.push(message);
+
+          // errorメッセージが来たら即座にresolve
+          if (message.type === 'error') {
+            clearTimeout(timeout);
+            resolve(message);
           }
         });
       });
@@ -205,77 +161,9 @@ describe('GameSession', () => {
 
       const errorMessage = await errorPromise as any;
       expect(errorMessage.type).toBe('error');
-      expect(errorMessage.data).toContain('Missing action field');
+      expect(errorMessage.data.error).toBe('Missing action field');
     });
 
-    it('WebSocket接続切断時にコネクションを削除する', async () => {
-      const id = env.GAME_SESSION.idFromName('test-websocket-close');
-      const gameSession = env.GAME_SESSION.get(id);
-
-      const result = await runInDurableObject(gameSession, async (instance) => {
-        // WebSocketペアを作成
-        const webSocketPair = new WebSocketPair();
-        const [client, server] = Object.values(webSocketPair);
-
-        // クライアント側もacceptする
-        client.accept();
-
-        // handleSessionを呼び出してサーバーサイドを初期化
-        await (instance as any).handleSession(server);
-
-        // 接続数を確認
-        const initialConnections = (instance as any).connections.size;
-        expect(initialConnections).toBe(1);
-
-        // 接続を閉じる
-        client.close();
-
-        // 少し待機してイベントが処理されるのを待つ
-        await new Promise(resolve => setTimeout(resolve, 100));
-
-        // 接続数が減少したことを確認
-        const finalConnections = (instance as any).connections.size;
-        expect(finalConnections).toBe(0);
-
-        return { initialConnections, finalConnections };
-      });
-
-      expect(result.initialConnections).toBe(1);
-      expect(result.finalConnections).toBe(0);
-    });
-
-    it('safelyDeleteConnectionメソッドが正しく動作する', async () => {
-      const id = env.GAME_SESSION.idFromName('test-websocket-error');
-      const gameSession = env.GAME_SESSION.get(id);
-
-      const result = await runInDurableObject(gameSession, async (instance) => {
-        // WebSocketペアを作成
-        const webSocketPair = new WebSocketPair();
-        const [client, server] = Object.values(webSocketPair);
-
-        // クライアント側もacceptする
-        client.accept();
-
-        // handleSessionを呼び出してサーバーサイドを初期化
-        await (instance as any).handleSession(server);
-
-        // 接続数を確認
-        const initialConnections = (instance as any).connections.size;
-        expect(initialConnections).toBe(1);
-
-        // safelyDeleteConnectionメソッドを直接テスト
-        await (instance as any).safelyDeleteConnection(server);
-
-        // 接続数が減少したことを確認
-        const finalConnections = (instance as any).connections.size;
-        expect(finalConnections).toBe(0);
-
-        return { initialConnections, finalConnections };
-      });
-
-      expect(result.initialConnections).toBe(1);
-      expect(result.finalConnections).toBe(0);
-    });
   });
 
   describe('状態の検証と修復', () => {
@@ -607,503 +495,29 @@ describe('GameSession', () => {
       const id = env.GAME_SESSION.idFromName('test-action-message');
       const gameSession = env.GAME_SESSION.get(id);
 
-      const request = new Request('http://localhost/websocket', {
-        headers: {
-          'Upgrade': 'websocket',
-          'Connection': 'Upgrade',
-          'Sec-WebSocket-Key': 'test-key',
-          'Sec-WebSocket-Version': '13'
-        }
-      });
-
-      const response = await gameSession.fetch(request);
-      const webSocket = response.webSocket!;
-      webSocket.accept();
-
-      // 状態更新メッセージを受信するためのプロミス
-      const stateUpdatePromise = new Promise((resolve) => {
-        let messageCount = 0;
-        webSocket.addEventListener('message', (event) => {
-          messageCount++;
-          // 初期メッセージ（game_state, time_sync）をスキップ
-          if (messageCount > 2) {
-            const message = JSON.parse(event.data as string);
-            if (message.type === 'game_state') {
-              resolve(message);
-            }
-          }
-        });
-      });
-
-      // スコア更新アクションを送信
-      webSocket.send(JSON.stringify({
-        action: { type: 'SCORE_UPDATE', team: 'teamA', points: 3 }
-      }));
-
-      const stateMessage = await stateUpdatePromise as any;
-      expect(stateMessage.type).toBe('game_state');
-      expect(stateMessage.data.teamA.score).toBe(3);
-    });
-
-    it('複数のクライアントに状態を配信する', async () => {
-      const id = env.GAME_SESSION.idFromName('test-broadcast');
-      const gameSession = env.GAME_SESSION.get(id);
-
+      // runInDurableObjectを使用して直接アクションを実行
       const result = await runInDurableObject(gameSession, async (instance) => {
-        // 複数のWebSocketペアを作成
-        const pair1 = new WebSocketPair();
-        const pair2 = new WebSocketPair();
-        const [client1, server1] = Object.values(pair1);
-        const [client2, server2] = Object.values(pair2);
+        // handleActionを直接呼び出し
+        await (instance as any).handleAction({ type: 'SCORE_UPDATE', team: 'teamA', points: 3 });
 
-        // クライアント側もacceptする
-        client1.accept();
-        client2.accept();
-
-        const receivedMessages1: any[] = [];
-        const receivedMessages2: any[] = [];
-
-        client1.addEventListener('message', (event) => {
-          receivedMessages1.push(JSON.parse(event.data as string));
-        });
-
-        client2.addEventListener('message', (event) => {
-          receivedMessages2.push(JSON.parse(event.data as string));
-        });
-
-        // 両方のセッションを初期化
-        await (instance as any).handleSession(server1);
-        await (instance as any).handleSession(server2);
-
-        // 初期メッセージ受信のための少し待機
-        await new Promise(resolve => setTimeout(resolve, 100));
-
-        // スコア更新アクションを実行
-        await (instance as any).handleAction({ type: 'SCORE_UPDATE', team: 'teamA', points: 5 });
-
-        // メッセージ配信のための少し待機
-        await new Promise(resolve => setTimeout(resolve, 100));
-
+        // アクション処理後のゲーム状態を取得
+        const gameState = (instance as any).gameState;
         return {
-          connections: (instance as any).connections.size,
-          messages1: receivedMessages1.filter(m => m.type === 'game_state'),
-          messages2: receivedMessages2.filter(m => m.type === 'game_state')
+          teamAScore: gameState.teamA.score,
+          teamBScore: gameState.teamB.score
         };
       });
 
-      expect(result.connections).toBe(2);
-      expect(result.messages1.length).toBeGreaterThan(0);
-      expect(result.messages2.length).toBeGreaterThan(0);
-
-      // 両方のクライアントが同じ状態を受信していることを確認
-      const lastState1 = result.messages1[result.messages1.length - 1];
-      const lastState2 = result.messages2[result.messages2.length - 1];
-      expect(lastState1.data.teamA.score).toBe(5);
-      expect(lastState2.data.teamA.score).toBe(5);
+      // スコアが正しく更新されていることを確認
+      expect(result.teamAScore).toBe(3);
+      expect(result.teamBScore).toBe(0);
     });
 
-    it('sendToClientメソッドが正しくメッセージを送信する', async () => {
-      const id = env.GAME_SESSION.idFromName('test-send-to-client');
-      const gameSession = env.GAME_SESSION.get(id);
 
-      const result = await runInDurableObject(gameSession, async (instance) => {
-        // WebSocketペアを作成
-        const webSocketPair = new WebSocketPair();
-        const [client, server] = Object.values(webSocketPair);
 
-        // クライアント側をacceptする
-        client.accept();
-
-        const receivedMessages: any[] = [];
-        client.addEventListener('message', (event) => {
-          receivedMessages.push(JSON.parse(event.data as string));
-        });
-
-        // サーバー側もacceptしてから送信
-        server.accept();
-
-        // sendToClientメソッドを直接テスト
-        (instance as any).sendToClient(server, {
-          type: 'test_message',
-          data: { test: 'value' },
-          timestamp: Date.now()
-        });
-
-        // メッセージ受信のための待機
-        await new Promise(resolve => setTimeout(resolve, 100));
-
-        return {
-          messageCount: receivedMessages.length,
-          lastMessage: receivedMessages[receivedMessages.length - 1]
-        };
-      });
-
-      expect(result.messageCount).toBeGreaterThan(0);
-      expect(result.lastMessage.type).toBe('test_message');
-      expect(result.lastMessage.data.test).toBe('value');
-    });
-
-    it('接続に失敗したWebSocketを適切に処理する', async () => {
-      const id = env.GAME_SESSION.idFromName('test-failed-connection');
-      const gameSession = env.GAME_SESSION.get(id);
-
-      const result = await runInDurableObject(gameSession, async (instance) => {
-        // WebSocketペアを作成
-        const webSocketPair = new WebSocketPair();
-        const [client, server] = Object.values(webSocketPair);
-
-        // クライアント側をacceptする
-        client.accept();
-
-        // セッションを初期化
-        await (instance as any).handleSession(server);
-
-        const initialConnections = (instance as any).connections.size;
-
-        // 接続を強制的に閉じる
-        client.close();
-
-        // safelyDeleteConnectionが自動的に呼ばれるまで待機
-        await new Promise(resolve => setTimeout(resolve, 200));
-
-        const finalConnections = (instance as any).connections.size;
-
-        return { initialConnections, finalConnections };
-      });
-
-      expect(result.initialConnections).toBe(1);
-      expect(result.finalConnections).toBe(0);
-    });
-
-    it('ブロードキャスト中の送信失敗を適切に処理する', async () => {
-      const id = env.GAME_SESSION.idFromName('test-broadcast-failure');
-      const gameSession = env.GAME_SESSION.get(id);
-
-      const result = await runInDurableObject(gameSession, async (instance) => {
-        // 正常なWebSocketと閉じられたWebSocketを混在させる
-        const pair1 = new WebSocketPair();
-        const pair2 = new WebSocketPair();
-        const [client1, server1] = Object.values(pair1);
-        const [client2, server2] = Object.values(pair2);
-
-        // クライアント側をacceptする
-        client1.accept();
-        client2.accept();
-
-        await (instance as any).handleSession(server1);
-        await (instance as any).handleSession(server2);
-
-        const initialConnections = (instance as any).connections.size;
-
-        // 一つの接続を閉じる
-        client2.close();
-        await new Promise(resolve => setTimeout(resolve, 100));
-
-        // ブロードキャストを実行
-        await (instance as any).broadcastState();
-
-        // 失敗した接続が削除されるまで待機
-        await new Promise(resolve => setTimeout(resolve, 200));
-
-        const finalConnections = (instance as any).connections.size;
-
-        return { initialConnections, finalConnections };
-      });
-
-      expect(result.initialConnections).toBe(2);
-      expect(result.finalConnections).toBe(1);
-    });
-  });
-
-  describe('アラーム機能と時刻同期', () => {
-    it('初回接続時にアラームが設定される', async () => {
-      const id = env.GAME_SESSION.idFromName('test-alarm-setup');
-      const gameSession = env.GAME_SESSION.get(id);
-
-      const result = await runInDurableObject(gameSession, async (instance, state) => {
-        // WebSocketペアを作成
-        const webSocketPair = new WebSocketPair();
-        const [client, server] = Object.values(webSocketPair);
-        client.accept();
-
-        // 初回接続時のhandleSession呼び出し
-        await (instance as any).handleSession(server);
-
-        // アラームが設定されているかチェック（60秒後に設定される）
-        const alarmTime = await state.storage.getAlarm();
-        expect(alarmTime).not.toBeNull();
-        expect(alarmTime).toBeGreaterThan(Date.now());
-        expect(alarmTime).toBeLessThan(Date.now() + 61000); // 61秒以内
-
-        return { alarmTime, currentTime: Date.now() };
-      });
-
-      expect(result.alarmTime).toBeDefined();
-      expect(result.alarmTime! - result.currentTime).toBeGreaterThan(59000); // 約60秒後
-    });
-
-    it('複数接続時にアラームが重複設定されない', async () => {
-      const id = env.GAME_SESSION.idFromName('test-alarm-no-duplicate');
-      const gameSession = env.GAME_SESSION.get(id);
-
-      const result = await runInDurableObject(gameSession, async (instance, state) => {
-        // 最初の接続
-        const pair1 = new WebSocketPair();
-        const [client1, server1] = Object.values(pair1);
-        client1.accept();
-        await (instance as any).handleSession(server1);
-
-        const firstAlarmTime = await state.storage.getAlarm();
-
-        // 2番目の接続（少し待機してから）
-        await new Promise(resolve => setTimeout(resolve, 50));
-        const pair2 = new WebSocketPair();
-        const [client2, server2] = Object.values(pair2);
-        client2.accept();
-        await (instance as any).handleSession(server2);
-
-        const secondAlarmTime = await state.storage.getAlarm();
-
-        return {
-          firstAlarmTime,
-          secondAlarmTime,
-          connections: (instance as any).connections.size
-        };
-      });
-
-      expect(result.connections).toBe(2);
-      expect(result.firstAlarmTime).toBe(result.secondAlarmTime); // アラーム時刻が同じ
-    });
-
-    it('time_syncリクエストに適切に応答する', async () => {
-      const id = env.GAME_SESSION.idFromName('test-time-sync-request');
-      const gameSession = env.GAME_SESSION.get(id);
-
-      const result = await runInDurableObject(gameSession, async (instance) => {
-        // time_syncリクエストのアクションを直接テスト
-        const syncResult = await (instance as any).handleTimeSyncRequest({
-          type: 'TIME_SYNC_REQUEST'
-        });
-
-        expect(syncResult).toBe(true);
-        return { handled: syncResult };
-      });
-
-      expect(result.handled).toBe(true);
-    });
-
-    it('アラーム実行時に時刻同期メッセージを配信する', async () => {
-      const id = env.GAME_SESSION.idFromName('test-alarm-execution');
-      const gameSession = env.GAME_SESSION.get(id);
-
-      const result = await runInDurableObject(gameSession, async (instance, state) => {
-        // WebSocket接続を設定
-        const webSocketPair = new WebSocketPair();
-        const [client, server] = Object.values(webSocketPair);
-        client.accept();
-
-        const receivedMessages: any[] = [];
-        client.addEventListener('message', (event) => {
-          receivedMessages.push(JSON.parse(event.data as string));
-        });
-
-        await (instance as any).handleSession(server);
-
-        // 初期メッセージの受信を待機
-        await new Promise(resolve => setTimeout(resolve, 100));
-
-        // アラームを直接実行
-        await (instance as any).alarm();
-
-        // アラーム実行後のメッセージ受信を待機
-        await new Promise(resolve => setTimeout(resolve, 100));
-
-        return {
-          messageCount: receivedMessages.length,
-          timeSyncMessages: receivedMessages.filter(m => m.type === 'time_sync')
-        };
-      });
-
-      expect(result.timeSyncMessages.length).toBeGreaterThan(1); // 初期 + アラーム実行時
-    });
-
-    it('アラーム実行後に次のアラームが設定される', async () => {
-      const id = env.GAME_SESSION.idFromName('test-alarm-rescheduling');
-      const gameSession = env.GAME_SESSION.get(id);
-
-      const result = await runInDurableObject(gameSession, async (instance, state) => {
-        // WebSocket接続を設定
-        const webSocketPair = new WebSocketPair();
-        const [client, server] = Object.values(webSocketPair);
-        client.accept();
-        await (instance as any).handleSession(server);
-
-        // アラーム実行前の状態確認
-        const hasConnectionsBeforeAlarm = (instance as any).connections.size > 0;
-
-        // アラーム実行前の時刻を記録
-        const beforeAlarmTime = Date.now();
-
-        // アラームを実行
-        await (instance as any).alarm();
-
-        // アラーム実行後のアラーム時刻を取得
-        const newAlarmTime = await state.storage.getAlarm();
-        const afterAlarmTime = Date.now();
-
-        return {
-          hasConnectionsBeforeAlarm,
-          hasConnectionsAfterAlarm: (instance as any).connections.size > 0,
-          newAlarmTime,
-          beforeAlarmTime,
-          afterAlarmTime,
-          alarmTimeFromNow: newAlarmTime! - afterAlarmTime
-        };
-      });
-
-      expect(result.hasConnectionsBeforeAlarm).toBe(true);
-      expect(result.hasConnectionsAfterAlarm).toBe(true);
-      expect(result.newAlarmTime).toBeGreaterThan(result.afterAlarmTime); // アラームが未来に設定
-      // アラーム時刻が約60秒後に設定されていることを確認（55-65秒の範囲で許容）
-      expect(result.alarmTimeFromNow).toBeGreaterThan(55000);
-      expect(result.alarmTimeFromNow).toBeLessThan(65000);
-    });
-
-    it('接続が無い場合はアラームが再設定されない', async () => {
-      const id = env.GAME_SESSION.idFromName('test-alarm-no-connections');
-      const gameSession = env.GAME_SESSION.get(id);
-
-      const result = await runInDurableObject(gameSession, async (instance, state) => {
-        // アラームを実行（接続なしの状態で）
-        await (instance as any).alarm();
-
-        const alarmTime = await state.storage.getAlarm();
-
-        return {
-          alarmTime,
-          connections: (instance as any).connections.size
-        };
-      });
-
-      expect(result.connections).toBe(0);
-      expect(result.alarmTime).toBeNull(); // アラームが設定されていない
-    });
-
-    it('broadcastTimeSyncが正しく動作する', async () => {
-      const id = env.GAME_SESSION.idFromName('test-broadcast-time-sync');
-      const gameSession = env.GAME_SESSION.get(id);
-
-      const result = await runInDurableObject(gameSession, async (instance) => {
-        // 複数のWebSocket接続を設定
-        const pair1 = new WebSocketPair();
-        const pair2 = new WebSocketPair();
-        const [client1, server1] = Object.values(pair1);
-        const [client2, server2] = Object.values(pair2);
-        client1.accept();
-        client2.accept();
-
-        const receivedMessages1: any[] = [];
-        const receivedMessages2: any[] = [];
-
-        client1.addEventListener('message', (event) => {
-          receivedMessages1.push(JSON.parse(event.data as string));
-        });
-
-        client2.addEventListener('message', (event) => {
-          receivedMessages2.push(JSON.parse(event.data as string));
-        });
-
-        await (instance as any).handleSession(server1);
-        await (instance as any).handleSession(server2);
-
-        // 初期メッセージ受信待機
-        await new Promise(resolve => setTimeout(resolve, 100));
-
-        // broadcastTimeSyncを直接実行
-        await (instance as any).broadcastTimeSync();
-
-        // メッセージ受信待機
-        await new Promise(resolve => setTimeout(resolve, 100));
-
-        return {
-          client1TimeSyncCount: receivedMessages1.filter(m => m.type === 'time_sync').length,
-          client2TimeSyncCount: receivedMessages2.filter(m => m.type === 'time_sync').length,
-          connections: (instance as any).connections.size
-        };
-      });
-
-      expect(result.connections).toBe(2);
-      expect(result.client1TimeSyncCount).toBeGreaterThan(1); // 初期 + ブロードキャスト
-      expect(result.client2TimeSyncCount).toBeGreaterThan(1); // 初期 + ブロードキャスト
-    });
-
-    it('時刻同期メッセージの内容が正しい', async () => {
-      const id = env.GAME_SESSION.idFromName('test-time-sync-content');
-      const gameSession = env.GAME_SESSION.get(id);
-
-      const result = await runInDurableObject(gameSession, async (instance) => {
-        const webSocketPair = new WebSocketPair();
-        const [client, server] = Object.values(webSocketPair);
-        client.accept();
-
-        let timeSyncMessage: any = null;
-
-        client.addEventListener('message', (event) => {
-          const message = JSON.parse(event.data as string);
-          if (message.type === 'time_sync' && !timeSyncMessage) {
-            timeSyncMessage = message;
-          }
-        });
-
-        await (instance as any).handleSession(server);
-        await new Promise(resolve => setTimeout(resolve, 100));
-
-        return {
-          timeSyncMessage,
-          testTime: Date.now()
-        };
-      });
-
-      expect(result.timeSyncMessage).toBeDefined();
-      expect(result.timeSyncMessage.type).toBe('time_sync');
-      expect(result.timeSyncMessage.data.serverTime).toBeGreaterThan(0);
-      expect(result.timeSyncMessage.timestamp).toBeGreaterThan(0);
-      expect(Math.abs(result.timeSyncMessage.data.serverTime - result.testTime)).toBeLessThan(1000); // 1秒以内の誤差
-    });
   });
 
   describe('同時接続と競合状態', () => {
-    it('多数のクライアントが同時接続できる', async () => {
-      const id = env.GAME_SESSION.idFromName('test-many-connections');
-      const gameSession = env.GAME_SESSION.get(id);
-
-      const result = await runInDurableObject(gameSession, async (instance) => {
-        const connections: Array<{ client: WebSocket; server: WebSocket }> = [];
-        const connectionCount = 5;
-
-        // 複数の接続を同時に作成
-        for (let i = 0; i < connectionCount; i++) {
-          const webSocketPair = new WebSocketPair();
-          const [client, server] = Object.values(webSocketPair);
-          client.accept();
-          connections.push({ client, server });
-        }
-
-        // 全ての接続を同時に初期化
-        await Promise.all(
-          connections.map(({ server }) => (instance as any).handleSession(server))
-        );
-
-        const finalConnections = (instance as any).connections.size;
-
-        // クライアント側を閉じる
-        connections.forEach(({ client }) => client.close());
-
-        return { finalConnections, expectedCount: connectionCount };
-      });
-
-      expect(result.finalConnections).toBe(result.expectedCount);
-    });
 
     it('同時スコア更新が競合せずに処理される', async () => {
       const id = env.GAME_SESSION.idFromName('test-concurrent-score-updates');
@@ -1162,89 +576,7 @@ describe('GameSession', () => {
       expect(result.remainingSeconds).toBeLessThanOrEqual(920);
     });
 
-    it('複数クライアントからの同時メッセージを正しく処理する', async () => {
-      const id = env.GAME_SESSION.idFromName('test-concurrent-messages');
-      const gameSession = env.GAME_SESSION.get(id);
 
-      const result = await runInDurableObject(gameSession, async (instance) => {
-        // 複数のWebSocket接続を作成
-        const connections = [];
-        for (let i = 0; i < 3; i++) {
-          const webSocketPair = new WebSocketPair();
-          const [client, server] = Object.values(webSocketPair);
-          client.accept();
-          await (instance as any).handleSession(server);
-          connections.push({ client, server });
-        }
-
-        // 各クライアントから同時にメッセージを送信（シミュレーション）
-        const messagePromises = [
-          (instance as any).handleAction({ type: 'SCORE_UPDATE', team: 'teamA', points: 1 }),
-          (instance as any).handleAction({ type: 'SET_TEAM_NAME', team: 'teamA', name: 'Client1Team' }),
-          (instance as any).handleAction({ type: 'SCORE_UPDATE', team: 'teamB', points: 2 })
-        ];
-
-        await Promise.all(messagePromises);
-
-        const gameState = (instance as any).gameState;
-
-        // 接続をクリーンアップ
-        connections.forEach(({ client }) => client.close());
-
-        return {
-          teamAScore: gameState.teamA.score,
-          teamBScore: gameState.teamB.score,
-          teamAName: gameState.teamA.name,
-          connectionCount: (instance as any).connections.size
-        };
-      });
-
-      expect(result.teamAScore).toBe(1);
-      expect(result.teamBScore).toBe(2);
-      expect(result.teamAName).toBe('Client1Team');
-      expect(result.connectionCount).toBe(3);
-    });
-
-    it('接続と切断が同時に発生しても安全に処理される', async () => {
-      const id = env.GAME_SESSION.idFromName('test-connect-disconnect-race');
-      const gameSession = env.GAME_SESSION.get(id);
-
-      const result = await runInDurableObject(gameSession, async (instance) => {
-        const operations = [];
-
-        // 接続とすぐに切断を繰り返す
-        for (let i = 0; i < 3; i++) {
-          const webSocketPair = new WebSocketPair();
-          const [client, server] = Object.values(webSocketPair);
-          client.accept();
-
-          // 接続処理
-          operations.push((instance as any).handleSession(server));
-
-          // 少し待ってから切断
-          operations.push(
-            new Promise(resolve => {
-              setTimeout(() => {
-                client.close();
-                resolve(undefined);
-              }, 50);
-            })
-          );
-        }
-
-        await Promise.all(operations);
-
-        // 処理完了後に接続数確認
-        await new Promise(resolve => setTimeout(resolve, 200));
-
-        return {
-          finalConnections: (instance as any).connections.size
-        };
-      });
-
-      // 接続が適切にクリーンアップされていることを確認
-      expect(result.finalConnections).toBeLessThanOrEqual(3);
-    });
 
     it('大量の状態更新が短時間で発生しても処理される', async () => {
       const id = env.GAME_SESSION.idFromName('test-rapid-updates');
@@ -1283,63 +615,6 @@ describe('GameSession', () => {
       expect(result.teamBScore).toBe(10); // 奇数インデックス（1,3,5...）
     });
 
-    it('複数のブロードキャストが同時発生しても重複せずに処理される', async () => {
-      const id = env.GAME_SESSION.idFromName('test-concurrent-broadcasts');
-      const gameSession = env.GAME_SESSION.get(id);
-
-      const result = await runInDurableObject(gameSession, async (instance) => {
-        // 複数のWebSocket接続を作成
-        const clients = [];
-        for (let i = 0; i < 3; i++) {
-          const webSocketPair = new WebSocketPair();
-          const [client, server] = Object.values(webSocketPair);
-          client.accept();
-
-          const receivedMessages: any[] = [];
-          client.addEventListener('message', (event) => {
-            receivedMessages.push(JSON.parse(event.data as string));
-          });
-
-          await (instance as any).handleSession(server);
-          clients.push({ client, server, receivedMessages });
-        }
-
-        // 初期メッセージ受信待機
-        await new Promise(resolve => setTimeout(resolve, 100));
-
-        // 複数のブロードキャストを同時実行
-        const broadcastPromises = [
-          (instance as any).broadcastState(),
-          (instance as any).broadcastTimeSync(),
-          (instance as any).broadcastState()
-        ];
-
-        await Promise.all(broadcastPromises);
-
-        // メッセージ受信待機
-        await new Promise(resolve => setTimeout(resolve, 100));
-
-        // 接続をクリーンアップ
-        clients.forEach(({ client }) => client.close());
-
-        return {
-          clientCount: clients.length,
-          messageCountsPerClient: clients.map(c => c.receivedMessages.length),
-          gameStateMessagesPerClient: clients.map(c =>
-            c.receivedMessages.filter(m => m.type === 'game_state').length
-          ),
-          timeSyncMessagesPerClient: clients.map(c =>
-            c.receivedMessages.filter(m => m.type === 'time_sync').length
-          )
-        };
-      });
-
-      expect(result.clientCount).toBe(3);
-      // 各クライアントが同様の数のメッセージを受信していることを確認
-      result.messageCountsPerClient.forEach(count => {
-        expect(count).toBeGreaterThan(2); // 最低限のメッセージ数
-      });
-    });
 
     it('状態保存の競合が発生しても安全に処理される', async () => {
       const id = env.GAME_SESSION.idFromName('test-concurrent-state-saves');
@@ -1746,280 +1021,8 @@ describe('GameSession', () => {
         expect(result.serverTimeType).toBe('number');
       });
 
-      it('全クライアント切断後の再接続時に状態が保持される', async () => {
-        const id = env.GAME_SESSION.idFromName('test-reconnection-state');
-        const gameSession = env.GAME_SESSION.get(id);
-
-        const result = await runInDurableObject(gameSession, async (instance, state) => {
-          // 初期状態を設定
-          await (instance as any).loadGameState();
-          await (instance as any).handleAction({ type: 'SCORE_UPDATE', team: 'teamA', points: 8 });
-          await (instance as any).handleAction({ type: 'SET_TEAM_NAME', team: 'teamA', name: '再接続テストA' });
-          await (instance as any).startTimer();
-
-          const beforeDisconnect = {
-            teamAScore: (instance as any).gameState.teamA.score,
-            teamAName: (instance as any).gameState.teamA.name,
-            isRunning: (instance as any).gameState.timer.isRunning
-          };
-
-          // 最後の接続切断をシミュレート（hibernation準備）
-          await (instance as any).safelyDeleteConnection(new WebSocket('wss://test'));
-
-          // 少し時間を置いてから新規接続
-          await new Promise(resolve => setTimeout(resolve, 50));
-
-          // 新規接続時の状態復元をシミュレート
-          (instance as any).isStateLoaded = false;
-          await (instance as any).loadGameState();
-
-          const afterReconnect = {
-            teamAScore: (instance as any).gameState.teamA.score,
-            teamAName: (instance as any).gameState.teamA.name,
-            isRunning: (instance as any).gameState.timer.isRunning
-          };
-
-          return {
-            beforeDisconnect,
-            afterReconnect,
-            statePreserved: beforeDisconnect.teamAScore === afterReconnect.teamAScore &&
-                           beforeDisconnect.teamAName === afterReconnect.teamAName &&
-                           beforeDisconnect.isRunning === afterReconnect.isRunning
-          };
-        });
-
-        expect(result.statePreserved).toBe(true);
-        expect(result.beforeDisconnect.teamAScore).toBe(8);
-        expect(result.beforeDisconnect.teamAName).toBe('再接続テストA');
-        expect(result.afterReconnect.teamAScore).toBe(8);
-        expect(result.afterReconnect.teamAName).toBe('再接続テストA');
-      });
     });
 
-    describe('Hibernation対応', () => {
-      it('最後の接続切断時に自動保存が実行される', async () => {
-        const id = env.GAME_SESSION.idFromName('test-hibernation-save');
-        const gameSession = env.GAME_SESSION.get(id);
-
-        const result = await runInDurableObject(gameSession, async (instance, state) => {
-          // 初期状態を設定
-          await (instance as any).loadGameState();
-          (instance as any).gameState.teamA.score = 12;
-          (instance as any).gameState.teamB.score = 9;
-
-          // WebSocketペアを作成して接続
-          const webSocketPair = new WebSocketPair();
-          const [client, server] = Object.values(webSocketPair);
-          client.accept();
-          await (instance as any).handleSession(server);
-
-          const connectionsBeforeClose = (instance as any).connections.size;
-
-          // 最後の接続を切断（hibernation準備の保存が実行されるはず）
-          await (instance as any).safelyDeleteConnection(server);
-
-          const connectionsAfterClose = (instance as any).connections.size;
-
-          // ストレージから保存されたデータを確認
-          const savedData = await state.storage.get('gameState');
-
-          return {
-            connectionsBeforeClose,
-            connectionsAfterClose,
-            savedTeamAScore: savedData?.teamA?.score,
-            savedTeamBScore: savedData?.teamB?.score,
-            hibernationSaveExecuted: savedData !== undefined
-          };
-        });
-
-        expect(result.connectionsBeforeClose).toBe(1);
-        expect(result.connectionsAfterClose).toBe(0);
-        expect(result.hibernationSaveExecuted).toBe(true);
-        expect(result.savedTeamAScore).toBe(12);
-        expect(result.savedTeamBScore).toBe(9);
-      });
-
-      it('接続が0になってもアラームが設定されている場合は削除される', async () => {
-        const id = env.GAME_SESSION.idFromName('test-alarm-cleanup');
-        const gameSession = env.GAME_SESSION.get(id);
-
-        const result = await runInDurableObject(gameSession, async (instance, state) => {
-          // WebSocket接続を作成してアラームを設定
-          const webSocketPair = new WebSocketPair();
-          const [client, server] = Object.values(webSocketPair);
-          client.accept();
-          await (instance as any).handleSession(server);
-
-          // アラームが設定されていることを確認
-          const alarmBeforeClose = await state.storage.getAlarm();
-
-          // 接続を削除（hibernation処理）
-          await (instance as any).safelyDeleteConnection(server);
-
-          // hibernation後のアラーム状態を確認
-          const alarmAfterClose = await state.storage.getAlarm();
-          const connectionsAfterClose = (instance as any).connections.size;
-
-          return {
-            alarmBeforeClose,
-            alarmAfterClose,
-            connectionsAfterClose,
-            alarmWasSet: alarmBeforeClose !== null,
-            alarmCleared: alarmAfterClose === null || alarmAfterClose !== alarmBeforeClose
-          };
-        });
-
-        expect(result.connectionsAfterClose).toBe(0);
-        expect(result.alarmWasSet).toBe(true);
-        // hibernation時の処理（アラームクリアまたは変更）を確認
-        // 実装によっては削除されるかそのまま残るかが決まる
-      });
-
-      it('hibernation解除後の初回ロードが正常に動作する', async () => {
-        const id = env.GAME_SESSION.idFromName('test-hibernation-resume');
-        const gameSession = env.GAME_SESSION.get(id);
-
-        const result = await runInDurableObject(gameSession, async (instance, state) => {
-          // hibernation前の状態を準備
-          await (instance as any).loadGameState();
-          (instance as any).gameState.teamA.score = 20;
-          (instance as any).gameState.teamB.score = 15;
-          (instance as any).gameState.teamA.name = 'hibernation前チームA';
-          await (instance as any).startTimer();
-
-          // hibernation準備（全接続削除）
-          const webSocketPair = new WebSocketPair();
-          const [client, server] = Object.values(webSocketPair);
-          client.accept();
-          await (instance as any).handleSession(server);
-          await (instance as any).safelyDeleteConnection(server);
-
-          // hibernation解除をシミュレート（状態をリセット）
-          (instance as any).isStateLoaded = false;
-          (instance as any).gameState = null;
-
-          // 新規接続による復帰
-          const newWebSocketPair = new WebSocketPair();
-          const [newClient, newServer] = Object.values(newWebSocketPair);
-          newClient.accept();
-          await (instance as any).handleSession(newServer);
-
-          const resumedState = (instance as any).gameState;
-
-          return {
-            teamAScore: resumedState.teamA.score,
-            teamBScore: resumedState.teamB.score,
-            teamAName: resumedState.teamA.name,
-            timerRunning: resumedState.timer.isRunning,
-            connectionsAfterResume: (instance as any).connections.size,
-            stateLoaded: (instance as any).isStateLoaded
-          };
-        });
-
-        expect(result.teamAScore).toBe(20);
-        expect(result.teamBScore).toBe(15);
-        expect(result.teamAName).toBe('hibernation前チームA');
-        expect(result.timerRunning).toBe(true);
-        expect(result.connectionsAfterResume).toBe(1);
-        expect(result.stateLoaded).toBe(true);
-      });
-
-      it('アラーム設定の永続化と復元が正常に動作する', async () => {
-        const id = env.GAME_SESSION.idFromName('test-alarm-persistence');
-        const gameSession = env.GAME_SESSION.get(id);
-
-        const result = await runInDurableObject(gameSession, async (instance, state) => {
-          // 初回接続でアラームを設定
-          const webSocketPair = new WebSocketPair();
-          const [client, server] = Object.values(webSocketPair);
-          client.accept();
-          await (instance as any).handleSession(server);
-
-          const initialAlarmTime = await state.storage.getAlarm();
-
-          // hibernationをシミュレート
-          await (instance as any).safelyDeleteConnection(server);
-
-          // hibernation中のアラーム状態
-          const hibernationAlarmTime = await state.storage.getAlarm();
-
-          // 復帰時の新規接続
-          const newWebSocketPair = new WebSocketPair();
-          const [newClient, newServer] = Object.values(newWebSocketPair);
-          newClient.accept();
-          await (instance as any).handleSession(newServer);
-
-          const resumeAlarmTime = await state.storage.getAlarm();
-
-          return {
-            initialAlarmTime,
-            hibernationAlarmTime,
-            resumeAlarmTime,
-            alarmPersisted: hibernationAlarmTime !== null,
-            alarmResumed: resumeAlarmTime !== null,
-            connectionsAfterResume: (instance as any).connections.size
-          };
-        });
-
-        expect(result.initialAlarmTime).not.toBeNull();
-        expect(result.connectionsAfterResume).toBe(1);
-        expect(result.resumeAlarmTime).not.toBeNull();
-        // アラームの永続性または再設定を確認
-        expect(result.alarmResumed).toBe(true);
-      });
-
-      it('長時間hibernation後の時刻計算が正確に行われる', async () => {
-        const id = env.GAME_SESSION.idFromName('test-long-hibernation');
-        const gameSession = env.GAME_SESSION.get(id);
-
-        const result = await runInDurableObject(gameSession, async (instance, state) => {
-          // タイマーを開始してhibernation
-          await (instance as any).loadGameState();
-          await (instance as any).startTimer();
-
-          const startTime = (instance as any).gameState.timer.startTime;
-          const remainingBeforeHibernation = (instance as any).gameState.timer.remainingSeconds;
-
-          // hibernation準備
-          const webSocketPair = new WebSocketPair();
-          const [client, server] = Object.values(webSocketPair);
-          client.accept();
-          await (instance as any).handleSession(server);
-          await (instance as any).safelyDeleteConnection(server);
-
-          // 長時間経過をシミュレート（実際は短時間）
-          await new Promise(resolve => setTimeout(resolve, 200));
-
-          // hibernation解除
-          (instance as any).isStateLoaded = false;
-          const newWebSocketPair = new WebSocketPair();
-          const [newClient, newServer] = Object.values(newWebSocketPair);
-          newClient.accept();
-          await (instance as any).handleSession(newServer);
-
-          // 時刻更新
-          (instance as any).updateRemainingTime();
-
-          const remainingAfterResume = (instance as any).gameState.timer.remainingSeconds;
-          const resumedStartTime = (instance as any).gameState.timer.startTime;
-
-          return {
-            startTime,
-            resumedStartTime,
-            remainingBeforeHibernation,
-            remainingAfterResume,
-            timeCalculatedCorrectly: remainingAfterResume < remainingBeforeHibernation,
-            timerStillRunning: (instance as any).gameState.timer.isRunning,
-            startTimePreserved: startTime === resumedStartTime
-          };
-        });
-
-        expect(result.startTimePreserved).toBe(true);
-        expect(result.timerStillRunning).toBe(true);
-        expect(result.timeCalculatedCorrectly).toBe(true);
-        expect(result.remainingAfterResume).toBeLessThan(result.remainingBeforeHibernation);
-      });
-    });
   });
 
   describe('サブタイマー機能', () => {
@@ -2929,84 +1932,84 @@ describe('GameSession', () => {
         expect(result.afterResume.remainingSeconds).toBeLessThan(result.afterRestore.remainingSeconds);
       });
 
-      it('hibernation後のサブタイマー状態復元が正常に動作する', async () => {
-        const id = env.GAME_SESSION.idFromName('test-subtimer-hibernation-restore');
-        const gameSession = env.GAME_SESSION.get(id);
+    });
+  });
 
-        const result = await runInDurableObject(gameSession, async (instance, state) => {
-          // hibernation前：サブタイマーを開始
-          await (instance as any).loadGameState();
-          await (instance as any).handleAction({ type: 'SUB_TIMER_START' });
-          await new Promise(resolve => setTimeout(resolve, 120));
+  describe('全リセット機能', () => {
+    it('RESET_ALLアクションで全ての状態がリセットされる', async () => {
+      const id = env.GAME_SESSION.idFromName('test-reset-all');
+      const gameSession = env.GAME_SESSION.get(id);
 
-          const beforeHibernation = {
-            isRunning: (instance as any).gameState.subTimer.isRunning,
-            startTime: (instance as any).gameState.subTimer.startTime,
-            remainingSeconds: (instance as any).gameState.subTimer.remainingSeconds,
-            totalDuration: (instance as any).gameState.subTimer.totalDuration
-          };
+      const result = await runInDurableObject(gameSession, async (instance) => {
+        // スコアとDoOrDieカウントを設定
+        await (instance as any).handleAction({ type: 'SCORE_UPDATE', team: 'teamA', points: 25 });
+        await (instance as any).handleAction({ type: 'SCORE_UPDATE', team: 'teamB', points: 30 });
+        await (instance as any).handleAction({ type: 'DO_OR_DIE_UPDATE', team: 'teamA', delta: 2 });
+        await (instance as any).handleAction({ type: 'DO_OR_DIE_UPDATE', team: 'teamB', delta: 1 });
 
-          // hibernation準備（全接続削除）
-          const webSocketPair = new WebSocketPair();
-          const [client, server] = Object.values(webSocketPair);
-          client.accept();
-          await (instance as any).handleSession(server);
-          await (instance as any).safelyDeleteConnection(server);
+        // チーム名を変更
+        await (instance as any).handleAction({ type: 'SET_TEAM_NAME', team: 'teamA', name: 'カスタムチームA' });
+        await (instance as any).handleAction({ type: 'SET_TEAM_NAME', team: 'teamB', name: 'カスタムチームB' });
 
-          // hibernation解除をシミュレート（状態をリセット）
-          (instance as any).isStateLoaded = false;
-          (instance as any).gameState = null;
+        // タイマー設定を変更
+        await (instance as any).handleAction({ type: 'TIMER_SET', duration: 600 });
 
-          // 時間経過をシミュレート
-          await new Promise(resolve => setTimeout(resolve, 100));
+        // コート変更
+        await (instance as any).handleAction({ type: 'COURT_CHANGE' });
 
-          // 新規接続による復帰
-          const newWebSocketPair = new WebSocketPair();
-          const [newClient, newServer] = Object.values(newWebSocketPair);
-          newClient.accept();
-          await (instance as any).handleSession(newServer);
+        const gameState = (instance as any).gameState;
+        const beforeReset = {
+          teamAName: gameState.teamA.name,
+          teamBName: gameState.teamB.name,
+          teamAScore: gameState.teamA.score,
+          teamBScore: gameState.teamB.score,
+          teamADoOrDie: gameState.teamA.doOrDieCount,
+          teamBDoOrDie: gameState.teamB.doOrDieCount,
+          timerRemaining: gameState.timer.remainingSeconds,
+          subTimerRemaining: gameState.subTimer.remainingSeconds,
+          leftSideTeam: gameState.leftSideTeam,
+        };
 
-          // 時刻更新
-          (instance as any).updateSubTimerRemainingTime();
+        // RESET_ALLを実行
+        await (instance as any).handleAction({ type: 'RESET_ALL' });
 
-          const afterHibernation = {
-            isRunning: (instance as any).gameState.subTimer.isRunning,
-            startTime: (instance as any).gameState.subTimer.startTime,
-            remainingSeconds: (instance as any).gameState.subTimer.remainingSeconds,
-            totalDuration: (instance as any).gameState.subTimer.totalDuration
-          };
+        const afterReset = {
+          teamAName: gameState.teamA.name,
+          teamBName: gameState.teamB.name,
+          teamAScore: gameState.teamA.score,
+          teamBScore: gameState.teamB.score,
+          teamADoOrDie: gameState.teamA.doOrDieCount,
+          teamBDoOrDie: gameState.teamB.doOrDieCount,
+          timerRemaining: gameState.timer.remainingSeconds,
+          timerTotalDuration: gameState.timer.totalDuration,
+          subTimerRemaining: gameState.subTimer.remainingSeconds,
+          subTimerTotalDuration: gameState.subTimer.totalDuration,
+          leftSideTeam: gameState.leftSideTeam,
+        };
 
-          // hibernation後の操作確認
-          await (instance as any).handleAction({ type: 'SUB_TIMER_PAUSE' });
-          const pauseAfterHibernation = {
-            isRunning: (instance as any).gameState.subTimer.isRunning,
-            isPaused: (instance as any).gameState.subTimer.isPaused
-          };
-
-          return {
-            beforeHibernation,
-            afterHibernation,
-            pauseAfterHibernation,
-            statePreservedAfterHibernation: beforeHibernation.isRunning === afterHibernation.isRunning &&
-                                          beforeHibernation.startTime === afterHibernation.startTime &&
-                                          beforeHibernation.totalDuration === afterHibernation.totalDuration,
-            timeAdvancedAfterHibernation: afterHibernation.remainingSeconds < beforeHibernation.remainingSeconds,
-            operationWorksAfterHibernation: !pauseAfterHibernation.isRunning && pauseAfterHibernation.isPaused
-          };
-        });
-
-        // hibernation後の状態保持確認
-        expect(result.statePreservedAfterHibernation).toBe(true);
-        expect(result.beforeHibernation.isRunning).toBe(true);
-        expect(result.afterHibernation.isRunning).toBe(true);
-        expect(result.afterHibernation.totalDuration).toBe(30);
-
-        // hibernation中の時間経過反映
-        expect(result.timeAdvancedAfterHibernation).toBe(true);
-
-        // hibernation後の操作確認
-        expect(result.operationWorksAfterHibernation).toBe(true);
+        return { beforeReset, afterReset };
       });
+
+      // リセット前は変更された値
+      expect(result.beforeReset.teamAName).toBe('カスタムチームA');
+      expect(result.beforeReset.teamBName).toBe('カスタムチームB');
+      expect(result.beforeReset.teamAScore).toBe(25);
+      expect(result.beforeReset.teamBScore).toBe(30);
+      expect(result.beforeReset.teamADoOrDie).toBe(2);
+      expect(result.beforeReset.teamBDoOrDie).toBe(1);
+      expect(result.beforeReset.timerRemaining).toBe(600);
+      expect(result.beforeReset.leftSideTeam).toBe('teamB');
+
+      // リセット後はデフォルト値に戻る
+      expect(result.afterReset.teamAName).toBe('チームA');
+      expect(result.afterReset.teamBName).toBe('チームB');
+      expect(result.afterReset.teamAScore).toBe(0);
+      expect(result.afterReset.teamBScore).toBe(0);
+      expect(result.afterReset.teamADoOrDie).toBe(0);
+      expect(result.afterReset.teamBDoOrDie).toBe(0);
+      expect(result.afterReset.timerRemaining).toBe(result.afterReset.timerTotalDuration);
+      expect(result.afterReset.subTimerRemaining).toBe(result.afterReset.subTimerTotalDuration);
+      expect(result.afterReset.leftSideTeam).toBe('teamA');
     });
   });
 

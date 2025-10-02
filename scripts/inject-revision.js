@@ -5,8 +5,8 @@ const fs = require('fs');
 const path = require('path');
 
 try {
-  // Gitリビジョンを取得
-  const revision = execSync('git rev-parse --short HEAD', { encoding: 'utf8' }).trim();
+  // Gitリビジョンを取得（フルハッシュ）
+  const revision = execSync('git rev-parse HEAD', { encoding: 'utf8' }).trim();
 
   const outputPath = path.join(__dirname, '..', 'src', 'revision.json');
 

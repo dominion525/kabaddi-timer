@@ -2,14 +2,14 @@ import { Hono } from 'hono';
 import { GameSession } from './durable-objects';
 import { Env } from './types/game';
 import websocketRouter from './routes/websocket';
-import gameRouter from './routes/game';
+import gameV2Router from './routes/game-v2';
 import homeRouter from './routes/home';
 
 const app = new Hono<{ Bindings: Env }>();
 
 // ルーターを統合
 app.route('/', websocketRouter);
-app.route('/', gameRouter);
+app.route('/', gameV2Router);
 app.route('/', homeRouter);
 
 // Cloudflare Workers標準の静的ファイル配信
