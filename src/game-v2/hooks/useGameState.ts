@@ -116,26 +116,32 @@ export function useGameState({ gameId }: UseGameStateOptions): UseGameStateResul
 
       // V1と同じstartTime調整処理: サーバー時刻をクライアント時刻に置換
       // タイマーが実行中の場合、startTimeを「メッセージ受信時のクライアント時刻」に置き換え
-      if (data.timer && data.timer.isRunning && data.timer.startTime) {
-        console.log('Adjusting timer startTime for relative calculation:', {
-          originalStartTime: data.timer.startTime,
-          remainingSeconds: data.timer.remainingSeconds,
-          clientTime: clientTime
-        });
-        data.timer.startTime = clientTime;
-      }
+      // 不変性を保つため、新しいオブジェクトを作成
+      const adjustedData: GameState = {
+        ...data,
+        timer: data.timer && data.timer.isRunning && data.timer.startTime
+          ? (() => {
+              console.log('Adjusting timer startTime for relative calculation:', {
+                originalStartTime: data.timer.startTime,
+                remainingSeconds: data.timer.remainingSeconds,
+                clientTime: clientTime
+              });
+              return { ...data.timer, startTime: clientTime };
+            })()
+          : data.timer,
+        subTimer: data.subTimer && data.subTimer.isRunning && data.subTimer.startTime
+          ? (() => {
+              console.log('Adjusting subTimer startTime for relative calculation:', {
+                originalStartTime: data.subTimer.startTime,
+                remainingSeconds: data.subTimer.remainingSeconds,
+                clientTime: clientTime
+              });
+              return { ...data.subTimer, startTime: clientTime };
+            })()
+          : data.subTimer,
+      };
 
-      // サブタイマーも同様の処理
-      if (data.subTimer && data.subTimer.isRunning && data.subTimer.startTime) {
-        console.log('Adjusting subTimer startTime for relative calculation:', {
-          originalStartTime: data.subTimer.startTime,
-          remainingSeconds: data.subTimer.remainingSeconds,
-          clientTime: clientTime
-        });
-        data.subTimer.startTime = clientTime;
-      }
-
-      setGameState(data);
+      setGameState(adjustedData);
 
       // 時刻同期計算（GET_GAME_STATEレスポンスで実行）
       if (lastSyncRequestRef.current > 0) {

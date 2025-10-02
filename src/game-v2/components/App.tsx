@@ -157,7 +157,7 @@ export function App({ gameId }: Props) {
   const rightTeamId = displayFlipped ? baseLeftTeamId : baseRightTeamId;
 
   // タイマーアニメーション: V1と同じrequestAnimationFrameループで毎フレーム更新
-  const { mainTimerSeconds, subTimerSeconds, subTimerIsRunning } = useTimerAnimation(gameState, serverTimeOffset);
+  const { mainTimerSeconds, subTimerSeconds, subTimerIsRunning } = useTimerAnimation(gameState);
 
   return (
     <>

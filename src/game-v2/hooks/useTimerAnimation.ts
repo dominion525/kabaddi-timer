@@ -1,6 +1,6 @@
-import { useState, useEffect, useRef } from 'preact/hooks';
+import { useState, useEffect, useLayoutEffect, useRef } from 'preact/hooks';
 import type { GameState } from '../../types/game';
-import { calculateRemainingSeconds, calculateSubTimerRemainingSeconds } from '../../utils/timer-logic-client';
+import { calculateRemainingSeconds, calculateSubTimerRemainingSeconds, shouldUpdateDisplay } from '../../utils/timer-logic-client';
 
 interface UseTimerAnimationResult {
   mainTimerSeconds: number;
@@ -11,37 +11,61 @@ interface UseTimerAnimationResult {
 /**
  * V1と同じタイマーアニメーションアーキテクチャを実装
  * requestAnimationFrameで毎フレーム更新し、サーバーからの状態更新で自動補正
+ *
+ * 改善点:
+ * - useRefでgameStateを保持し、アニメーションループを再起動しない
+ * - スマート補正ロジックでちらつきを防止
  */
 export function useTimerAnimation(
-  gameState: GameState | null,
-  serverTimeOffset: number
+  gameState: GameState | null
 ): UseTimerAnimationResult {
   const [mainTimerSeconds, setMainTimerSeconds] = useState(0);
   const [subTimerSeconds, setSubTimerSeconds] = useState(0);
   const [subTimerIsRunning, setSubTimerIsRunning] = useState(false);
+
   const animationIdRef = useRef<number | null>(null);
+  const gameStateRef = useRef<GameState | null>(null);
+  const prevMainSecondsRef = useRef(0);
+  const prevSubSecondsRef = useRef(0);
 
+  // gameState更新時にrefに保存（アニメーションループは再起動しない）
+  // useLayoutEffectを使用して同期的に更新し、requestAnimationFrameのタイミング問題を回避
+  useLayoutEffect(() => {
+    gameStateRef.current = gameState;
+  }, [gameState]);
+
+  // アニメーションループ（初回のみ起動、以降は継続）
   useEffect(() => {
-    if (!gameState) {
-      // ゲーム状態がない場合はアニメーションを停止
-      if (animationIdRef.current !== null) {
-        cancelAnimationFrame(animationIdRef.current);
-        animationIdRef.current = null;
-      }
-      return;
-    }
-
-    // アニメーションループ: V1のstartTimerUpdate()と同等
     const updateLoop = () => {
-      try {
-        // メインタイマー計算
-        const mainResult = calculateRemainingSeconds(gameState.timer, serverTimeOffset);
-        setMainTimerSeconds(mainResult.seconds);
+      const currentGameState = gameStateRef.current;
 
-        // サブタイマー計算
-        if (gameState.subTimer) {
-          const subResult = calculateSubTimerRemainingSeconds(gameState.subTimer, serverTimeOffset);
-          setSubTimerSeconds(subResult.seconds);
+      if (!currentGameState) {
+        // ゲーム状態がない場合は次フレームで再チェック
+        animationIdRef.current = requestAnimationFrame(updateLoop);
+        return;
+      }
+
+      try {
+        // メインタイマー計算（相対時間アプローチでserverTimeOffsetは不要）
+        const mainResult = calculateRemainingSeconds(currentGameState.timer, 0);
+        const newMainSeconds = mainResult.seconds;
+
+        // スマート補正: ちらつき防止
+        if (shouldUpdateDisplay(prevMainSecondsRef.current, newMainSeconds)) {
+          setMainTimerSeconds(newMainSeconds);
+          prevMainSecondsRef.current = newMainSeconds;
+        }
+
+        // サブタイマー計算（相対時間アプローチでserverTimeOffsetは不要）
+        if (currentGameState.subTimer) {
+          const subResult = calculateSubTimerRemainingSeconds(currentGameState.subTimer, 0);
+          const newSubSeconds = subResult.seconds;
+
+          // スマート補正: ちらつき防止
+          if (shouldUpdateDisplay(prevSubSecondsRef.current, newSubSeconds)) {
+            setSubTimerSeconds(newSubSeconds);
+            prevSubSecondsRef.current = newSubSeconds;
+          }
           setSubTimerIsRunning(subResult.isRunning);
         }
 
@@ -57,22 +81,17 @@ export function useTimerAnimation(
       }
     };
 
-    // 既存のアニメーションをクリア（V1のupdateTimerDisplay()と同等）
-    if (animationIdRef.current !== null) {
-      cancelAnimationFrame(animationIdRef.current);
-    }
-
     // アニメーションループを開始
     animationIdRef.current = requestAnimationFrame(updateLoop);
 
-    // クリーンアップ: コンポーネントアンマウント時またはgameState変更時
+    // クリーンアップ: コンポーネントアンマウント時のみ
     return () => {
       if (animationIdRef.current !== null) {
         cancelAnimationFrame(animationIdRef.current);
         animationIdRef.current = null;
       }
     };
-  }, [gameState, serverTimeOffset]);
+  }, []); // 空配列 = 初回のみ実行、以降はアニメーションループが継続
 
   return {
     mainTimerSeconds,

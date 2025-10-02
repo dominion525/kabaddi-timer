@@ -125,3 +125,45 @@ export function formatTimer(seconds: number): string {
 export function formatSubTimer(seconds: number): string {
   return seconds.toString().padStart(2, '0');
 }
+
+/**
+ * スマート補正ロジック: ちらつきを防止しつつ時刻同期を行う
+ *
+ * タイマーの性質（必ず減少）を活用した補正判定:
+ * - 300ms超のズレ → 即座に補正（明らかな異常）
+ * - 増加方向（タイマーが逆行）:
+ *   - 100ms未満 → 無視（ちらつき防止）
+ *   - 100ms以上 → 補正（異常な増加）
+ * - 減少方向:
+ *   - 表示値が変わらない範囲で補正
+ *
+ * @param currentSeconds - 現在の秒数
+ * @param newSeconds - 新しい秒数
+ * @returns 表示を更新すべきかどうか
+ */
+export function shouldUpdateDisplay(currentSeconds: number, newSeconds: number): boolean {
+  // ミリ秒単位に変換して丸め（浮動小数点精度問題を回避）
+  const diffMs = Math.round(Math.abs((newSeconds - currentSeconds) * 1000));
+
+  // 300ms超のズレ → 即座に補正
+  if (diffMs > 300) {
+    return true;
+  }
+
+  // タイマーは減少するはず
+  // 増加する場合（逆行）は、小さなズレは無視
+  if (newSeconds > currentSeconds) {
+    // 100ms以上の増加は異常なので補正
+    if (diffMs >= 100) {
+      return true;
+    }
+    // 100ms未満の増加は無視（ちらつき防止）
+    return false;
+  }
+
+  // 減少方向: 表示値が変わらなければ補正OK
+  const currentDisplay = Math.ceil(currentSeconds);
+  const newDisplay = Math.ceil(newSeconds);
+
+  return currentDisplay === newDisplay;
+}
