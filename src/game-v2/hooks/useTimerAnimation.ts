@@ -13,8 +13,7 @@ interface UseTimerAnimationResult {
  * requestAnimationFrameで毎フレーム更新し、サーバーからの状態更新で自動補正
  */
 export function useTimerAnimation(
-  gameState: GameState | null,
-  serverTimeOffset: number
+  gameState: GameState | null
 ): UseTimerAnimationResult {
   const [mainTimerSeconds, setMainTimerSeconds] = useState(0);
   const [subTimerSeconds, setSubTimerSeconds] = useState(0);
@@ -34,13 +33,13 @@ export function useTimerAnimation(
     // アニメーションループ: V1のstartTimerUpdate()と同等
     const updateLoop = () => {
       try {
-        // メインタイマー計算
-        const mainResult = calculateRemainingSeconds(gameState.timer, serverTimeOffset);
+        // メインタイマー計算（相対時間アプローチでserverTimeOffsetは不要）
+        const mainResult = calculateRemainingSeconds(gameState.timer, 0);
         setMainTimerSeconds(mainResult.seconds);
 
-        // サブタイマー計算
+        // サブタイマー計算（相対時間アプローチでserverTimeOffsetは不要）
         if (gameState.subTimer) {
-          const subResult = calculateSubTimerRemainingSeconds(gameState.subTimer, serverTimeOffset);
+          const subResult = calculateSubTimerRemainingSeconds(gameState.subTimer, 0);
           setSubTimerSeconds(subResult.seconds);
           setSubTimerIsRunning(subResult.isRunning);
         }
@@ -72,7 +71,7 @@ export function useTimerAnimation(
         animationIdRef.current = null;
       }
     };
-  }, [gameState, serverTimeOffset]);
+  }, [gameState]);
 
   return {
     mainTimerSeconds,
