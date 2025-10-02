@@ -30,8 +30,8 @@ export function CreditsModal({ isOpen, onClose, revision, fullRevision }: Props)
       document.addEventListener('keydown', handleKeyDown);
 
       // Lucideアイコンの初期化
-      if (typeof lucide !== 'undefined') {
-        lucide.createIcons();
+      if (window.lucide) {
+        window.lucide.createIcons();
       }
 
       return () => {

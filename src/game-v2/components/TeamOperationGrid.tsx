@@ -1,5 +1,6 @@
 import { ScoreIncrementButton, ScoreDecrementButton, ScoreResetButton } from './ScoreControl';
 import { DoOrDieIncrementButton, DoOrDieDecrementButton, DoOrDieResetButton } from './DoOrDieControl';
+import type { GameState } from '../../types/game';
 
 interface TeamData {
   name: string;
@@ -14,7 +15,7 @@ interface Props {
   rightTeam: TeamData;
   leftTeamId: 'teamA' | 'teamB';
   rightTeamId: 'teamA' | 'teamB';
-  gameState: any;
+  gameState: GameState;
   scoreUpdate: (team: 'teamA' | 'teamB', points: number) => void;
   doOrDieUpdate: (team: 'teamA' | 'teamB', delta: number) => void;
   resetTeamScore: (team: 'teamA' | 'teamB') => void;
