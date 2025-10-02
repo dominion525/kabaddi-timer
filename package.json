@@ -1,6 +1,6 @@
 {
   "name": "kabaddi-timer",
-  "version": "0.0.2",
+  "version": "0.1.0",
   "description": "カバディ用のタイマー・スコアボードアプリケーション",
   "main": "src/index.ts",
   "scripts": {
