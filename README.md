@@ -26,7 +26,7 @@
 - **Preact SSG** (インデックスページ静的生成)
 
 ### ビルド・テスト
-- **esbuild**: バンドル+ミニファイ
+- **Vite**: バンドル+ミニファイ
 - **Vitest**: ユニットテスト
 - **TypeScript Compiler**: 型チェック
 
@@ -95,7 +95,8 @@ npm run build
 
 # テスト
 npm run test                # Durable Objectsテスト
-npm run test:client         # クライアントテスト
+npm run test:game-v2        # GameV2テスト
+npm run test:index-page     # インデックスページテスト
 npm run test:coverage       # カバレッジ付き
 
 # デプロイ

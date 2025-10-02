@@ -12,23 +12,21 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **開発サーバー起動**: `npm run dev` - Cloudflare Workersローカル開発環境
   - **重要**: 開発サーバーは必ずバックグラウンドで実行すること（`run_in_background: true`）
 - **ビルド**: `npm run build` - TypeScriptコンパイル（全体）
-  - `npm run build:client:dev` - レガシークライアント開発用
-  - `npm run build:client:prod` - レガシークライアント本番用（esbuild）
   - `npm run build:v2` - GameV2ビルド（Vite）
   - `npm run build:index-page` - インデックスページビルド（Preact SSG）
   - `npm run build:worker` - ワーカーサイドTypeScriptのビルド
 - **型チェック**: `npm run typecheck` - 型エラーのチェック
 - **テスト**:
   - `npm run test` - Durable Objectsテスト
-  - `npm run test:client` - クライアントテスト
+  - `npm run test:game-v2` - GameV2テスト
+  - `npm run test:index-page` - インデックスページテスト
 - **デプロイ**: `npm run deploy` - 本番ビルド + Cloudflare Workersへのデプロイ
 
 ## アーキテクチャ構成
 
 ### エンドポイント
 - `/` - インデックスページ（Preact SSG、静的HTML）
-- `/game-v2/{gameId}` - GameV2スコアボード（Preact + TSX）**← メイン実装**
-- `/game/{gameId}` - レガシースコアボード（Alpine.js）**← 削除予定**
+- `/game-v2/{gameId}` - スコアボード（Preact + TSX）
 - `/ws/{gameId}` - WebSocket接続エンドポイント
 
 ### バックエンド (Cloudflare Workers + Durable Objects)
@@ -68,12 +66,6 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **ディレクトリ**: `src/shared/components/`
   - `CreditsModal.tsx` - クレジット表示モーダル（Preact）
 
-#### レガシー実装（削除予定）
-- **技術スタック**: Alpine.js + Tailwind CSS
-- **TypeScript**: IIFE形式（`tsconfig.client.json`）
-- **ディレクトリ**: `src/client/components/`
-- **出力**: `public/js/bundle.min.js` (24KB)
-
 ### データ永続化
 - **SQLiteバックエンド**: Durable Objects SQLiteバックエンド使用
   - `wrangler.toml`で`new_sqlite_classes = ["GameSession"]`設定
@@ -95,17 +87,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ### TypeScriptビルド設定
 - **`tsconfig.json`**: ワーカー（サーバーサイド）用設定
-- **`tsconfig.client.json`**: レガシークライアント用設定
-  - `module: "None"`: CommonJS出力を無効化
-  - `moduleDetection: "legacy"`: IIFE形式での出力
-  - `target: "ES2020"`: ブラウザ互換性確保
-- **`tsconfig.game-v2.json`**: GameV2用設定（Preact、JSX）
 - **`tsconfig.index-page.json`**: インデックスページ用設定（Preact SSG）
-
-### HTMLテンプレート管理方針
-- **GameV2・インデックスページ**: Preact TSXコンポーネント
-- **レガシー**: ビルド時インポート（`import html from './template.html'`）
-- **禁止事項**: 文字列埋め込み、`fs.readFileSync()`は使用禁止
 
 ### OGP（Open Graph Protocol）設定
 - **HTML構造**: `<html lang="ja" prefix="og: https://ogp.me/ns#">`
@@ -134,8 +116,7 @@ src/
 ├── game-v2/              # GameV2実装（Preact + TSX）
 │   ├── components/      # UIコンポーネント
 │   ├── hooks/           # カスタムフック
-│   ├── lib/             # ユーティリティ
-│   └── types/           # 型定義
+│   └── test/            # テストユーティリティ
 ├── index-page/          # インデックスページ（Preact SSG）
 │   ├── components/      # ページコンポーネント
 │   ├── utils/           # ユーティリティ
@@ -143,17 +124,15 @@ src/
 │   └── template.tsx     # HTMLテンプレート
 ├── shared/              # 共有コンポーネント
 │   └── components/      # CreditsModal等
-├── client/components/   # レガシークライアントTS（削除予定）
 ├── durable-objects/     # Durable Objects実装
-├── templates/           # レガシーHTMLテンプレート（削除予定）
+├── routes/              # ルーター定義
 ├── types/               # 共通型定義
 └── index.ts             # メインWorkerハンドラー
 
 public/
 ├── js/                  # ビルド済みJavaScript
 │   ├── game-v2.js      # GameV2バンドル
-│   ├── index-page-client.js  # インデックスページJS
-│   └── bundle.min.js   # レガシーバンドル
+│   └── index-page-client.js  # インデックスページJS
 └── images/              # アイコン・OG画像
     ├── ICON-BASIC.svg  # マスターアイコンSVG
     ├── ICON-BASIC.png  # 中間PNG
@@ -177,7 +156,6 @@ generated/
 - **インデックスページ**:
   - クライアントJS: Vite (`vite.index-page-client.config.ts`)
   - HTML: Preact SSG (`scripts/build-index-page.ts`)
-- **レガシー**: esbuildでバンドル
 - **ワーカー**: TypeScript Compiler
 
 ### 型安全性
@@ -192,14 +170,9 @@ generated/
 
 ## コード品質改善
 
-### 定数管理（レガシー）
-- **`src/client/components/constants.ts`**: レガシー実装の定数管理
-- GameV2では各コンポーネント内で定義
-
 ### WebSocket接続状態フィードバック
 - **視覚的インジケーター**: 接続状態を色で表示
   - 緑色●: 接続済み
   - 黄色●: 接続中
   - オレンジ●（点滅）: 再接続中
   - 赤色●: 切断
-- GameV2・レガシー両方で実装

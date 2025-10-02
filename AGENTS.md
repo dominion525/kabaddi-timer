@@ -9,15 +9,15 @@
 
 ## ビルド・テスト・開発コマンド
 - `npm run dev`: Cloudflare Workersローカル開発環境を起動（バックグラウンド実行推奨）
-- `npm run build`: 全体ビルド（クライアント + GameV2 + インデックスページ + Worker）
-  - `npm run build:client:dev`: レガシークライアント開発用ビルド
-  - `npm run build:client:prod`: レガシークライアント本番用（esbuild、ミニファイ）
+- `npm run build`: 全体ビルド（GameV2 + インデックスページ + Worker）
   - `npm run build:v2`: GameV2ビルド（Vite）
   - `npm run build:index-page`: インデックスページビルド（Preact SSG）
   - `npm run build:worker`: ワーカーサイドTypeScriptビルド
 - `npm run build:prod`: 本番用ビルド（全体最適化）
 - `npm run deploy`: 本番ビルド後にCloudflare Workersへデプロイ
-- `npm test` / `npm run test:client`: Durable ObjectsとクライアントのVitestスイート実行（`:coverage`でカバレッジ収集）
+- `npm test`: Durable Objectsテスト
+- `npm run test:game-v2`: GameV2テスト（`:coverage`でカバレッジ収集）
+- `npm run test:index-page`: インデックスページテスト
 - `npm run typecheck`: TypeScript型チェック（`--noEmit`）
 
 ## コーディングスタイルと命名規約
