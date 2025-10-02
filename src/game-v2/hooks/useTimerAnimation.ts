@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'preact/hooks';
+import { useState, useEffect, useLayoutEffect, useRef } from 'preact/hooks';
 import type { GameState } from '../../types/game';
 import { calculateRemainingSeconds, calculateSubTimerRemainingSeconds, shouldUpdateDisplay } from '../../utils/timer-logic-client';
 
@@ -29,7 +29,8 @@ export function useTimerAnimation(
   const prevSubSecondsRef = useRef(0);
 
   // gameState更新時にrefに保存（アニメーションループは再起動しない）
-  useEffect(() => {
+  // useLayoutEffectを使用して同期的に更新し、requestAnimationFrameのタイミング問題を回避
+  useLayoutEffect(() => {
     gameStateRef.current = gameState;
   }, [gameState]);
 

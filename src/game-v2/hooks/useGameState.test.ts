@@ -351,4 +351,115 @@ describe('useGameState', () => {
       expect(mockSendAction).toHaveBeenCalledTimes(2);
     });
   });
+
+  describe('データ不変性の保証', () => {
+    beforeEach(() => {
+      vi.spyOn(Date, 'now').mockReturnValue(2000000);
+    });
+
+    it('受信したdataオブジェクトを直接変更しない（タイマー実行中）', () => {
+      const { result } = renderHook(() =>
+        useGameState({ gameId: mockGameId })
+      );
+
+      const originalData = createMockGameState();
+      originalData.timer.isRunning = true;
+      originalData.timer.startTime = 1500000;
+      originalData.timer.remainingSeconds = 100;
+
+      // オリジナルデータのコピーを保存
+      const originalTimerStartTime = originalData.timer.startTime;
+
+      const gameStateMessage = createGameMessage('game_state', originalData);
+
+      act(() => {
+        mockOnMessage(gameStateMessage);
+      });
+
+      // 受信したオリジナルデータが変更されていないことを確認
+      expect(originalData.timer.startTime).toBe(originalTimerStartTime);
+
+      // gameStateは新しいオブジェクトとして設定される
+      expect(result.current.gameState).not.toBe(originalData);
+      expect(result.current.gameState?.timer).not.toBe(originalData.timer);
+
+      // startTimeはクライアント時刻に調整される
+      expect(result.current.gameState?.timer.startTime).toBe(2000000);
+    });
+
+    it('受信したdataオブジェクトを直接変更しない（サブタイマー実行中）', () => {
+      const { result } = renderHook(() =>
+        useGameState({ gameId: mockGameId })
+      );
+
+      const originalData = createMockGameState();
+      originalData.subTimer.isRunning = true;
+      originalData.subTimer.startTime = 1500000;
+      originalData.subTimer.remainingSeconds = 25;
+
+      const originalSubTimerStartTime = originalData.subTimer.startTime;
+
+      const gameStateMessage = createGameMessage('game_state', originalData);
+
+      act(() => {
+        mockOnMessage(gameStateMessage);
+      });
+
+      // 受信したオリジナルデータが変更されていないことを確認
+      expect(originalData.subTimer.startTime).toBe(originalSubTimerStartTime);
+
+      // gameStateは新しいオブジェクトとして設定される
+      expect(result.current.gameState).not.toBe(originalData);
+      expect(result.current.gameState?.subTimer).not.toBe(originalData.subTimer);
+
+      // startTimeはクライアント時刻に調整される
+      expect(result.current.gameState?.subTimer.startTime).toBe(2000000);
+    });
+
+    it('タイマーが停止中の場合、dataオブジェクトはそのまま使用される', () => {
+      const { result } = renderHook(() =>
+        useGameState({ gameId: mockGameId })
+      );
+
+      const originalData = createMockGameState();
+      originalData.timer.isRunning = false;
+      originalData.timer.startTime = null;
+
+      const gameStateMessage = createGameMessage('game_state', originalData);
+
+      act(() => {
+        mockOnMessage(gameStateMessage);
+      });
+
+      // タイマー停止中なのでtimerオブジェクトは元のまま
+      expect(result.current.gameState?.timer).toBe(originalData.timer);
+    });
+
+    it('両方のタイマーが実行中の場合、両方とも新しいオブジェクトになる', () => {
+      const { result } = renderHook(() =>
+        useGameState({ gameId: mockGameId })
+      );
+
+      const originalData = createMockGameState();
+      originalData.timer.isRunning = true;
+      originalData.timer.startTime = 1500000;
+      originalData.subTimer.isRunning = true;
+      originalData.subTimer.startTime = 1800000;
+
+      const gameStateMessage = createGameMessage('game_state', originalData);
+
+      act(() => {
+        mockOnMessage(gameStateMessage);
+      });
+
+      // 両方のタイマーが新しいオブジェクトになる
+      expect(result.current.gameState).not.toBe(originalData);
+      expect(result.current.gameState?.timer).not.toBe(originalData.timer);
+      expect(result.current.gameState?.subTimer).not.toBe(originalData.subTimer);
+
+      // 両方のstartTimeがクライアント時刻に調整される
+      expect(result.current.gameState?.timer.startTime).toBe(2000000);
+      expect(result.current.gameState?.subTimer.startTime).toBe(2000000);
+    });
+  });
 });
