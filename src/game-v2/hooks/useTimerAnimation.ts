@@ -11,21 +11,34 @@ interface UseTimerAnimationResult {
 /**
  * スマート補正ロジック: ちらつきを防止しつつ時刻同期を行う
  *
- * ルール:
- * - 500ms超のズレ → 即座に補正（明らかなズレは直す）
- * - 500ms以下のズレ → 表示値が変わらない場合のみ補正
- *   例: 9.98秒→10.03秒は両方「10秒」表示なので補正OK
- *   例: 10.48秒→10.03秒は表示が11→10に変わるので補正しない（ちらつき防止）
+ * タイマーの性質（必ず減少）を活用した補正判定:
+ * - 1秒超のズレ → 即座に補正（明らかな異常）
+ * - 増加方向（タイマーが逆行）:
+ *   - 100ms未満 → 無視（ちらつき防止）
+ *   - 100ms以上 → 補正（異常な増加）
+ * - 減少方向:
+ *   - 表示値が変わらない範囲で補正
  */
 function shouldUpdateDisplay(currentSeconds: number, newSeconds: number): boolean {
   const diff = Math.abs(newSeconds - currentSeconds);
 
-  // 500ms超 → 即座に補正
-  if (diff > 0.5) {
+  // 1秒超のズレ → 即座に補正
+  if (diff > 1.0) {
     return true;
   }
 
-  // 500ms以下 → 表示値（Math.ceil後）が変わらなければ補正
+  // タイマーは減少するはず
+  // 増加する場合（逆行）は、小さなズレは無視
+  if (newSeconds > currentSeconds) {
+    // 100ms以上の増加は異常なので補正
+    if (diff > 0.1) {
+      return true;
+    }
+    // 100ms未満の増加は無視（ちらつき防止）
+    return false;
+  }
+
+  // 減少方向: 表示値が変わらなければ補正OK
   const currentDisplay = Math.ceil(currentSeconds);
   const newDisplay = Math.ceil(newSeconds);
 
