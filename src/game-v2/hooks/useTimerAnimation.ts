@@ -9,8 +9,36 @@ interface UseTimerAnimationResult {
 }
 
 /**
+ * スマート補正ロジック: ちらつきを防止しつつ時刻同期を行う
+ *
+ * ルール:
+ * - 500ms超のズレ → 即座に補正（明らかなズレは直す）
+ * - 500ms以下のズレ → 表示値が変わらない場合のみ補正
+ *   例: 9.98秒→10.03秒は両方「10秒」表示なので補正OK
+ *   例: 10.48秒→10.03秒は表示が11→10に変わるので補正しない（ちらつき防止）
+ */
+function shouldUpdateDisplay(currentSeconds: number, newSeconds: number): boolean {
+  const diff = Math.abs(newSeconds - currentSeconds);
+
+  // 500ms超 → 即座に補正
+  if (diff > 0.5) {
+    return true;
+  }
+
+  // 500ms以下 → 表示値（Math.ceil後）が変わらなければ補正
+  const currentDisplay = Math.ceil(currentSeconds);
+  const newDisplay = Math.ceil(newSeconds);
+
+  return currentDisplay === newDisplay;
+}
+
+/**
  * V1と同じタイマーアニメーションアーキテクチャを実装
  * requestAnimationFrameで毎フレーム更新し、サーバーからの状態更新で自動補正
+ *
+ * 改善点:
+ * - useRefでgameStateを保持し、アニメーションループを再起動しない
+ * - スマート補正ロジックでちらつきを防止
  */
 export function useTimerAnimation(
   gameState: GameState | null
@@ -18,29 +46,49 @@ export function useTimerAnimation(
   const [mainTimerSeconds, setMainTimerSeconds] = useState(0);
   const [subTimerSeconds, setSubTimerSeconds] = useState(0);
   const [subTimerIsRunning, setSubTimerIsRunning] = useState(false);
+
   const animationIdRef = useRef<number | null>(null);
+  const gameStateRef = useRef<GameState | null>(null);
+  const prevMainSecondsRef = useRef(0);
+  const prevSubSecondsRef = useRef(0);
 
+  // gameState更新時にrefに保存（アニメーションループは再起動しない）
   useEffect(() => {
-    if (!gameState) {
-      // ゲーム状態がない場合はアニメーションを停止
-      if (animationIdRef.current !== null) {
-        cancelAnimationFrame(animationIdRef.current);
-        animationIdRef.current = null;
-      }
-      return;
-    }
+    gameStateRef.current = gameState;
+  }, [gameState]);
 
-    // アニメーションループ: V1のstartTimerUpdate()と同等
+  // アニメーションループ（初回のみ起動、以降は継続）
+  useEffect(() => {
     const updateLoop = () => {
+      const currentGameState = gameStateRef.current;
+
+      if (!currentGameState) {
+        // ゲーム状態がない場合は次フレームで再チェック
+        animationIdRef.current = requestAnimationFrame(updateLoop);
+        return;
+      }
+
       try {
         // メインタイマー計算（相対時間アプローチでserverTimeOffsetは不要）
-        const mainResult = calculateRemainingSeconds(gameState.timer, 0);
-        setMainTimerSeconds(mainResult.seconds);
+        const mainResult = calculateRemainingSeconds(currentGameState.timer, 0);
+        const newMainSeconds = mainResult.seconds;
+
+        // スマート補正: ちらつき防止
+        if (shouldUpdateDisplay(prevMainSecondsRef.current, newMainSeconds)) {
+          setMainTimerSeconds(newMainSeconds);
+          prevMainSecondsRef.current = newMainSeconds;
+        }
 
         // サブタイマー計算（相対時間アプローチでserverTimeOffsetは不要）
-        if (gameState.subTimer) {
-          const subResult = calculateSubTimerRemainingSeconds(gameState.subTimer, 0);
-          setSubTimerSeconds(subResult.seconds);
+        if (currentGameState.subTimer) {
+          const subResult = calculateSubTimerRemainingSeconds(currentGameState.subTimer, 0);
+          const newSubSeconds = subResult.seconds;
+
+          // スマート補正: ちらつき防止
+          if (shouldUpdateDisplay(prevSubSecondsRef.current, newSubSeconds)) {
+            setSubTimerSeconds(newSubSeconds);
+            prevSubSecondsRef.current = newSubSeconds;
+          }
           setSubTimerIsRunning(subResult.isRunning);
         }
 
@@ -56,22 +104,17 @@ export function useTimerAnimation(
       }
     };
 
-    // 既存のアニメーションをクリア（V1のupdateTimerDisplay()と同等）
-    if (animationIdRef.current !== null) {
-      cancelAnimationFrame(animationIdRef.current);
-    }
-
     // アニメーションループを開始
     animationIdRef.current = requestAnimationFrame(updateLoop);
 
-    // クリーンアップ: コンポーネントアンマウント時またはgameState変更時
+    // クリーンアップ: コンポーネントアンマウント時のみ
     return () => {
       if (animationIdRef.current !== null) {
         cancelAnimationFrame(animationIdRef.current);
         animationIdRef.current = null;
       }
     };
-  }, [gameState]);
+  }, []); // 空配列 = 初回のみ実行、以降はアニメーションループが継続
 
   return {
     mainTimerSeconds,
