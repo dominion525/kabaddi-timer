@@ -33,8 +33,8 @@ export function QRModal({ isOpen, onClose, gameId }: Props) {
 
     try {
       // QRiousライブラリを使用
-      if (typeof (window as any).QRious !== 'undefined') {
-        new (window as any).QRious({
+      if (window.QRious) {
+        new window.QRious({
           element: canvas,
           value: gameUrl,
           size: 200,
@@ -95,8 +95,8 @@ export function QRModal({ isOpen, onClose, gameId }: Props) {
     document.addEventListener('keydown', handleKeyDown);
 
     // Lucideアイコンの初期化
-    if (typeof (window as any).lucide !== 'undefined') {
-      (window as any).lucide.createIcons();
+    if (window.lucide) {
+      window.lucide.createIcons();
     }
 
     // QRコード生成

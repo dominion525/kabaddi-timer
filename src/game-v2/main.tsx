@@ -15,7 +15,7 @@ function init() {
   render(<App gameId={gameId} />, app!);
 
   // Lucide アイコンを初期化
-  if (typeof (window as any).lucide !== 'undefined') {
-    (window as any).lucide.createIcons();
+  if (window.lucide) {
+    window.lucide.createIcons();
   }
 }

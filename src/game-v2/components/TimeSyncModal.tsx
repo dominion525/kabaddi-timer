@@ -90,8 +90,8 @@ export function TimeSyncModal({
     document.addEventListener('keydown', handleKeyDown);
 
     // Lucideアイコンの初期化
-    if (typeof (window as any).lucide !== 'undefined') {
-      (window as any).lucide.createIcons();
+    if (window.lucide) {
+      window.lucide.createIcons();
     }
 
     return () => {

@@ -18,7 +18,7 @@ interface Props {
 
 export function App({ gameId }: Props) {
   // リビジョン情報を取得
-  const fullRevision = (window as any).APP_REVISION || 'unknown';
+  const fullRevision = window.APP_REVISION || 'unknown';
   // ゲーム状態とWebSocket通信
   const {
     gameState,

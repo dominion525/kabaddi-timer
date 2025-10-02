@@ -13,6 +13,7 @@ import { MainTimerControl } from './MainTimerControl';
 import { SimpleTimerControl } from './SimpleTimerControl';
 import { SimpleTimerPresetControl } from './SimpleTimerPresetControl';
 import { MobileHandleSection } from './MobileHandleSection';
+import type { GameState } from '../../types/game';
 
 // localStorage キー
 const STORAGE_KEY_SIMPLE_MODE = 'v2_kabaddi_simple_mode';
@@ -39,7 +40,7 @@ interface TeamData {
 interface Props {
   isOpen: boolean;
   onClose: () => void;
-  gameState: any;
+  gameState: GameState;
   leftTeam: TeamData;
   rightTeam: TeamData;
   leftTeamId: 'teamA' | 'teamB';
@@ -157,8 +158,8 @@ export function ControlPanel({
     document.addEventListener('keydown', handleKeyDown);
 
     // Lucideアイコンの初期化
-    if (typeof (window as any).lucide !== 'undefined') {
-      (window as any).lucide.createIcons();
+    if (window.lucide) {
+      window.lucide.createIcons();
     }
 
     return () => {

@@ -23,6 +23,19 @@ interface UseWebSocketResult {
   reconnect: () => void;
 }
 
+interface WebSocketCallbacks {
+  onMessage?: (message: GameMessage) => void;
+  onConnected?: () => void;
+  onDisconnected?: () => void;
+  onError?: (error: Event) => void;
+  setIsConnected?: (connected: boolean) => void;
+  setConnectionStatus?: (status: ConnectionStatus) => void;
+  setReconnectAttempts?: (attempts: number) => void;
+  setErrorMessage?: (message: string | null) => void;
+  setSendingData?: (sending: boolean) => void;
+  setReceivingData?: (receiving: boolean) => void;
+}
+
 // グローバルWebSocket管理（シングルトンパターン）
 class WebSocketManager {
   private connections: Map<string, {
@@ -37,34 +50,12 @@ class WebSocketManager {
     receivingData: boolean;
     sendingAnimationTimeout: number | null;
     receivingAnimationTimeout: number | null;
-    subscribers: Set<{
-      onMessage?: (message: GameMessage) => void;
-      onConnected?: () => void;
-      onDisconnected?: () => void;
-      onError?: (error: Event) => void;
-      setIsConnected?: (connected: boolean) => void;
-      setConnectionStatus?: (status: ConnectionStatus) => void;
-      setReconnectAttempts?: (attempts: number) => void;
-      setErrorMessage?: (message: string | null) => void;
-      setSendingData?: (sending: boolean) => void;
-      setReceivingData?: (receiving: boolean) => void;
-    }>;
+    subscribers: Set<WebSocketCallbacks>;
     reconnectTimeout: number | null;
     didUnmount: boolean;
   }> = new Map();
 
-  connect(gameId: string, callbacks: {
-    onMessage?: (message: GameMessage) => void;
-    onConnected?: () => void;
-    onDisconnected?: () => void;
-    onError?: (error: Event) => void;
-    setIsConnected?: (connected: boolean) => void;
-    setConnectionStatus?: (status: ConnectionStatus) => void;
-    setReconnectAttempts?: (attempts: number) => void;
-    setErrorMessage?: (message: string | null) => void;
-    setSendingData?: (sending: boolean) => void;
-    setReceivingData?: (receiving: boolean) => void;
-  }) {
+  connect(gameId: string, callbacks: WebSocketCallbacks) {
     console.log(`[WebSocketManager] Connect request for gameId: ${gameId}`);
 
     if (!gameId) {
@@ -113,7 +104,7 @@ class WebSocketManager {
     this._createWebSocket(gameId);
   }
 
-  disconnect(gameId: string, callbacks: any) {
+  disconnect(gameId: string, callbacks: WebSocketCallbacks) {
     console.log(`[WebSocketManager] Disconnect request for gameId: ${gameId}`);
 
     const connection = this.connections.get(gameId);

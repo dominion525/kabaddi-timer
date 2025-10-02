@@ -1,5 +1,5 @@
 import { useState, useCallback, useRef, useEffect } from 'preact/hooks';
-import type { GameState, GameMessage, MESSAGE_TYPES } from '../../types/game';
+import type { GameState, GameMessage, GameAction, MESSAGE_TYPES } from '../../types/game';
 import { useWebSocket } from './useWebSocket';
 import { useIdleTimer } from './useIdleTimer';
 import { isValidScore, isValidDoOrDieCount, isValidTeamName } from '../../utils/score-logic';
@@ -80,7 +80,7 @@ const createInitialGameState = (): GameState => ({
 
 export function useGameState({ gameId }: UseGameStateOptions): UseGameStateResult {
   const [gameState, setGameState] = useState<GameState | null>(null);
-  const sendActionRef = useRef<((action: any) => boolean) | null>(null);
+  const sendActionRef = useRef<((action: GameAction) => boolean) | null>(null);
   const hasRequestedInitialState = useRef(false);
 
   // 時刻同期関連の状態
@@ -182,7 +182,7 @@ export function useGameState({ gameId }: UseGameStateOptions): UseGameStateResul
   }, [resetIdleTimer, serverTimeOffset]);
 
   // アクション送信 + 時刻記録 + アイドルタイマーリセット
-  const sendActionWithIdleReset = useCallback((action: any) => {
+  const sendActionWithIdleReset = useCallback((action: GameAction) => {
     if (!sendActionRef.current) return false;
 
     // GET_GAME_STATE送信時に時刻を記録
