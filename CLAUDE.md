@@ -83,7 +83,31 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **`Math.ceil()`を使用**: 自然なカウントダウン表示を実現
   - 開始時に設定時間を維持（60秒タイマーなら「60」を表示）
   - 0.1秒残っていても「1」と表示（0表示を避ける）
-- **実装場所**: GameV2の各タイマーコンポーネント
+- **実装場所**: GameV2の各タイマーコンポーネント、コントロールパネル時間設定表示
+
+### タイマー状態管理
+- **`TimerState`型定義** (`src/types/game.ts`):
+  - `totalDuration`: タイマー実行の基準時間（秒）
+    - タイマー開始/再開時に更新される
+    - クライアント側の経過時間計算に使用: `totalDuration - elapsed`
+  - `initialDuration`: リセット時に戻る時間（秒）※オプショナル
+    - プリセット設定時のみ更新される
+    - リセット時に`resetTimer()`で使用: `remainingSeconds = initialDuration ?? totalDuration`
+    - 後方互換性のため省略可能（古いデータでも動作）
+  - `remainingSeconds`: 現在の残り時間（秒）
+    - タイマー調整時に更新される
+- **用途の分離**:
+  - タイマー実行: `totalDuration`を基準とした相対時間計算
+  - タイマーリセット: `initialDuration`に戻す
+  - 時間調整: `remainingSeconds`のみ変更、`initialDuration`は保持
+- **コントロールパネル表示**: `initialDuration ?? totalDuration`を表示（リセット先の時間）
+
+### コントロールパネル設定
+- **モバイル版初期設定**: シンプルモードがデフォルト（`STORAGE_KEY_SIMPLE_MODE: true`）
+  - 初回ユーザー向けに操作が簡単なUIを優先
+  - ユーザーはいつでも通常モードに切り替え可能
+- **デスクトップ版ボタンサイズ**: +1/-1ボタンは`h-12`（48px高さ）
+  - コンパクトで視認性の良いレイアウト
 
 ### TypeScriptビルド設定
 - **`tsconfig.json`**: ワーカー（サーバーサイド）用設定
@@ -176,3 +200,16 @@ generated/
   - 黄色●: 接続中
   - オレンジ●（点滅）: 再接続中
   - 赤色●: 切断
+
+### テストカバレッジ
+- **全体カバレッジ** (2025-10-19時点):
+  - Statements: 84.87%
+  - Branch: 72.92%
+  - Functions: 80.1%
+  - Lines: 86.64%
+- **主要コンポーネント**: 多くのコンポーネントで100%カバレッジを達成
+  - StatusBar: 94.73%
+  - ScoreBoard関連: 100%
+  - Timer関連: 100%
+  - Control関連: 100%
+- **テスト実行**: `npm run test:game-v2:run -- --coverage`

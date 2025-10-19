@@ -126,7 +126,7 @@ describe('QRModal', () => {
           level: 'M',
         })
       );
-      expect(console.log).toHaveBeenCalledWith('QRコード生成成功');
+      expect(console.log).toHaveBeenCalledWith('QRコード生成成功:', window.location.href);
     });
 
     it('キャンバス要素が見つからない場合、QRコード生成をスキップする', () => {
@@ -156,12 +156,14 @@ describe('QRModal', () => {
       // キャンバスのモックを作成
       const mockFillText = vi.fn();
       const mockFillRect = vi.fn();
+      const mockClearRect = vi.fn();
       const mockGetContext = vi.fn().mockReturnValue({
         fillStyle: '',
         font: '',
         textAlign: '',
         fillText: mockFillText,
         fillRect: mockFillRect,
+        clearRect: mockClearRect,
       });
 
       // HTMLCanvasElement.prototype.getContextをモック
@@ -171,6 +173,7 @@ describe('QRModal', () => {
 
       expect(console.error).toHaveBeenCalledWith('QRiousライブラリが読み込まれていません');
       expect(mockGetContext).toHaveBeenCalledWith('2d');
+      expect(mockClearRect).toHaveBeenCalled();
       expect(mockFillRect).toHaveBeenCalled();
       expect(mockFillText).toHaveBeenCalledWith('QRコードが生成できません', 100, 90);
       expect(mockFillText).toHaveBeenCalledWith('URLをコピーしてください', 100, 110);
@@ -185,12 +188,14 @@ describe('QRModal', () => {
       // キャンバスのモックを作成
       const mockFillText = vi.fn();
       const mockFillRect = vi.fn();
+      const mockClearRect = vi.fn();
       const mockGetContext = vi.fn().mockReturnValue({
         fillStyle: '',
         font: '',
         textAlign: '',
         fillText: mockFillText,
         fillRect: mockFillRect,
+        clearRect: mockClearRect,
       });
 
       // HTMLCanvasElement.prototype.getContextをモック
@@ -200,6 +205,7 @@ describe('QRModal', () => {
 
       expect(console.error).toHaveBeenCalledWith('QRコード生成エラー:', mockError);
       expect(mockGetContext).toHaveBeenCalledWith('2d');
+      expect(mockClearRect).toHaveBeenCalled();
       expect(mockFillRect).toHaveBeenCalled();
       expect(mockFillText).toHaveBeenCalledWith('QRコードが生成できません', 100, 90);
       expect(mockFillText).toHaveBeenCalledWith('URLをコピーしてください', 100, 110);

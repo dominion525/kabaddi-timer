@@ -92,7 +92,7 @@ export function ControlPanel({
 }: Props) {
   const [isVisible, setIsVisible] = useState(false);
   const [isAnimating, setIsAnimating] = useState(false);
-  const [simpleMode, setSimpleMode] = useState(() => getStoredBoolean(STORAGE_KEY_SIMPLE_MODE, false));
+  const [simpleMode, setSimpleMode] = useState(() => getStoredBoolean(STORAGE_KEY_SIMPLE_MODE, true));
   const [scrollLockEnabled, setScrollLockEnabled] = useState(() => getStoredBoolean(STORAGE_KEY_SCROLL_LOCK, true));
 
   // チーム名のローカルstate
@@ -185,19 +185,21 @@ export function ControlPanel({
   }, [gameState?.teamA?.name, gameState?.teamB?.name]);
 
   // サーバー状態とタイマー入力値の同期
-  // totalDuration（リセット時の戻り値）を表示
-  // totalDurationはTIMER_SETでのみ変更される
-  // TIMER_ADJUSTではremainingSecondsのみ変更され、totalDurationは変わらないため、入力欄は更新されない
+  // initialDuration（リセット時に戻る値）を表示
+  // initialDurationはTIMER_SETでのみ変更される
+  // TIMER_ADJUSTではremainingSecondsのみ変更され、initialDurationは変わらないため、入力欄は更新されない
   useEffect(() => {
     if (!gameState?.timer) return;
 
-    // totalDurationを表示（リセット時の戻り値）
-    const totalSeconds = gameState.timer.totalDuration;
-    const minutes = Math.floor(totalSeconds / 60);
-    const seconds = totalSeconds % 60;
+    // initialDuration（リセット時に戻る値）を表示
+    // 後方互換性のためinitialDurationがない場合はtotalDurationを使用
+    // Math.ceil()で切り上げてメインタイマーと同じ表示ロジックを使用
+    const resetSeconds = Math.ceil(gameState.timer.initialDuration ?? gameState.timer.totalDuration);
+    const minutes = Math.floor(resetSeconds / 60);
+    const seconds = resetSeconds % 60;
     setTimerInputMinutes(minutes);
     setTimerInputSeconds(seconds);
-  }, [gameState?.timer?.totalDuration]);
+  }, [gameState?.timer?.initialDuration, gameState?.timer?.totalDuration]);
 
   return (
     <>
@@ -325,6 +327,13 @@ export function ControlPanel({
           {/* コンテンツエリア - 通常モード */}
           {!simpleMode && (
             <div className="flex-1 p-3 overflow-y-auto space-y-3" style={{ backgroundColor: '#7F7F7F' }}>
+              {/* 全体コントロール */}
+              <OverallControlSection
+                size="mobile"
+                onCourtChange={courtChange}
+                onResetAll={resetAll}
+              />
+
               {/* チーム名設定 */}
               <TeamNameSettings
                 size="mobile"
@@ -373,13 +382,6 @@ export function ControlPanel({
                 scoreUpdate={scoreUpdate}
                 doOrDieUpdate={doOrDieUpdate}
                 resetTeamScore={resetTeamScore}
-              />
-
-              {/* 全体コントロール */}
-              <OverallControlSection
-                size="mobile"
-                onCourtChange={courtChange}
-                onResetAll={resetAll}
               />
 
             </div>

@@ -21,6 +21,14 @@ interface Props {
   resetTeamScore: (team: 'teamA' | 'teamB') => void;
 }
 
+// DoOrDieカウントの序数表記を返すヘルパー
+const getOrdinalSuffix = (count: number): string => {
+  if (count === 0) return '0th';
+  if (count === 1) return '1st';
+  if (count === 2) return '2nd';
+  return '3rd';
+};
+
 // sizeに応じたスタイルを返すヘルパー
 const getStyles = (size: Props['size']) => {
   const styleMap = {
@@ -150,11 +158,22 @@ export function TeamOperationGrid({
           </div>
           {/* リセットボタン行 */}
           <div className={`grid grid-cols-2 ${styles.columnGap}`}>
-            <ScoreResetButton
-              teamId={leftTeamId}
-              onReset={resetTeamScore}
-              size={size}
-            />
+            {/* シンプルモードではスコアリセットボタンのみ非表示 */}
+            {size !== 'mobile-simple' ? (
+              <ScoreResetButton
+                teamId={leftTeamId}
+                onReset={resetTeamScore}
+                size={size}
+              />
+            ) : (
+              <div className={`flex items-center justify-center text-xs ${
+                (leftTeamId === 'teamA' ? gameState.teamA.doOrDieCount : gameState.teamB.doOrDieCount) === 3
+                  ? 'bg-yellow-400 text-gray-900 font-bold'
+                  : 'text-gray-600'
+              }`}>
+                Raid:<span className="font-bold">{getOrdinalSuffix(leftTeamId === 'teamA' ? gameState.teamA.doOrDieCount : gameState.teamB.doOrDieCount)}</span>
+              </div>
+            )}
             <DoOrDieResetButton
               teamId={leftTeamId}
               currentCount={leftTeamId === 'teamA' ? gameState.teamA.doOrDieCount : gameState.teamB.doOrDieCount}
@@ -202,11 +221,22 @@ export function TeamOperationGrid({
               onUpdate={doOrDieUpdate}
               size={size}
             />
-            <ScoreResetButton
-              teamId={rightTeamId}
-              onReset={resetTeamScore}
-              size={size}
-            />
+            {/* シンプルモードではスコアリセットボタンのみ非表示 */}
+            {size !== 'mobile-simple' ? (
+              <ScoreResetButton
+                teamId={rightTeamId}
+                onReset={resetTeamScore}
+                size={size}
+              />
+            ) : (
+              <div className={`flex items-center justify-center text-xs ${
+                (rightTeamId === 'teamA' ? gameState.teamA.doOrDieCount : gameState.teamB.doOrDieCount) === 3
+                  ? 'bg-yellow-400 text-gray-900 font-bold'
+                  : 'text-gray-600'
+              }`}>
+                Raid:<span className="font-bold">{getOrdinalSuffix(rightTeamId === 'teamA' ? gameState.teamA.doOrDieCount : gameState.teamB.doOrDieCount)}</span>
+              </div>
+            )}
           </div>
         </div>
       </div>

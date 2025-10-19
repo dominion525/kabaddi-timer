@@ -112,7 +112,8 @@ export function useGameState({ gameId }: UseGameStateOptions): UseGameStateResul
     console.log('Received WebSocket message:', message.type);
     if (message.type === 'game_state' && message.data) {
       const data = message.data as GameState;
-      const clientTime = Date.now();
+      const clientTime = Date.now();  // RTT計算用
+      const performanceTime = performance.now();  // タイマー用
 
       // カウントダウン中は時刻同期を無視（タイマー情報を保持）
       setGameState(prevState => {
@@ -122,14 +123,14 @@ export function useGameState({ gameId }: UseGameStateOptions): UseGameStateResul
             ? (data.timer.isRunning && prevState?.timer?.isRunning
                 ? prevState.timer  // 実行中→前回のタイマー情報をそのまま保持
                 : (data.timer.isRunning && data.timer.startTime
-                    ? { ...data.timer, startTime: clientTime }  // 新規開始→startTimeをクライアント時刻に変換
+                    ? { ...data.timer, startTime: performanceTime }  // 新規開始→startTimeをperformance.now()に変換
                     : data.timer))  // 停止中→そのまま
             : data.timer,
           subTimer: data.subTimer
             ? (data.subTimer.isRunning && prevState?.subTimer?.isRunning
                 ? prevState.subTimer  // 実行中→前回のタイマー情報をそのまま保持
                 : (data.subTimer.isRunning && data.subTimer.startTime
-                    ? { ...data.subTimer, startTime: clientTime }  // 新規開始→startTimeをクライアント時刻に変換
+                    ? { ...data.subTimer, startTime: performanceTime }  // 新規開始→startTimeをperformance.now()に変換
                     : data.subTimer))  // 停止中→そのまま
             : data.subTimer,
         };

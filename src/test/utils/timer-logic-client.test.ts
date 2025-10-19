@@ -39,6 +39,7 @@ describe('timer-logic', () => {
       // 現在時刻を固定
       const mockNow = 1000000;
       vi.spyOn(Date, 'now').mockReturnValue(mockNow);
+      vi.spyOn(performance, 'now').mockReturnValue(mockNow);
 
       const timer = {
         isRunning: true,
@@ -72,6 +73,7 @@ describe('timer-logic', () => {
     it('相対時間アプローチで経過時間を計算する（serverTimeOffsetは無視）', () => {
       const mockNow = 1000000;
       vi.spyOn(Date, 'now').mockReturnValue(mockNow);
+      vi.spyOn(performance, 'now').mockReturnValue(mockNow);
 
       const timer = {
         isRunning: true,
@@ -116,6 +118,7 @@ describe('timer-logic', () => {
     it('Math.ceilにより0.1秒残りでも「1」が表示される', () => {
       const mockNow = 1000000;
       vi.spyOn(Date, 'now').mockReturnValue(mockNow);
+      vi.spyOn(performance, 'now').mockReturnValue(mockNow);
 
       const timer = {
         isRunning: true,
@@ -138,6 +141,7 @@ describe('timer-logic', () => {
     it('サブタイマーが動作中の場合、正しく残り秒数を計算する', () => {
       const mockNow = 1000000;
       vi.spyOn(Date, 'now').mockReturnValue(mockNow);
+      vi.spyOn(performance, 'now').mockReturnValue(mockNow);
 
       const subTimer = {
         isRunning: true,

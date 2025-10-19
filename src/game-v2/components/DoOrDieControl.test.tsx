@@ -43,7 +43,7 @@ describe('DoOrDieIncrementButton', () => {
   it('desktopサイズで適切なスタイルが適用される', () => {
     render(<DoOrDieIncrementButton teamId="teamA" onUpdate={mockOnUpdate} size="desktop" />);
     const button = screen.getByTestId('dod-increment');
-    expect(button.className).toContain('aspect-square');
+    expect(button.className).toContain('h-12');
     expect(button.className).toContain('font-bold');
     expect(button.className).toContain('rounded-lg');
   });
@@ -108,7 +108,7 @@ describe('DoOrDieDecrementButton', () => {
   it('desktopサイズで適切なスタイルが適用される', () => {
     render(<DoOrDieDecrementButton teamId="teamA" onUpdate={mockOnUpdate} size="desktop" />);
     const button = screen.getByTestId('dod-decrement');
-    expect(button.className).toContain('aspect-square');
+    expect(button.className).toContain('h-12');
     expect(button.className).toContain('font-bold');
     expect(button.className).toContain('rounded-lg');
   });

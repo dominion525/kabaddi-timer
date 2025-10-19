@@ -16,7 +16,7 @@ interface ScoreResetButtonProps {
 // +1ボタン
 export function ScoreIncrementButton({ teamId, teamColor, onUpdate, size = 'desktop' }: ScoreButtonProps) {
   const sizeStyles = {
-    desktop: 'aspect-square font-bold rounded-lg',
+    desktop: 'h-12 font-bold rounded-lg',
     'mobile-basic': 'h-12 font-bold text-base rounded-lg',
     'mobile-simple': 'h-8 font-bold text-xs rounded',
   };
@@ -47,7 +47,7 @@ export function ScoreIncrementButton({ teamId, teamColor, onUpdate, size = 'desk
 // -1ボタン
 export function ScoreDecrementButton({ teamId, teamColor, onUpdate, size = 'desktop' }: ScoreButtonProps) {
   const sizeStyles = {
-    desktop: 'aspect-square font-bold rounded-lg',
+    desktop: 'h-12 font-bold rounded-lg',
     'mobile-basic': 'h-12 font-bold text-base rounded-lg',
     'mobile-simple': 'h-8 font-bold text-xs rounded',
   };
