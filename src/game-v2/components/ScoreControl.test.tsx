@@ -43,7 +43,7 @@ describe('ScoreIncrementButton', () => {
   it('desktopサイズで適切なスタイルが適用される', () => {
     render(<ScoreIncrementButton teamId="teamA" teamColor="red" onUpdate={mockOnUpdate} size="desktop" />);
     const button = screen.getByTestId('score-increment');
-    expect(button.className).toContain('aspect-square');
+    expect(button.className).toContain('h-12');
     expect(button.className).toContain('font-bold');
     expect(button.className).toContain('rounded-lg');
   });
@@ -129,7 +129,7 @@ describe('ScoreDecrementButton', () => {
   it('desktopサイズで適切なスタイルが適用される', () => {
     render(<ScoreDecrementButton teamId="teamA" teamColor="red" onUpdate={mockOnUpdate} size="desktop" />);
     const button = screen.getByTestId('score-decrement');
-    expect(button.className).toContain('aspect-square');
+    expect(button.className).toContain('h-12');
     expect(button.className).toContain('font-bold');
     expect(button.className).toContain('rounded-lg');
   });

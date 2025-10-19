@@ -13,7 +13,7 @@ interface DoOrDieResetButtonProps extends DoOrDieButtonProps {
 // +1ボタン
 export function DoOrDieIncrementButton({ teamId, onUpdate, size = 'desktop' }: DoOrDieButtonProps) {
   const sizeStyles = {
-    desktop: 'aspect-square font-bold rounded-lg',
+    desktop: 'h-12 font-bold rounded-lg',
     'mobile-basic': 'h-12 font-bold text-base rounded-lg',
     'mobile-simple': 'h-8 font-bold text-xs rounded',
   };
@@ -31,7 +31,7 @@ export function DoOrDieIncrementButton({ teamId, onUpdate, size = 'desktop' }: D
 // -1ボタン
 export function DoOrDieDecrementButton({ teamId, onUpdate, size = 'desktop' }: DoOrDieButtonProps) {
   const sizeStyles = {
-    desktop: 'aspect-square font-bold rounded-lg',
+    desktop: 'h-12 font-bold rounded-lg',
     'mobile-basic': 'h-12 font-bold text-base rounded-lg',
     'mobile-simple': 'h-8 font-bold text-xs rounded',
   };
