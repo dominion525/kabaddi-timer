@@ -18,6 +18,7 @@ export class GameSession {
       teamB: { name: 'チームB', score: 0, doOrDieCount: 0 },
       timer: {
         totalDuration: 15 * 60, // デフォルト15分
+        initialDuration: 15 * 60, // リセット時に戻る時間
         startTime: null,
         isRunning: false,
         isPaused: false,
@@ -196,6 +197,7 @@ export class GameSession {
       },
       timer: {
         totalDuration: (state?.timer?.totalDuration && typeof state.timer.totalDuration === 'number' && state.timer.totalDuration > 0) ? state.timer.totalDuration : defaultState.timer.totalDuration,
+        initialDuration: (state?.timer?.initialDuration && typeof state.timer.initialDuration === 'number' && state.timer.initialDuration > 0) ? state.timer.initialDuration : state?.timer?.totalDuration,
         startTime: (state?.timer?.startTime && (typeof state.timer.startTime === 'number' || state.timer.startTime === null)) ? state.timer.startTime : defaultState.timer.startTime,
         isRunning: (state?.timer?.isRunning && typeof state.timer.isRunning === 'boolean') ? state.timer.isRunning : defaultState.timer.isRunning,
         isPaused: (state?.timer?.isPaused && typeof state.timer.isPaused === 'boolean') ? state.timer.isPaused : defaultState.timer.isPaused,
@@ -499,12 +501,14 @@ export class GameSession {
     this.gameState.timer.isRunning = false;
     this.gameState.timer.isPaused = false;
     this.gameState.timer.pausedAt = null;
-    this.gameState.timer.remainingSeconds = this.gameState.timer.totalDuration;
+    // initialDurationが設定されていればそれを使用、なければtotalDurationを使用（後方互換性）
+    this.gameState.timer.remainingSeconds = this.gameState.timer.initialDuration ?? this.gameState.timer.totalDuration;
     await this.saveAndBroadcast();
   }
 
   private async setTimerDuration(duration: number): Promise<void> {
     this.gameState.timer.totalDuration = duration;
+    this.gameState.timer.initialDuration = duration; // リセット時に戻る時間を設定
     this.gameState.timer.remainingSeconds = duration;
     this.gameState.timer.startTime = null;
     this.gameState.timer.isRunning = false;

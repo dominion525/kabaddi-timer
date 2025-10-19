@@ -5,7 +5,8 @@ export interface TeamState {
 }
 
 export interface TimerState {
-  totalDuration: number;    // 設定された総時間（秒）
+  totalDuration: number;    // タイマー実行の基準時間（秒）
+  initialDuration?: number; // リセット時に戻る時間（秒）※後方互換性のためオプショナル
   startTime: number | null; // タイマー開始時のサーバー時刻（ミリ秒）
   isRunning: boolean;       // タイマーが動作中かどうか
   isPaused: boolean;        // 一時停止中かどうか
