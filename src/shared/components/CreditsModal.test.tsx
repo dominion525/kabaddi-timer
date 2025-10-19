@@ -11,7 +11,7 @@ describe('CreditsModal', () => {
     vi.clearAllMocks();
 
     // window.lucideのモック
-    (window as any).lucide = {
+    window.lucide = {
       createIcons: vi.fn(),
     };
   });
@@ -59,7 +59,7 @@ describe('CreditsModal', () => {
         />
       );
 
-      expect((window as any).lucide.createIcons).toHaveBeenCalled();
+      expect(window.lucide?.createIcons).toHaveBeenCalled();
     });
 
     it('モーダルが閉じているときはLucideアイコンは初期化されない', () => {
@@ -72,7 +72,7 @@ describe('CreditsModal', () => {
         />
       );
 
-      expect((window as any).lucide.createIcons).not.toHaveBeenCalled();
+      expect(window.lucide?.createIcons).not.toHaveBeenCalled();
     });
   });
 

@@ -40,3 +40,25 @@ interface Window {
   openCreditsModal?: () => void;
   closeCreditsModal?: () => void;
 }
+
+/**
+ * Node.js Global interface拡張（テスト環境用）
+ */
+declare namespace NodeJS {
+  interface Global {
+    /**
+     * localStorage モック（テスト環境）
+     */
+    localStorage?: Storage;
+
+    /**
+     * sessionStorage モック（テスト環境）
+     */
+    sessionStorage?: Storage;
+
+    /**
+     * WebSocket モック（テスト環境）
+     */
+    WebSocket?: typeof WebSocket;
+  }
+}
