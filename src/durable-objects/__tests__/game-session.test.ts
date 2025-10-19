@@ -1104,14 +1104,16 @@ describe('GameSession', () => {
         const gameSession = env.GAME_SESSION.get(id);
 
         const result = await runInDurableObject(gameSession, async (instance, state) => {
-          await (instance as any).loadGameState();
+          const testInstance = instance as unknown as GameSessionTestAccess;
 
-          const beforeStart = (instance as any).gameState.subTimer;
+          await testInstance.loadGameState();
+
+          const beforeStart = testInstance.gameState.subTimer;
 
           // サブタイマー開始アクションを実行
-          await (instance as any).handleAction({ type: 'SUB_TIMER_START' });
+          await testInstance.handleAction({ type: 'SUB_TIMER_START' });
 
-          const afterStart = (instance as any).gameState.subTimer;
+          const afterStart = testInstance.gameState.subTimer;
 
           return {
             beforeIsRunning: beforeStart.isRunning,
@@ -1139,22 +1141,24 @@ describe('GameSession', () => {
         const gameSession = env.GAME_SESSION.get(id);
 
         const result = await runInDurableObject(gameSession, async (instance, state) => {
-          await (instance as any).loadGameState();
+          const testInstance = instance as unknown as GameSessionTestAccess;
+
+          await testInstance.loadGameState();
 
           // サブタイマーをリセットしてから開始
-          await (instance as any).handleAction({ type: 'SUB_TIMER_RESET' });
-          await (instance as any).handleAction({ type: 'SUB_TIMER_START' });
+          await testInstance.handleAction({ type: 'SUB_TIMER_RESET' });
+          await testInstance.handleAction({ type: 'SUB_TIMER_START' });
           await new Promise(resolve => setTimeout(resolve, 100)); // 少し時間を経過
 
           // 一時停止前の状態確認用に残り時間を更新
-          (instance as any).updateSubTimerRemainingTime();
+          testInstance.updateSubTimerRemainingTime();
 
-          const beforePause = { ...(instance as any).gameState.subTimer };
+          const beforePause = { ...testInstance.gameState.subTimer };
 
           // サブタイマー一時停止
-          await (instance as any).handleAction({ type: 'SUB_TIMER_PAUSE' });
+          await testInstance.handleAction({ type: 'SUB_TIMER_PAUSE' });
 
-          const afterPause = (instance as any).gameState.subTimer;
+          const afterPause = testInstance.gameState.subTimer;
 
           return {
             beforeIsRunning: beforePause.isRunning,
@@ -1181,21 +1185,23 @@ describe('GameSession', () => {
         const gameSession = env.GAME_SESSION.get(id);
 
         const result = await runInDurableObject(gameSession, async (instance, state) => {
-          await (instance as any).loadGameState();
+          const testInstance = instance as unknown as GameSessionTestAccess;
+
+          await testInstance.loadGameState();
 
           // サブタイマーをリセットしてから開始
-          await (instance as any).handleAction({ type: 'SUB_TIMER_RESET' });
-          await (instance as any).handleAction({ type: 'SUB_TIMER_START' });
+          await testInstance.handleAction({ type: 'SUB_TIMER_RESET' });
+          await testInstance.handleAction({ type: 'SUB_TIMER_START' });
           await new Promise(resolve => setTimeout(resolve, 100));
 
           // 残り時間を明示的に更新してから取得
-          (instance as any).updateSubTimerRemainingTime();
-          const beforeReset = { ...(instance as any).gameState.subTimer };
+          testInstance.updateSubTimerRemainingTime();
+          const beforeReset = { ...testInstance.gameState.subTimer };
 
           // サブタイマーリセット
-          await (instance as any).handleAction({ type: 'SUB_TIMER_RESET' });
+          await testInstance.handleAction({ type: 'SUB_TIMER_RESET' });
 
-          const afterReset = (instance as any).gameState.subTimer;
+          const afterReset = testInstance.gameState.subTimer;
 
           return {
             beforeIsRunning: beforeReset.isRunning,
@@ -1226,22 +1232,24 @@ describe('GameSession', () => {
         const gameSession = env.GAME_SESSION.get(id);
 
         const result = await runInDurableObject(gameSession, async (instance, state) => {
-          await (instance as any).loadGameState();
+          const testInstance = instance as unknown as GameSessionTestAccess;
 
-          const initialSubTimer = (instance as any).gameState.subTimer;
+          await testInstance.loadGameState();
+
+          const initialSubTimer = testInstance.gameState.subTimer;
 
           // サブタイマーを開始
-          await (instance as any).handleAction({ type: 'SUB_TIMER_START' });
+          await testInstance.handleAction({ type: 'SUB_TIMER_START' });
 
           // 時間更新を実行
-          (instance as any).updateSubTimerRemainingTime();
+          testInstance.updateSubTimerRemainingTime();
 
-          const runningSubTimer = (instance as any).gameState.subTimer;
+          const runningSubTimer = testInstance.gameState.subTimer;
 
           // リセット
-          await (instance as any).handleAction({ type: 'SUB_TIMER_RESET' });
+          await testInstance.handleAction({ type: 'SUB_TIMER_RESET' });
 
-          const resetSubTimer = (instance as any).gameState.subTimer;
+          const resetSubTimer = testInstance.gameState.subTimer;
 
           return {
             initialDuration: initialSubTimer.totalDuration,
@@ -1267,51 +1275,53 @@ describe('GameSession', () => {
         const gameSession = env.GAME_SESSION.get(id);
 
         const result = await runInDurableObject(gameSession, async (instance, state) => {
-          await (instance as any).loadGameState();
+          const testInstance = instance as unknown as GameSessionTestAccess;
+
+          await testInstance.loadGameState();
 
           // メインタイマーのみ開始
-          await (instance as any).handleAction({ type: 'TIMER_START' });
+          await testInstance.handleAction({ type: 'TIMER_START' });
           await new Promise(resolve => setTimeout(resolve, 50));
 
           // 状態確認前に時間を更新
-          (instance as any).updateRemainingTime();
+          testInstance.updateRemainingTime();
 
           const mainRunning = {
-            mainTimerRunning: (instance as any).gameState.timer.isRunning,
-            subTimerRunning: (instance as any).gameState.subTimer?.isRunning || false
+            mainTimerRunning: testInstance.gameState.timer.isRunning,
+            subTimerRunning: testInstance.gameState.subTimer?.isRunning || false
           };
 
           // サブタイマーのみ開始
-          await (instance as any).handleAction({ type: 'SUB_TIMER_START' });
+          await testInstance.handleAction({ type: 'SUB_TIMER_START' });
           await new Promise(resolve => setTimeout(resolve, 50));
 
           // 状態確認前に時間を更新
-          (instance as any).updateRemainingTime();
-          (instance as any).updateSubTimerRemainingTime();
+          testInstance.updateRemainingTime();
+          testInstance.updateSubTimerRemainingTime();
 
           const bothRunning = {
-            mainTimerRunning: (instance as any).gameState.timer.isRunning,
-            subTimerRunning: (instance as any).gameState.subTimer.isRunning
+            mainTimerRunning: testInstance.gameState.timer.isRunning,
+            subTimerRunning: testInstance.gameState.subTimer.isRunning
           };
 
           // メインタイマーのみ停止
-          await (instance as any).handleAction({ type: 'TIMER_PAUSE' });
+          await testInstance.handleAction({ type: 'TIMER_PAUSE' });
 
           const mainPaused = {
-            mainTimerRunning: (instance as any).gameState.timer.isRunning,
-            mainTimerPaused: (instance as any).gameState.timer.isPaused,
-            subTimerRunning: (instance as any).gameState.subTimer.isRunning,
-            subTimerPaused: (instance as any).gameState.subTimer.isPaused
+            mainTimerRunning: testInstance.gameState.timer.isRunning,
+            mainTimerPaused: testInstance.gameState.timer.isPaused,
+            subTimerRunning: testInstance.gameState.subTimer.isRunning,
+            subTimerPaused: testInstance.gameState.subTimer.isPaused
           };
 
           // サブタイマーのみ停止
-          await (instance as any).handleAction({ type: 'SUB_TIMER_PAUSE' });
+          await testInstance.handleAction({ type: 'SUB_TIMER_PAUSE' });
 
           const bothPaused = {
-            mainTimerRunning: (instance as any).gameState.timer.isRunning,
-            mainTimerPaused: (instance as any).gameState.timer.isPaused,
-            subTimerRunning: (instance as any).gameState.subTimer.isRunning,
-            subTimerPaused: (instance as any).gameState.subTimer.isPaused
+            mainTimerRunning: testInstance.gameState.timer.isRunning,
+            mainTimerPaused: testInstance.gameState.timer.isPaused,
+            subTimerRunning: testInstance.gameState.subTimer.isRunning,
+            subTimerPaused: testInstance.gameState.subTimer.isPaused
           };
 
           return {
