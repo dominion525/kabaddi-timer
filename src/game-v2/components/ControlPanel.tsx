@@ -325,6 +325,13 @@ export function ControlPanel({
           {/* コンテンツエリア - 通常モード */}
           {!simpleMode && (
             <div className="flex-1 p-3 overflow-y-auto space-y-3" style={{ backgroundColor: '#7F7F7F' }}>
+              {/* 全体コントロール */}
+              <OverallControlSection
+                size="mobile"
+                onCourtChange={courtChange}
+                onResetAll={resetAll}
+              />
+
               {/* チーム名設定 */}
               <TeamNameSettings
                 size="mobile"
@@ -373,13 +380,6 @@ export function ControlPanel({
                 scoreUpdate={scoreUpdate}
                 doOrDieUpdate={doOrDieUpdate}
                 resetTeamScore={resetTeamScore}
-              />
-
-              {/* 全体コントロール */}
-              <OverallControlSection
-                size="mobile"
-                onCourtChange={courtChange}
-                onResetAll={resetAll}
               />
 
             </div>
