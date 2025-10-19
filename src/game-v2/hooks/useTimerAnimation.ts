@@ -1,6 +1,7 @@
 import { useState, useEffect, useLayoutEffect, useRef } from 'preact/hooks';
 import type { GameState } from '../../types/game';
 import { calculateRemainingSeconds, calculateSubTimerRemainingSeconds, shouldUpdateDisplay } from '../../utils/timer-logic-client';
+import { timerLogger } from '../../utils/logger';
 
 interface UseTimerAnimationResult {
   mainTimerSeconds: number;
@@ -72,7 +73,7 @@ export function useTimerAnimation(
         // 次フレームをスケジュール
         animationIdRef.current = requestAnimationFrame(updateLoop);
       } catch (error) {
-        console.error('Timer animation error:', error);
+        timerLogger.error('Timer animation error:', error);
         // エラー時はアニメーションを停止
         if (animationIdRef.current !== null) {
           cancelAnimationFrame(animationIdRef.current);

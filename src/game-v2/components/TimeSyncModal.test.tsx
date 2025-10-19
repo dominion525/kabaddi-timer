@@ -25,7 +25,7 @@ describe('TimeSyncModal', () => {
     vi.useFakeTimers();
 
     // window.lucideのモック
-    (window as any).lucide = {
+    window.lucide = {
       createIcons: vi.fn(),
     };
   });
@@ -51,7 +51,7 @@ describe('TimeSyncModal', () => {
     it('Lucideアイコンが初期化される', () => {
       render(<TimeSyncModal {...defaultProps} />);
 
-      expect((window as any).lucide.createIcons).toHaveBeenCalled();
+      expect(window.lucide?.createIcons).toHaveBeenCalled();
     });
   });
 

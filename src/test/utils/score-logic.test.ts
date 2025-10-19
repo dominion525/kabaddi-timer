@@ -46,12 +46,12 @@ describe('ScoreLogic', () => {
     });
 
     it('count が null の場合、全て false の配列を返す', () => {
-      const result = generateDoOrDieIndicators(null as any);
+      const result = generateDoOrDieIndicators(null as unknown as number);
       expect(result).toEqual([false, false, false]);
     });
 
     it('count が undefined の場合、全て false の配列を返す', () => {
-      const result = generateDoOrDieIndicators(undefined as any);
+      const result = generateDoOrDieIndicators(undefined as unknown as number);
       expect(result).toEqual([false, false, false]);
     });
 
@@ -75,11 +75,11 @@ describe('ScoreLogic', () => {
     });
 
     it('null の場合、"0" を返す', () => {
-      expect(formatScore(null as any)).toBe('0');
+      expect(formatScore(null as unknown as number)).toBe('0');
     });
 
     it('undefined の場合、"0" を返す', () => {
-      expect(formatScore(undefined as any)).toBe('0');
+      expect(formatScore(undefined as unknown as number)).toBe('0');
     });
 
     it('負の数値も文字列に変換する', () => {
@@ -125,15 +125,15 @@ describe('ScoreLogic', () => {
     });
 
     it('文字列は無効なスコア', () => {
-      expect(isValidScore('42' as any)).toBe(false);
+      expect(isValidScore('42' as unknown as number)).toBe(false);
     });
 
     it('nullは無効なスコア', () => {
-      expect(isValidScore(null as any)).toBe(false);
+      expect(isValidScore(null as unknown as number)).toBe(false);
     });
 
     it('undefinedは無効なスコア', () => {
-      expect(isValidScore(undefined as any)).toBe(false);
+      expect(isValidScore(undefined as unknown as number)).toBe(false);
     });
   });
 
@@ -175,15 +175,15 @@ describe('ScoreLogic', () => {
     });
 
     it('文字列は無効なカウント', () => {
-      expect(isValidDoOrDieCount('1' as any)).toBe(false);
+      expect(isValidDoOrDieCount('1' as unknown as number)).toBe(false);
     });
 
     it('nullは無効なカウント', () => {
-      expect(isValidDoOrDieCount(null as any)).toBe(false);
+      expect(isValidDoOrDieCount(null as unknown as number)).toBe(false);
     });
 
     it('undefinedは無効なカウント', () => {
-      expect(isValidDoOrDieCount(undefined as any)).toBe(false);
+      expect(isValidDoOrDieCount(undefined as unknown as number)).toBe(false);
     });
   });
 
@@ -296,23 +296,23 @@ describe('ScoreLogic', () => {
     });
 
     it('数値は無効なチーム名', () => {
-      expect(isValidTeamName(123 as any)).toBe(false);
+      expect(isValidTeamName(123 as unknown as string)).toBe(false);
     });
 
     it('nullは無効なチーム名', () => {
-      expect(isValidTeamName(null as any)).toBe(false);
+      expect(isValidTeamName(null as unknown as string)).toBe(false);
     });
 
     it('undefinedは無効なチーム名', () => {
-      expect(isValidTeamName(undefined as any)).toBe(false);
+      expect(isValidTeamName(undefined as unknown as string)).toBe(false);
     });
 
     it('オブジェクトは無効なチーム名', () => {
-      expect(isValidTeamName({} as any)).toBe(false);
+      expect(isValidTeamName({} as unknown as string)).toBe(false);
     });
 
     it('配列は無効なチーム名', () => {
-      expect(isValidTeamName([] as any)).toBe(false);
+      expect(isValidTeamName([] as unknown as string)).toBe(false);
     });
 
     it('特殊文字を含むチーム名も有効', () => {

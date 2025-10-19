@@ -30,4 +30,35 @@ interface Window {
    * ビルド時に注入されるGitコミットハッシュ
    */
   APP_REVISION?: string;
+
+  /**
+   * インデックスページ用グローバル関数
+   * HTML onclick属性から呼び出されるため、windowオブジェクトに公開
+   */
+  createNewTimer?: () => void;
+  goToTimer?: (gameId: string) => void;
+  openCreditsModal?: () => void;
+  closeCreditsModal?: () => void;
+}
+
+/**
+ * Node.js Global interface拡張（テスト環境用）
+ */
+declare namespace NodeJS {
+  interface Global {
+    /**
+     * localStorage モック（テスト環境）
+     */
+    localStorage?: Storage;
+
+    /**
+     * sessionStorage モック（テスト環境）
+     */
+    sessionStorage?: Storage;
+
+    /**
+     * WebSocket モック（テスト環境）
+     */
+    WebSocket?: typeof WebSocket;
+  }
 }

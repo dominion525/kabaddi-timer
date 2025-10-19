@@ -2,22 +2,22 @@ import { vi } from 'vitest';
 import '@testing-library/jest-dom';
 
 // localStorage, sessionStorageのモック
-if (typeof (global as any).localStorage === 'undefined') {
-  (global as any).localStorage = {
+if (typeof global.localStorage === 'undefined') {
+  global.localStorage = {
     getItem: vi.fn(),
     setItem: vi.fn(),
     removeItem: vi.fn(),
     clear: vi.fn(),
-  };
+  } as Storage;
 }
 
-if (typeof (global as any).sessionStorage === 'undefined') {
-  (global as any).sessionStorage = {
+if (typeof global.sessionStorage === 'undefined') {
+  global.sessionStorage = {
     getItem: vi.fn(),
     setItem: vi.fn(),
     removeItem: vi.fn(),
     clear: vi.fn(),
-  };
+  } as Storage;
 }
 
 // WebSocketのモック（useWebSocketテスト用）
@@ -54,7 +54,7 @@ class MockWebSocket {
   });
 
   // テスト用のヘルパーメソッド
-  simulateMessage(data: any) {
+  simulateMessage(data: unknown) {
     if (this.onmessage) {
       this.onmessage(new MessageEvent('message', { data: JSON.stringify(data) }));
     }
@@ -67,7 +67,7 @@ class MockWebSocket {
   }
 }
 
-(global as any).WebSocket = MockWebSocket;
+global.WebSocket = MockWebSocket as unknown as typeof WebSocket;
 
 // Date.nowのモック（テスト時の時刻制御用）
 export const mockDateNow = (timestamp: number) => {

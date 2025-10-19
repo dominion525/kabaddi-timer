@@ -1,5 +1,6 @@
 import { useEffect, useRef, useCallback, useState } from 'preact/hooks';
 import type { GameAction, GameMessage, MESSAGE_TYPES } from '../../types/game';
+import { webSocketLogger } from '../../utils/logger';
 
 type ConnectionStatus = 'connecting' | 'connected' | 'reconnecting' | 'disconnected' | 'error';
 
@@ -56,10 +57,10 @@ class WebSocketManager {
   }> = new Map();
 
   connect(gameId: string, callbacks: WebSocketCallbacks) {
-    console.log(`[WebSocketManager] Connect request for gameId: ${gameId}`);
+    webSocketLogger.debug(`[WebSocketManager] Connect request for gameId: ${gameId}`);
 
     if (!gameId) {
-      console.warn('[WebSocketManager] No gameId provided');
+      webSocketLogger.warn('[WebSocketManager] No gameId provided');
       return;
     }
 
@@ -67,7 +68,7 @@ class WebSocketManager {
     if (this.connections.has(gameId)) {
       const connection = this.connections.get(gameId)!;
       connection.subscribers.add(callbacks);
-      console.log(`[WebSocketManager] Added subscriber to existing connection. Total subscribers: ${connection.subscribers.size}`);
+      webSocketLogger.debug(`[WebSocketManager] Added subscriber to existing connection. Total subscribers: ${connection.subscribers.size}`);
 
       // 現在の状態を新しいサブスクライバーに通知
       callbacks.setIsConnected?.(connection.isConnected);
@@ -105,18 +106,18 @@ class WebSocketManager {
   }
 
   disconnect(gameId: string, callbacks: WebSocketCallbacks) {
-    console.log(`[WebSocketManager] Disconnect request for gameId: ${gameId}`);
+    webSocketLogger.debug(`[WebSocketManager] Disconnect request for gameId: ${gameId}`);
 
     const connection = this.connections.get(gameId);
     if (!connection) return;
 
     // サブスクライバーから削除
     connection.subscribers.delete(callbacks);
-    console.log(`[WebSocketManager] Removed subscriber. Remaining: ${connection.subscribers.size}`);
+    webSocketLogger.debug(`[WebSocketManager] Removed subscriber. Remaining: ${connection.subscribers.size}`);
 
     // サブスクライバーがいなくなったら接続を閉じる
     if (connection.subscribers.size === 0) {
-      console.log(`[WebSocketManager] No more subscribers, closing connection for ${gameId}`);
+      webSocketLogger.debug(`[WebSocketManager] No more subscribers, closing connection for ${gameId}`);
       connection.didUnmount = true;
       this._closeConnection(gameId);
     }
@@ -125,20 +126,20 @@ class WebSocketManager {
   sendAction(gameId: string, action: GameAction): boolean {
     const connection = this.connections.get(gameId);
     if (!connection?.ws || connection.ws.readyState !== WebSocket.OPEN) {
-      console.warn(`[WebSocketManager] Cannot send action, not connected: ${gameId}`);
+      webSocketLogger.warn(`[WebSocketManager] Cannot send action, not connected: ${gameId}`);
       return false;
     }
 
     try {
       connection.ws.send(JSON.stringify({ action }));
-      console.log(`[WebSocketManager] Sent action:`, action);
+      webSocketLogger.debug(`[WebSocketManager] Sent action:`, action);
 
       // 送信アニメーションをトリガー
       this._triggerSendingAnimation(gameId);
 
       return true;
     } catch (error) {
-      console.error(`[WebSocketManager] Failed to send action:`, error);
+      webSocketLogger.error(`[WebSocketManager] Failed to send action:`, error);
       return false;
     }
   }
@@ -148,7 +149,7 @@ class WebSocketManager {
   }
 
   reconnect(gameId: string) {
-    console.log(`[WebSocketManager] Manual reconnect requested for ${gameId}`);
+    webSocketLogger.debug(`[WebSocketManager] Manual reconnect requested for ${gameId}`);
     const connection = this.connections.get(gameId);
     if (!connection) return;
 
@@ -222,14 +223,14 @@ class WebSocketManager {
   private _createWebSocket(gameId: string) {
     const connection = this.connections.get(gameId);
     if (!connection || connection.isConnecting || connection.didUnmount) {
-      console.log(`[WebSocketManager] Skip create WebSocket: ${gameId} (${connection ? 'connecting/unmounted' : 'no connection'})`);
+      webSocketLogger.debug(`[WebSocketManager] Skip create WebSocket: ${gameId} (${connection ? 'connecting/unmounted' : 'no connection'})`);
       return;
     }
 
     connection.isConnecting = true;
     connection.connectionStatus = connection.reconnectAttempts > 0 ? 'reconnecting' : 'connecting';
     connection.errorMessage = null;
-    console.log(`[WebSocketManager] Creating WebSocket for ${gameId} (attempt ${connection.reconnectAttempts + 1})`);
+    webSocketLogger.debug(`[WebSocketManager] Creating WebSocket for ${gameId} (attempt ${connection.reconnectAttempts + 1})`);
 
     // 状態をサブスクライバーに通知
     connection.subscribers.forEach(subscriber => {
@@ -245,7 +246,7 @@ class WebSocketManager {
     connection.ws = ws;
 
     ws.onopen = () => {
-      console.log(`[WebSocketManager] ✓ WebSocket connected: ${gameId}`);
+      webSocketLogger.info(`[WebSocketManager] ✓ WebSocket connected: ${gameId}`);
       connection.isConnected = true;
       connection.isConnecting = false;
       connection.connectionStatus = 'connected';
@@ -264,7 +265,7 @@ class WebSocketManager {
     ws.onmessage = (event: MessageEvent) => {
       try {
         const message: GameMessage = JSON.parse(event.data);
-        console.log(`[WebSocketManager] ← Received:`, message.type);
+        webSocketLogger.debug(`[WebSocketManager] ← Received:`, message.type);
 
         // 受信アニメーションをトリガー
         this._triggerReceivingAnimation(gameId);
@@ -273,12 +274,12 @@ class WebSocketManager {
           subscriber.onMessage?.(message);
         });
       } catch (error) {
-        console.error(`[WebSocketManager] Message parse error:`, error);
+        webSocketLogger.error(`[WebSocketManager] Message parse error:`, error);
       }
     };
 
     ws.onclose = (event: CloseEvent) => {
-      console.log(`[WebSocketManager] ✗ WebSocket closed: ${gameId}, code: ${event.code}, reason: ${event.reason}`);
+      webSocketLogger.info(`[WebSocketManager] ✗ WebSocket closed: ${gameId}, code: ${event.code}, reason: ${event.reason}`);
       connection.isConnected = false;
       connection.isConnecting = false;
       connection.connectionStatus = 'disconnected';
@@ -291,13 +292,13 @@ class WebSocketManager {
 
       // 正常な切断 (1000) やアンマウント済みの場合は再接続しない
       if (event.code === 1000 || connection.didUnmount) {
-        console.log(`[WebSocketManager] No reconnection needed (code: ${event.code}, unmounted: ${connection.didUnmount})`);
+        webSocketLogger.debug(`[WebSocketManager] No reconnection needed (code: ${event.code}, unmounted: ${connection.didUnmount})`);
         return;
       }
 
       // 最大再接続回数に達した場合は停止
       if (connection.reconnectAttempts >= connection.maxReconnectAttempts) {
-        console.warn(`[WebSocketManager] Max reconnect attempts reached for ${gameId}`);
+        webSocketLogger.warn(`[WebSocketManager] Max reconnect attempts reached for ${gameId}`);
         connection.connectionStatus = 'error';
         connection.errorMessage = '最大再接続回数に達しました';
 
@@ -312,7 +313,7 @@ class WebSocketManager {
       // 指数バックオフで再接続をスケジュール
       if (this.connections.has(gameId) && connection.subscribers.size > 0 && !connection.didUnmount) {
         const backoffMs = Math.min(Math.pow(2, connection.reconnectAttempts) * 1000, 10000);
-        console.log(`[WebSocketManager] Scheduling reconnection #${connection.reconnectAttempts + 1} for ${gameId} in ${backoffMs}ms`);
+        webSocketLogger.debug(`[WebSocketManager] Scheduling reconnection #${connection.reconnectAttempts + 1} for ${gameId} in ${backoffMs}ms`);
 
         connection.reconnectTimeout = window.setTimeout(() => {
           connection.reconnectTimeout = null;
@@ -326,7 +327,7 @@ class WebSocketManager {
     };
 
     ws.onerror = (event: Event) => {
-      console.error(`[WebSocketManager] ⚠ WebSocket error: ${gameId}`, event);
+      webSocketLogger.error(`[WebSocketManager] ⚠ WebSocket error: ${gameId}`, event);
       connection.isConnecting = false;
       connection.connectionStatus = 'error';
       connection.errorMessage = 'WebSocket接続エラーが発生しました';
@@ -340,7 +341,7 @@ class WebSocketManager {
   }
 
   private _closeConnection(gameId: string, removeFromMap = true) {
-    console.log(`[WebSocketManager] Closing connection: ${gameId}`);
+    webSocketLogger.debug(`[WebSocketManager] Closing connection: ${gameId}`);
     const connection = this.connections.get(gameId);
     if (!connection) return;
 
@@ -414,11 +415,11 @@ export function useWebSocket({
   useEffect(() => {
     if (!gameId) return;
 
-    console.log(`[useWebSocket] 🔌 Connecting to gameId: ${gameId}`);
+    webSocketLogger.debug(`[useWebSocket] 🔌 Connecting to gameId: ${gameId}`);
     wsManager.connect(gameId, wrappedCallbacks.current);
 
     return () => {
-      console.log(`[useWebSocket] 🔌 Disconnecting from gameId: ${gameId}`);
+      webSocketLogger.debug(`[useWebSocket] 🔌 Disconnecting from gameId: ${gameId}`);
       wsManager.disconnect(gameId, wrappedCallbacks.current);
       setIsConnected(false);
       setConnectionStatus('disconnected');
@@ -434,7 +435,7 @@ export function useWebSocket({
   }, [gameId]);
 
   const reconnect = useCallback(() => {
-    console.log(`[useWebSocket] 🔄 Manual reconnect for: ${gameId}`);
+    webSocketLogger.debug(`[useWebSocket] 🔄 Manual reconnect for: ${gameId}`);
     wsManager.reconnect(gameId);
   }, [gameId]);
 

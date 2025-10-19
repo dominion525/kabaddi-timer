@@ -139,7 +139,7 @@ describe('useWebSocket', () => {
 });
 
 describe('WebSocketManager（統合テスト）', () => {
-  let mockWebSocket: any;
+  let mockWebSocket: Partial<WebSocket>;
 
   beforeEach(() => {
     // グローバルWebSocketをモック
@@ -153,7 +153,7 @@ describe('WebSocketManager（統合テスト）', () => {
       onerror: null,
     };
 
-    (global as any).WebSocket = vi.fn(() => mockWebSocket);
+    global.WebSocket = vi.fn(() => mockWebSocket) as unknown as typeof WebSocket;
   });
 
   afterEach(() => {

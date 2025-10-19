@@ -10,10 +10,10 @@ describe('QRModal', () => {
     vi.clearAllMocks();
 
     // window.QRiousのモック
-    (window as any).QRious = vi.fn().mockImplementation(() => ({}));
+    window.QRious = vi.fn().mockImplementation(() => ({}));
 
     // window.lucideのモック
-    (window as any).lucide = {
+    window.lucide = {
       createIcons: vi.fn(),
     };
 
@@ -62,7 +62,7 @@ describe('QRModal', () => {
     it('Lucideアイコンが初期化される', () => {
       render(<QRModal isOpen={true} onClose={mockOnClose} gameId={mockGameId} />);
 
-      expect((window as any).lucide.createIcons).toHaveBeenCalled();
+      expect(window.lucide?.createIcons).toHaveBeenCalled();
     });
   });
 
@@ -118,8 +118,8 @@ describe('QRModal', () => {
     it('QRiousライブラリが存在する場合、QRコードが生成される', () => {
       render(<QRModal isOpen={true} onClose={mockOnClose} gameId={mockGameId} />);
 
-      expect((window as any).QRious).toHaveBeenCalled();
-      expect((window as any).QRious).toHaveBeenCalledWith(
+      expect(window.QRious).toHaveBeenCalled();
+      expect(window.QRious).toHaveBeenCalledWith(
         expect.objectContaining({
           value: window.location.href,
           size: 200,
@@ -139,7 +139,7 @@ describe('QRModal', () => {
     });
 
     it('getContextがnullを返す場合、フォールバック描画をスキップする', () => {
-      (window as any).QRious = undefined;
+      window.QRious = undefined;
 
       // getContextがnullを返すモック
       vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue(null);
@@ -151,7 +151,7 @@ describe('QRModal', () => {
     });
 
     it('QRiousライブラリが存在しない場合、フォールバック表示される', () => {
-      (window as any).QRious = undefined;
+      window.QRious = undefined;
 
       // キャンバスのモックを作成
       const mockFillText = vi.fn();
@@ -164,10 +164,10 @@ describe('QRModal', () => {
         fillText: mockFillText,
         fillRect: mockFillRect,
         clearRect: mockClearRect,
-      });
+      } as Partial<CanvasRenderingContext2D>);
 
       // HTMLCanvasElement.prototype.getContextをモック
-      vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockImplementation(mockGetContext as any);
+      vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockImplementation(mockGetContext);
 
       render(<QRModal isOpen={true} onClose={mockOnClose} gameId={mockGameId} />);
 
@@ -181,7 +181,7 @@ describe('QRModal', () => {
 
     it('QRコード生成でエラーが発生した場合、フォールバック表示される', () => {
       const mockError = new Error('QR generation failed');
-      (window as any).QRious = vi.fn().mockImplementation(() => {
+      window.QRious = vi.fn().mockImplementation(() => {
         throw mockError;
       });
 
@@ -196,10 +196,10 @@ describe('QRModal', () => {
         fillText: mockFillText,
         fillRect: mockFillRect,
         clearRect: mockClearRect,
-      });
+      } as Partial<CanvasRenderingContext2D>);
 
       // HTMLCanvasElement.prototype.getContextをモック
-      vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockImplementation(mockGetContext as any);
+      vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockImplementation(mockGetContext);
 
       render(<QRModal isOpen={true} onClose={mockOnClose} gameId={mockGameId} />);
 

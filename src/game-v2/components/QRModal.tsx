@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'preact/hooks';
 import { JSX } from 'preact';
+import { qrModalLogger } from '../../utils/logger';
 
 interface Props {
   isOpen: boolean;
@@ -24,7 +25,7 @@ export function QRModal({ isOpen, onClose, gameId }: Props) {
       await navigator.clipboard.writeText(gameId);
       alert('ゲームIDをクリップボードにコピーしました');
     } catch (err) {
-      console.error('ゲームIDコピーエラー:', err);
+      qrModalLogger.error('ゲームIDコピーエラー:', err);
       alert('コピーに失敗しました');
     }
   };
@@ -36,7 +37,7 @@ export function QRModal({ isOpen, onClose, gameId }: Props) {
       await navigator.clipboard.writeText(gameUrl);
       alert('URLをクリップボードにコピーしました');
     } catch (err) {
-      console.error('URLコピーエラー:', err);
+      qrModalLogger.error('URLコピーエラー:', err);
       alert('コピーに失敗しました');
     }
   };
@@ -47,7 +48,7 @@ export function QRModal({ isOpen, onClose, gameId }: Props) {
 
     const canvas = canvasRef.current;
     if (!canvas) {
-      console.error('Canvas要素が見つかりません');
+      qrModalLogger.error('Canvas要素が見つかりません');
       return;
     }
 
@@ -88,13 +89,13 @@ export function QRModal({ isOpen, onClose, gameId }: Props) {
             size: 200,
             level: 'M'
           });
-          console.log('QRコード生成成功:', gameUrl);
+          qrModalLogger.debug('QRコード生成成功:', gameUrl);
         } else {
-          console.error('QRiousライブラリが読み込まれていません');
+          qrModalLogger.error('QRiousライブラリが読み込まれていません');
           showQRFallback(canvas);
         }
       } catch (error) {
-        console.error('QRコード生成エラー:', error);
+        qrModalLogger.error('QRコード生成エラー:', error);
         showQRFallback(canvas);
       }
     };

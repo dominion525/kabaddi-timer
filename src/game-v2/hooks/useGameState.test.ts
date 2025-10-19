@@ -25,7 +25,7 @@ describe('useGameState', () => {
     mockSendAction.mockReturnValue(true);
 
     // useWebSocketのモックを設定
-    (useWebSocket as any).mockImplementation(({ onMessage, onConnected, onDisconnected }: any) => {
+    vi.mocked(useWebSocket).mockImplementation(({ onMessage, onConnected, onDisconnected }) => {
       mockOnMessage = onMessage;
       mockOnConnected = onConnected;
       mockOnDisconnected = onDisconnected;
@@ -37,6 +37,8 @@ describe('useGameState', () => {
         maxReconnectAttempts: 10,
         errorMessage: null,
         reconnect: mockReconnect,
+        sendingData: false,
+        receivingData: false,
       };
     });
   });

@@ -11,6 +11,7 @@ import { ControlPanel } from './ControlPanel';
 import { LoadingModal } from './LoadingModal';
 import { useGameState } from '../hooks/useGameState';
 import { useTimerAnimation } from '../hooks/useTimerAnimation';
+import { appLogger } from '../../utils/logger';
 
 interface Props {
   gameId: string;
@@ -70,7 +71,7 @@ export function App({ gameId }: Props) {
       const stored = localStorage.getItem(`v2_kabaddi_display_flipped_${gameId}`);
       return stored === 'true';
     } catch (error) {
-      console.error('Failed to read displayFlipped from localStorage:', error);
+      appLogger.error('Failed to read displayFlipped from localStorage:', error);
       return false;
     }
   });
@@ -120,7 +121,7 @@ export function App({ gameId }: Props) {
     try {
       localStorage.setItem(`v2_kabaddi_display_flipped_${gameId}`, String(displayFlipped));
     } catch (error) {
-      console.error('Failed to save displayFlipped to localStorage:', error);
+      appLogger.error('Failed to save displayFlipped to localStorage:', error);
     }
   }, [displayFlipped, gameId]);
 

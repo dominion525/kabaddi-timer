@@ -5,6 +5,7 @@
 
 import { generateShortId, validateGameId } from './utils/gameId';
 import '../styles/tailwind.css';
+import { appLogger } from '../utils/logger';
 
 // Lucide icons初期化（TypeScript型定義なし）
 declare const lucide: {
@@ -25,7 +26,7 @@ function createNewTimer(): void {
 function goToTimer(): void {
   const input = document.getElementById('timerIdInput') as HTMLInputElement | null;
   if (!input) {
-    console.error('timerIdInput element not found');
+    appLogger.error('timerIdInput element not found');
     return;
   }
 
@@ -108,7 +109,7 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 // グローバル関数として公開（HTML onclick属性から呼び出すため）
-(window as any).createNewTimer = createNewTimer;
-(window as any).goToTimer = goToTimer;
-(window as any).openCreditsModal = openCreditsModal;
-(window as any).closeCreditsModal = closeCreditsModal;
+window.createNewTimer = createNewTimer;
+window.goToTimer = goToTimer;
+window.openCreditsModal = openCreditsModal;
+window.closeCreditsModal = closeCreditsModal;
