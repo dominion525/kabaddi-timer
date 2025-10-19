@@ -108,7 +108,7 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 // グローバル関数として公開（HTML onclick属性から呼び出すため）
-(window as any).createNewTimer = createNewTimer;
-(window as any).goToTimer = goToTimer;
-(window as any).openCreditsModal = openCreditsModal;
-(window as any).closeCreditsModal = closeCreditsModal;
+window.createNewTimer = createNewTimer;
+window.goToTimer = goToTimer;
+window.openCreditsModal = openCreditsModal;
+window.closeCreditsModal = closeCreditsModal;

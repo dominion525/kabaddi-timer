@@ -115,7 +115,7 @@ export class GameSession {
     let needsSave = false;
 
     try {
-      const stored = await this.ctx.storage.get<any>('gameState');
+      const stored = await this.ctx.storage.get<unknown>('gameState');
 
       if (stored) {
         // データ検証を実行
@@ -145,27 +145,32 @@ export class GameSession {
     }
   }
 
-  private validateGameState(state: any): state is GameState {
+  private validateGameState(state: unknown): state is GameState {
     if (!state || typeof state !== 'object') return false;
 
+    // unknown型をRecord型として扱い、プロパティアクセスを可能にする
+    const obj = state as Record<string, unknown>;
+
     // チーム情報の検証
-    if (!state.teamA || !state.teamB) return false;
-    if (typeof state.teamA.name !== 'string' || typeof state.teamA.score !== 'number') return false;
-    if (typeof state.teamB.name !== 'string' || typeof state.teamB.score !== 'number') return false;
-    if (typeof state.teamA.doOrDieCount !== 'number' || state.teamA.doOrDieCount < 0 || state.teamA.doOrDieCount > 3) return false;
-    if (typeof state.teamB.doOrDieCount !== 'number' || state.teamB.doOrDieCount < 0 || state.teamB.doOrDieCount > 3) return false;
+    if (!obj.teamA || !obj.teamB) return false;
+    const teamA = obj.teamA as Record<string, unknown>;
+    const teamB = obj.teamB as Record<string, unknown>;
+    if (typeof teamA.name !== 'string' || typeof teamA.score !== 'number') return false;
+    if (typeof teamB.name !== 'string' || typeof teamB.score !== 'number') return false;
+    if (typeof teamA.doOrDieCount !== 'number' || teamA.doOrDieCount < 0 || teamA.doOrDieCount > 3) return false;
+    if (typeof teamB.doOrDieCount !== 'number' || teamB.doOrDieCount < 0 || teamB.doOrDieCount > 3) return false;
 
     // タイマー情報の検証
-    if (!state.timer) return false;
-    const timer = state.timer;
+    if (!obj.timer) return false;
+    const timer = obj.timer as Record<string, unknown>;
     if (typeof timer.totalDuration !== 'number' || timer.totalDuration <= 0) return false;
     if (typeof timer.isRunning !== 'boolean') return false;
     if (typeof timer.isPaused !== 'boolean') return false;
     if (typeof timer.remainingSeconds !== 'number' || timer.remainingSeconds < 0) return false;
 
     // サブタイマー情報の検証（オプショナルなのでstateにない場合はスキップ）
-    if (state.subTimer) {
-      const subTimer = state.subTimer;
+    if (obj.subTimer) {
+      const subTimer = obj.subTimer as Record<string, unknown>;
       if (typeof subTimer.totalDuration !== 'number' || subTimer.totalDuration <= 0) return false;
       if (typeof subTimer.isRunning !== 'boolean') return false;
       if (typeof subTimer.isPaused !== 'boolean') return false;
@@ -173,46 +178,53 @@ export class GameSession {
     }
 
     // 基本時刻情報の検証
-    if (typeof state.serverTime !== 'number' || typeof state.lastUpdated !== 'number') return false;
+    if (typeof obj.serverTime !== 'number' || typeof obj.lastUpdated !== 'number') return false;
 
     // leftSideTeamの検証
-    if (typeof state.leftSideTeam !== 'string' || !['teamA', 'teamB'].includes(state.leftSideTeam)) return false;
+    if (typeof obj.leftSideTeam !== 'string' || !['teamA', 'teamB'].includes(obj.leftSideTeam)) return false;
 
     return true;
   }
 
-  private repairGameState(state: any): GameState {
+  private repairGameState(state: unknown): GameState {
     const defaultState = this.getDefaultGameState();
+
+    // unknown型をRecord型として扱い、プロパティアクセスを可能にする
+    const obj = (state && typeof state === 'object') ? state as Record<string, unknown> : {};
+    const teamA = (obj.teamA && typeof obj.teamA === 'object') ? obj.teamA as Record<string, unknown> : {};
+    const teamB = (obj.teamB && typeof obj.teamB === 'object') ? obj.teamB as Record<string, unknown> : {};
+    const timer = (obj.timer && typeof obj.timer === 'object') ? obj.timer as Record<string, unknown> : {};
+    const subTimer = (obj.subTimer && typeof obj.subTimer === 'object') ? obj.subTimer as Record<string, unknown> : undefined;
 
     const repairedState: GameState = {
       teamA: {
-        name: (state?.teamA?.name && typeof state.teamA.name === 'string') ? state.teamA.name : defaultState.teamA.name,
-        score: (state?.teamA?.score && typeof state.teamA.score === 'number' && isValidScore(state.teamA.score)) ? state.teamA.score : defaultState.teamA.score,
-        doOrDieCount: (state?.teamA?.doOrDieCount && typeof state.teamA.doOrDieCount === 'number' && isValidDoOrDieCount(state.teamA.doOrDieCount)) ? state.teamA.doOrDieCount : defaultState.teamA.doOrDieCount
+        name: (typeof teamA.name === 'string') ? teamA.name : defaultState.teamA.name,
+        score: (typeof teamA.score === 'number' && isValidScore(teamA.score)) ? teamA.score : defaultState.teamA.score,
+        doOrDieCount: (typeof teamA.doOrDieCount === 'number' && isValidDoOrDieCount(teamA.doOrDieCount)) ? teamA.doOrDieCount : defaultState.teamA.doOrDieCount
       },
       teamB: {
-        name: (state?.teamB?.name && typeof state.teamB.name === 'string') ? state.teamB.name : defaultState.teamB.name,
-        score: (state?.teamB?.score && typeof state.teamB.score === 'number' && isValidScore(state.teamB.score)) ? state.teamB.score : defaultState.teamB.score,
-        doOrDieCount: (state?.teamB?.doOrDieCount && typeof state.teamB.doOrDieCount === 'number' && isValidDoOrDieCount(state.teamB.doOrDieCount)) ? state.teamB.doOrDieCount : defaultState.teamB.doOrDieCount
+        name: (typeof teamB.name === 'string') ? teamB.name : defaultState.teamB.name,
+        score: (typeof teamB.score === 'number' && isValidScore(teamB.score)) ? teamB.score : defaultState.teamB.score,
+        doOrDieCount: (typeof teamB.doOrDieCount === 'number' && isValidDoOrDieCount(teamB.doOrDieCount)) ? teamB.doOrDieCount : defaultState.teamB.doOrDieCount
       },
       timer: {
-        totalDuration: (state?.timer?.totalDuration && typeof state.timer.totalDuration === 'number' && state.timer.totalDuration > 0) ? state.timer.totalDuration : defaultState.timer.totalDuration,
-        initialDuration: (state?.timer?.initialDuration && typeof state.timer.initialDuration === 'number' && state.timer.initialDuration > 0) ? state.timer.initialDuration : state?.timer?.totalDuration,
-        startTime: (state?.timer?.startTime && (typeof state.timer.startTime === 'number' || state.timer.startTime === null)) ? state.timer.startTime : defaultState.timer.startTime,
-        isRunning: (state?.timer?.isRunning && typeof state.timer.isRunning === 'boolean') ? state.timer.isRunning : defaultState.timer.isRunning,
-        isPaused: (state?.timer?.isPaused && typeof state.timer.isPaused === 'boolean') ? state.timer.isPaused : defaultState.timer.isPaused,
-        pausedAt: (state?.timer?.pausedAt && (typeof state.timer.pausedAt === 'number' || state.timer.pausedAt === null)) ? state.timer.pausedAt : defaultState.timer.pausedAt,
-        remainingSeconds: (state?.timer?.remainingSeconds && typeof state.timer.remainingSeconds === 'number' && state.timer.remainingSeconds >= 0) ? state.timer.remainingSeconds : defaultState.timer.remainingSeconds
+        totalDuration: (typeof timer.totalDuration === 'number' && timer.totalDuration > 0) ? timer.totalDuration : defaultState.timer.totalDuration,
+        initialDuration: (typeof timer.initialDuration === 'number' && timer.initialDuration > 0) ? timer.initialDuration : (typeof timer.totalDuration === 'number' ? timer.totalDuration : defaultState.timer.initialDuration),
+        startTime: (typeof timer.startTime === 'number' || timer.startTime === null) ? timer.startTime : defaultState.timer.startTime,
+        isRunning: (typeof timer.isRunning === 'boolean') ? timer.isRunning : defaultState.timer.isRunning,
+        isPaused: (typeof timer.isPaused === 'boolean') ? timer.isPaused : defaultState.timer.isPaused,
+        pausedAt: (typeof timer.pausedAt === 'number' || timer.pausedAt === null) ? timer.pausedAt : defaultState.timer.pausedAt,
+        remainingSeconds: (typeof timer.remainingSeconds === 'number' && timer.remainingSeconds >= 0) ? timer.remainingSeconds : defaultState.timer.remainingSeconds
       },
-      subTimer: state?.subTimer ? {
-        totalDuration: (state.subTimer?.totalDuration && typeof state.subTimer.totalDuration === 'number' && state.subTimer.totalDuration > 0) ? state.subTimer.totalDuration : defaultState.subTimer!.totalDuration,
-        startTime: (state.subTimer?.startTime && (typeof state.subTimer.startTime === 'number' || state.subTimer.startTime === null)) ? state.subTimer.startTime : defaultState.subTimer!.startTime,
-        isRunning: (state.subTimer?.isRunning && typeof state.subTimer.isRunning === 'boolean') ? state.subTimer.isRunning : defaultState.subTimer!.isRunning,
-        isPaused: (state.subTimer?.isPaused && typeof state.subTimer.isPaused === 'boolean') ? state.subTimer.isPaused : defaultState.subTimer!.isPaused,
-        pausedAt: (state.subTimer?.pausedAt && (typeof state.subTimer.pausedAt === 'number' || state.subTimer.pausedAt === null)) ? state.subTimer.pausedAt : defaultState.subTimer!.pausedAt,
-        remainingSeconds: (state.subTimer?.remainingSeconds && typeof state.subTimer.remainingSeconds === 'number' && state.subTimer.remainingSeconds >= 0) ? state.subTimer.remainingSeconds : defaultState.subTimer!.remainingSeconds
+      subTimer: subTimer ? {
+        totalDuration: (typeof subTimer.totalDuration === 'number' && subTimer.totalDuration > 0) ? subTimer.totalDuration : defaultState.subTimer!.totalDuration,
+        startTime: (typeof subTimer.startTime === 'number' || subTimer.startTime === null) ? subTimer.startTime : defaultState.subTimer!.startTime,
+        isRunning: (typeof subTimer.isRunning === 'boolean') ? subTimer.isRunning : defaultState.subTimer!.isRunning,
+        isPaused: (typeof subTimer.isPaused === 'boolean') ? subTimer.isPaused : defaultState.subTimer!.isPaused,
+        pausedAt: (typeof subTimer.pausedAt === 'number' || subTimer.pausedAt === null) ? subTimer.pausedAt : defaultState.subTimer!.pausedAt,
+        remainingSeconds: (typeof subTimer.remainingSeconds === 'number' && subTimer.remainingSeconds >= 0) ? subTimer.remainingSeconds : defaultState.subTimer!.remainingSeconds
       } : defaultState.subTimer,
-      leftSideTeam: (state?.leftSideTeam && typeof state.leftSideTeam === 'string' && ['teamA', 'teamB'].includes(state.leftSideTeam)) ? state.leftSideTeam : defaultState.leftSideTeam,
+      leftSideTeam: (typeof obj.leftSideTeam === 'string' && ['teamA', 'teamB'].includes(obj.leftSideTeam)) ? obj.leftSideTeam as 'teamA' | 'teamB' : defaultState.leftSideTeam,
       serverTime: Date.now(),
       lastUpdated: Date.now()
     };
