@@ -1,4 +1,5 @@
 import { h } from 'preact';
+import { buttonSizeStyles } from '../utils/button-styles';
 
 interface ScoreButtonProps {
   teamId: 'teamA' | 'teamB';
@@ -15,12 +16,6 @@ interface ScoreResetButtonProps {
 
 // +1ボタン
 export function ScoreIncrementButton({ teamId, teamColor, onUpdate, size = 'desktop' }: ScoreButtonProps) {
-  const sizeStyles = {
-    desktop: 'h-12 font-bold rounded-lg',
-    'mobile-basic': 'h-12 font-bold text-base rounded-lg',
-    'mobile-simple': 'h-8 font-bold text-xs rounded',
-  };
-
   const colorStyles = {
     red: {
       desktop: 'bg-red-600 hover:bg-red-700',
@@ -37,7 +32,7 @@ export function ScoreIncrementButton({ teamId, teamColor, onUpdate, size = 'desk
   return (
     <button
       onClick={() => onUpdate(teamId, 1)}
-      className={`${sizeStyles[size]} ${colorStyles[teamColor][size]} text-white transition-colors active:scale-95`}
+      className={`${buttonSizeStyles[size]} ${colorStyles[teamColor][size]} text-white transition-colors active:scale-95`}
       data-testid="score-increment">
       +1
     </button>
@@ -46,12 +41,6 @@ export function ScoreIncrementButton({ teamId, teamColor, onUpdate, size = 'desk
 
 // -1ボタン
 export function ScoreDecrementButton({ teamId, teamColor, onUpdate, size = 'desktop' }: ScoreButtonProps) {
-  const sizeStyles = {
-    desktop: 'h-12 font-bold rounded-lg',
-    'mobile-basic': 'h-12 font-bold text-base rounded-lg',
-    'mobile-simple': 'h-8 font-bold text-xs rounded',
-  };
-
   const colorStyles = {
     red: {
       desktop: 'bg-red-100 hover:bg-red-200 text-red-600',
@@ -68,7 +57,7 @@ export function ScoreDecrementButton({ teamId, teamColor, onUpdate, size = 'desk
   return (
     <button
       onClick={() => onUpdate(teamId, -1)}
-      className={`${sizeStyles[size]} ${colorStyles[teamColor][size]} transition-colors active:scale-95`}
+      className={`${buttonSizeStyles[size]} ${colorStyles[teamColor][size]} transition-colors active:scale-95`}
       data-testid="score-decrement">
       -1
     </button>
@@ -77,16 +66,10 @@ export function ScoreDecrementButton({ teamId, teamColor, onUpdate, size = 'desk
 
 // スコアリセットボタン
 export function ScoreResetButton({ teamId, onReset, size = 'desktop' }: ScoreResetButtonProps) {
-  const sizeStyles = {
-    desktop: 'h-12 rounded-lg',
-    'mobile-basic': 'h-12 rounded-lg',
-    'mobile-simple': 'h-8 rounded',
-  };
-
   return (
     <button
       onClick={() => onReset(teamId)}
-      className={`${sizeStyles[size]} bg-gray-500 hover:bg-gray-600 text-white font-bold text-xs transition-colors active:scale-95`}
+      className={`${buttonSizeStyles[size]} bg-gray-500 hover:bg-gray-600 text-white text-xs transition-colors active:scale-95`}
       data-testid="score-reset">
       スコア<br />リセット
     </button>
