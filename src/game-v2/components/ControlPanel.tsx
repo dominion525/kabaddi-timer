@@ -185,19 +185,21 @@ export function ControlPanel({
   }, [gameState?.teamA?.name, gameState?.teamB?.name]);
 
   // サーバー状態とタイマー入力値の同期
-  // totalDuration（リセット時の戻り値）を表示
-  // totalDurationはTIMER_SETでのみ変更される
-  // TIMER_ADJUSTではremainingSecondsのみ変更され、totalDurationは変わらないため、入力欄は更新されない
+  // initialDuration（リセット時に戻る値）を表示
+  // initialDurationはTIMER_SETでのみ変更される
+  // TIMER_ADJUSTではremainingSecondsのみ変更され、initialDurationは変わらないため、入力欄は更新されない
   useEffect(() => {
     if (!gameState?.timer) return;
 
-    // totalDurationを表示（リセット時の戻り値）
-    const totalSeconds = gameState.timer.totalDuration;
-    const minutes = Math.floor(totalSeconds / 60);
-    const seconds = totalSeconds % 60;
+    // initialDuration（リセット時に戻る値）を表示
+    // 後方互換性のためinitialDurationがない場合はtotalDurationを使用
+    // Math.ceil()で切り上げてメインタイマーと同じ表示ロジックを使用
+    const resetSeconds = Math.ceil(gameState.timer.initialDuration ?? gameState.timer.totalDuration);
+    const minutes = Math.floor(resetSeconds / 60);
+    const seconds = resetSeconds % 60;
     setTimerInputMinutes(minutes);
     setTimerInputSeconds(seconds);
-  }, [gameState?.timer?.totalDuration]);
+  }, [gameState?.timer?.initialDuration, gameState?.timer?.totalDuration]);
 
   return (
     <>
