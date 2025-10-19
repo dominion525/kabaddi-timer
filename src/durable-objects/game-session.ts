@@ -1,5 +1,4 @@
-// @ts-ignore: ACTION_TYPES is used in switch case statements
-import { GameState, GameAction, GameMessage, WebSocketMessage, TimeSyncData, MESSAGE_TYPES, ACTION_TYPES } from '../types/game';
+import { GameState, GameAction, GameMessage, WebSocketMessage, MESSAGE_TYPES, ACTION_TYPES } from '../types/game';
 import { isValidScore, isValidDoOrDieCount, clampScore, clampDoOrDieCount } from '../utils/score-logic';
 import { calculateServerRemainingSeconds } from '../utils/timer-logic-server';
 import { gameSessionLogger } from '../utils/logger';
