@@ -347,19 +347,21 @@ describe('GameSession', () => {
       const gameSession = env.GAME_SESSION.get(id);
 
       const result = await runInDurableObject(gameSession, async (instance, state) => {
+        const testInstance = instance as unknown as GameSessionTestAccess;
+
         // チームAのスコア追加
-        await (instance as any).handleAction({ type: 'SCORE_UPDATE', team: 'teamA', points: 2 });
-        let gameState = (instance as any).gameState;
+        await testInstance.handleAction({ type: 'SCORE_UPDATE', team: 'teamA', points: 2 });
+        let gameState = testInstance.gameState;
         expect(gameState.teamA.score).toBe(2);
 
         // チームBのスコア追加
-        await (instance as any).handleAction({ type: 'SCORE_UPDATE', team: 'teamB', points: 1 });
-        gameState = (instance as any).gameState;
+        await testInstance.handleAction({ type: 'SCORE_UPDATE', team: 'teamB', points: 1 });
+        gameState = testInstance.gameState;
         expect(gameState.teamB.score).toBe(1);
 
         // チームAにさらにスコア追加
-        await (instance as any).handleAction({ type: 'SCORE_UPDATE', team: 'teamA', points: 3 });
-        gameState = (instance as any).gameState;
+        await testInstance.handleAction({ type: 'SCORE_UPDATE', team: 'teamA', points: 3 });
+        gameState = testInstance.gameState;
         expect(gameState.teamA.score).toBe(5); // 2 + 3
 
         return { teamA: gameState.teamA.score, teamB: gameState.teamB.score };
@@ -374,18 +376,20 @@ describe('GameSession', () => {
       const gameSession = env.GAME_SESSION.get(id);
 
       const result = await runInDurableObject(gameSession, async (instance, state) => {
+        const testInstance = instance as unknown as GameSessionTestAccess;
+
         // スコアを設定
-        await (instance as any).handleAction({ type: 'SCORE_UPDATE', team: 'teamA', points: 10 });
-        await (instance as any).handleAction({ type: 'SCORE_UPDATE', team: 'teamB', points: 8 });
+        await testInstance.handleAction({ type: 'SCORE_UPDATE', team: 'teamA', points: 10 });
+        await testInstance.handleAction({ type: 'SCORE_UPDATE', team: 'teamB', points: 8 });
 
         // リセット前の確認
-        let gameState = (instance as any).gameState;
+        let gameState = testInstance.gameState;
         expect(gameState.teamA.score).toBe(10);
         expect(gameState.teamB.score).toBe(8);
 
         // スコアリセット
-        await (instance as any).handleAction({ type: 'RESET_SCORES' });
-        gameState = (instance as any).gameState;
+        await testInstance.handleAction({ type: 'RESET_SCORES' });
+        gameState = testInstance.gameState;
 
         expect(gameState.teamA.score).toBe(0);
         expect(gameState.teamB.score).toBe(0);
@@ -402,26 +406,28 @@ describe('GameSession', () => {
       const gameSession = env.GAME_SESSION.get(id);
 
       const result = await runInDurableObject(gameSession, async (instance, state) => {
+        const testInstance = instance as unknown as GameSessionTestAccess;
+
         // スコア設定
-        await (instance as any).handleAction({ type: 'SCORE_UPDATE', team: 'teamA', points: 5 });
-        await (instance as any).handleAction({ type: 'SCORE_UPDATE', team: 'teamB', points: 8 });
+        await testInstance.handleAction({ type: 'SCORE_UPDATE', team: 'teamA', points: 5 });
+        await testInstance.handleAction({ type: 'SCORE_UPDATE', team: 'teamB', points: 8 });
 
         // リセット前の確認
-        let gameState = (instance as any).gameState;
+        let gameState = testInstance.gameState;
         expect(gameState.teamA.score).toBe(5);
         expect(gameState.teamB.score).toBe(8);
 
         // チームAのスコアのみリセット
-        await (instance as any).handleAction({ type: 'RESET_TEAM_SCORE', team: 'teamA' });
-        gameState = (instance as any).gameState;
+        await testInstance.handleAction({ type: 'RESET_TEAM_SCORE', team: 'teamA' });
+        gameState = testInstance.gameState;
 
         expect(gameState.teamA.score).toBe(0);
         expect(gameState.teamB.score).toBe(8);
 
         // チームBのスコアのみリセット
-        await (instance as any).handleAction({ type: 'SCORE_UPDATE', team: 'teamA', points: 3 });
-        await (instance as any).handleAction({ type: 'RESET_TEAM_SCORE', team: 'teamB' });
-        gameState = (instance as any).gameState;
+        await testInstance.handleAction({ type: 'SCORE_UPDATE', team: 'teamA', points: 3 });
+        await testInstance.handleAction({ type: 'RESET_TEAM_SCORE', team: 'teamB' });
+        gameState = testInstance.gameState;
 
         expect(gameState.teamA.score).toBe(3);
         expect(gameState.teamB.score).toBe(0);
@@ -438,24 +444,26 @@ describe('GameSession', () => {
       const gameSession = env.GAME_SESSION.get(id);
 
       const result = await runInDurableObject(gameSession, async (instance, state) => {
+        const testInstance = instance as unknown as GameSessionTestAccess;
+
         // チームAのDo or Die増加
-        await (instance as any).handleAction({ type: 'DO_OR_DIE_UPDATE', team: 'teamA', delta: 1 });
-        let gameState = (instance as any).gameState;
+        await testInstance.handleAction({ type: 'DO_OR_DIE_UPDATE', team: 'teamA', delta: 1 });
+        let gameState = testInstance.gameState;
         expect(gameState.teamA.doOrDieCount).toBe(1);
 
         // さらに増加
-        await (instance as any).handleAction({ type: 'DO_OR_DIE_UPDATE', team: 'teamA', delta: 1 });
-        gameState = (instance as any).gameState;
+        await testInstance.handleAction({ type: 'DO_OR_DIE_UPDATE', team: 'teamA', delta: 1 });
+        gameState = testInstance.gameState;
         expect(gameState.teamA.doOrDieCount).toBe(2);
 
         // チームBも増加
-        await (instance as any).handleAction({ type: 'DO_OR_DIE_UPDATE', team: 'teamB', delta: 1 });
-        gameState = (instance as any).gameState;
+        await testInstance.handleAction({ type: 'DO_OR_DIE_UPDATE', team: 'teamB', delta: 1 });
+        gameState = testInstance.gameState;
         expect(gameState.teamB.doOrDieCount).toBe(1);
 
         // 減少テスト
-        await (instance as any).handleAction({ type: 'DO_OR_DIE_UPDATE', team: 'teamA', delta: -1 });
-        gameState = (instance as any).gameState;
+        await testInstance.handleAction({ type: 'DO_OR_DIE_UPDATE', team: 'teamA', delta: -1 });
+        gameState = testInstance.gameState;
         expect(gameState.teamA.doOrDieCount).toBe(1);
 
         return {
@@ -473,18 +481,20 @@ describe('GameSession', () => {
       const gameSession = env.GAME_SESSION.get(id);
 
       const result = await runInDurableObject(gameSession, async (instance, state) => {
+        const testInstance = instance as unknown as GameSessionTestAccess;
+
         // Do or Dieカウンターを設定
-        await (instance as any).handleAction({ type: 'DO_OR_DIE_UPDATE', team: 'teamA', delta: 2 });
-        await (instance as any).handleAction({ type: 'DO_OR_DIE_UPDATE', team: 'teamB', delta: 1 });
+        await testInstance.handleAction({ type: 'DO_OR_DIE_UPDATE', team: 'teamA', delta: 2 });
+        await testInstance.handleAction({ type: 'DO_OR_DIE_UPDATE', team: 'teamB', delta: 1 });
 
         // リセット前の確認
-        let gameState = (instance as any).gameState;
+        let gameState = testInstance.gameState;
         expect(gameState.teamA.doOrDieCount).toBe(2);
         expect(gameState.teamB.doOrDieCount).toBe(1);
 
         // Do or Dieリセット
-        await (instance as any).handleAction({ type: 'DO_OR_DIE_RESET' });
-        gameState = (instance as any).gameState;
+        await testInstance.handleAction({ type: 'DO_OR_DIE_RESET' });
+        gameState = testInstance.gameState;
 
         expect(gameState.teamA.doOrDieCount).toBe(0);
         expect(gameState.teamB.doOrDieCount).toBe(0);
@@ -504,11 +514,13 @@ describe('GameSession', () => {
       const gameSession = env.GAME_SESSION.get(id);
 
       const result = await runInDurableObject(gameSession, async (instance, state) => {
-        // チーム名変更
-        await (instance as any).handleAction({ type: 'SET_TEAM_NAME', team: 'teamA', name: '東京チーム' });
-        await (instance as any).handleAction({ type: 'SET_TEAM_NAME', team: 'teamB', name: '大阪チーム' });
+        const testInstance = instance as unknown as GameSessionTestAccess;
 
-        const gameState = (instance as any).gameState;
+        // チーム名変更
+        await testInstance.handleAction({ type: 'SET_TEAM_NAME', team: 'teamA', name: '東京チーム' });
+        await testInstance.handleAction({ type: 'SET_TEAM_NAME', team: 'teamB', name: '大阪チーム' });
+
+        const gameState = testInstance.gameState;
         expect(gameState.teamA.name).toBe('東京チーム');
         expect(gameState.teamB.name).toBe('大阪チーム');
 
