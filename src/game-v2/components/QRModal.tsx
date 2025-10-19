@@ -18,55 +18,6 @@ export function QRModal({ isOpen, onClose, gameId }: Props) {
     }
   };
 
-  const handleKeyDown = (e: KeyboardEvent) => {
-    if (e.key === 'Escape') {
-      onClose();
-    }
-  };
-
-  // QRコード生成
-  const generateQRCode = () => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-
-    const gameUrl = window.location.href;
-
-    try {
-      // QRiousライブラリを使用
-      if (window.QRious) {
-        new window.QRious({
-          element: canvas,
-          value: gameUrl,
-          size: 200,
-          level: 'M'
-        });
-        console.log('QRコード生成成功');
-      } else {
-        console.error('QRiousライブラリが読み込まれていません');
-        showQRFallback(canvas);
-      }
-    } catch (error) {
-      console.error('QRコード生成エラー:', error);
-      showQRFallback(canvas);
-    }
-  };
-
-  // QRコード生成失敗時のフォールバック表示
-  const showQRFallback = (canvas: HTMLCanvasElement) => {
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
-
-    canvas.width = 200;
-    canvas.height = 200;
-    ctx.fillStyle = '#f3f4f6';
-    ctx.fillRect(0, 0, 200, 200);
-    ctx.fillStyle = '#374151';
-    ctx.font = '14px Arial';
-    ctx.textAlign = 'center';
-    ctx.fillText('QRコードが生成できません', 100, 90);
-    ctx.fillText('URLをコピーしてください', 100, 110);
-  };
-
   // ゲームIDをコピー
   const copyGameId = async () => {
     try {
@@ -90,8 +41,71 @@ export function QRModal({ isOpen, onClose, gameId }: Props) {
     }
   };
 
-  // エスケープキーのリスナーを追加とアイコン初期化
+  // モーダルが開くたびにQRコードを生成
   useEffect(() => {
+    if (!isOpen) return;
+
+    const canvas = canvasRef.current;
+    if (!canvas) {
+      console.error('Canvas要素が見つかりません');
+      return;
+    }
+
+    // QRコード生成失敗時のフォールバック表示
+    const showQRFallback = (canvas: HTMLCanvasElement) => {
+      const ctx = canvas.getContext('2d');
+      if (!ctx) return;
+
+      canvas.width = 200;
+      canvas.height = 200;
+      ctx.fillStyle = '#f3f4f6';
+      ctx.fillRect(0, 0, 200, 200);
+      ctx.fillStyle = '#374151';
+      ctx.font = '14px Arial';
+      ctx.textAlign = 'center';
+      ctx.fillText('QRコードが生成できません', 100, 90);
+      ctx.fillText('URLをコピーしてください', 100, 110);
+    };
+
+    // QRコード生成
+    const generateQRCode = () => {
+      // canvasをクリア（前回のQRコードを削除）
+      const ctx = canvas.getContext('2d');
+      if (ctx) {
+        canvas.width = 200;
+        canvas.height = 200;
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+      }
+
+      const gameUrl = window.location.href;
+
+      try {
+        // QRiousライブラリを使用
+        if (window.QRious) {
+          new window.QRious({
+            element: canvas,
+            value: gameUrl,
+            size: 200,
+            level: 'M'
+          });
+          console.log('QRコード生成成功:', gameUrl);
+        } else {
+          console.error('QRiousライブラリが読み込まれていません');
+          showQRFallback(canvas);
+        }
+      } catch (error) {
+        console.error('QRコード生成エラー:', error);
+        showQRFallback(canvas);
+      }
+    };
+
+    // エスケープキーハンドラ
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        onClose();
+      }
+    };
+
     document.addEventListener('keydown', handleKeyDown);
 
     // Lucideアイコンの初期化
@@ -105,7 +119,7 @@ export function QRModal({ isOpen, onClose, gameId }: Props) {
     return () => {
       document.removeEventListener('keydown', handleKeyDown);
     };
-  }, []);
+  }, [isOpen, onClose]); // isOpenとonCloseが変わるたびに実行
 
   const gameUrl = window.location.href;
 
