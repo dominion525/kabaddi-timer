@@ -1893,24 +1893,26 @@ describe('GameSession', () => {
         const gameSession = env.GAME_SESSION.get(id);
 
         const result = await runInDurableObject(gameSession, async (instance, state) => {
-          await (instance as any).loadGameState();
+          const testInstance = instance as unknown as GameSessionTestAccess;
+
+          await testInstance.loadGameState();
 
           // サブタイマーを開始
-          await (instance as any).handleAction({ type: 'SUB_TIMER_START' });
+          await testInstance.handleAction({ type: 'SUB_TIMER_START' });
           await new Promise(resolve => setTimeout(resolve, 100));
 
           // 残り時間を明示的に更新してから取得
-          (instance as any).updateSubTimerRemainingTime();
+          testInstance.updateSubTimerRemainingTime();
 
           const beforeSave = {
-            isRunning: (instance as any).gameState.subTimer.isRunning,
-            startTime: (instance as any).gameState.subTimer.startTime,
-            remainingSeconds: (instance as any).gameState.subTimer.remainingSeconds,
-            totalDuration: (instance as any).gameState.subTimer.totalDuration
+            isRunning: testInstance.gameState.subTimer.isRunning,
+            startTime: testInstance.gameState.subTimer.startTime,
+            remainingSeconds: testInstance.gameState.subTimer.remainingSeconds,
+            totalDuration: testInstance.gameState.subTimer.totalDuration
           };
 
           // 状態を保存
-          await (instance as any).saveGameState();
+          await testInstance.saveGameState();
 
           // ストレージから直接確認
           const savedData = await state.storage.get('gameState');
@@ -1945,55 +1947,57 @@ describe('GameSession', () => {
         const gameSession = env.GAME_SESSION.get(id);
 
         const result = await runInDurableObject(gameSession, async (instance, state) => {
+          const testInstance = instance as unknown as GameSessionTestAccess;
+
           // 最初のセッション：一時停止状態まで実行
-          await (instance as any).loadGameState();
-          await (instance as any).handleAction({ type: 'SUB_TIMER_START' });
+          await testInstance.loadGameState();
+          await testInstance.handleAction({ type: 'SUB_TIMER_START' });
           await new Promise(resolve => setTimeout(resolve, 150));
-          await (instance as any).handleAction({ type: 'SUB_TIMER_PAUSE' });
+          await testInstance.handleAction({ type: 'SUB_TIMER_PAUSE' });
 
           // 残り時間を明示的に更新してから取得
-          (instance as any).updateSubTimerRemainingTime();
+          testInstance.updateSubTimerRemainingTime();
 
           const beforeSave = {
-            isRunning: (instance as any).gameState.subTimer.isRunning,
-            isPaused: (instance as any).gameState.subTimer.isPaused,
-            pausedAt: (instance as any).gameState.subTimer.pausedAt,
-            remainingSeconds: (instance as any).gameState.subTimer.remainingSeconds,
-            startTime: (instance as any).gameState.subTimer.startTime
+            isRunning: testInstance.gameState.subTimer.isRunning,
+            isPaused: testInstance.gameState.subTimer.isPaused,
+            pausedAt: testInstance.gameState.subTimer.pausedAt,
+            remainingSeconds: testInstance.gameState.subTimer.remainingSeconds,
+            startTime: testInstance.gameState.subTimer.startTime
           };
 
           // 状態を保存
-          await (instance as any).saveGameState();
+          await testInstance.saveGameState();
 
           // 復元をシミュレート（状態をクリア）
-          (instance as any).isStateLoaded = false;
-          (instance as any).gameState = null;
+          testInstance.isStateLoaded = false;
+          testInstance.gameState = null;
 
           // 状態を再ロード
-          await (instance as any).loadGameState();
+          await testInstance.loadGameState();
 
           // 復元後の残り時間を明示的に更新
-          (instance as any).updateSubTimerRemainingTime();
+          testInstance.updateSubTimerRemainingTime();
 
           const afterRestore = {
-            isRunning: (instance as any).gameState.subTimer.isRunning,
-            isPaused: (instance as any).gameState.subTimer.isPaused,
-            pausedAt: (instance as any).gameState.subTimer.pausedAt,
-            remainingSeconds: (instance as any).gameState.subTimer.remainingSeconds,
-            startTime: (instance as any).gameState.subTimer.startTime
+            isRunning: testInstance.gameState.subTimer.isRunning,
+            isPaused: testInstance.gameState.subTimer.isPaused,
+            pausedAt: testInstance.gameState.subTimer.pausedAt,
+            remainingSeconds: testInstance.gameState.subTimer.remainingSeconds,
+            startTime: testInstance.gameState.subTimer.startTime
           };
 
           // 復元後の再開動作確認
-          await (instance as any).handleAction({ type: 'SUB_TIMER_START' });
+          await testInstance.handleAction({ type: 'SUB_TIMER_START' });
           await new Promise(resolve => setTimeout(resolve, 50));
 
           // 再開後の残り時間を明示的に更新
-          (instance as any).updateSubTimerRemainingTime();
+          testInstance.updateSubTimerRemainingTime();
 
           const afterResume = {
-            isRunning: (instance as any).gameState.subTimer.isRunning,
-            isPaused: (instance as any).gameState.subTimer.isPaused,
-            remainingSeconds: (instance as any).gameState.subTimer.remainingSeconds
+            isRunning: testInstance.gameState.subTimer.isRunning,
+            isPaused: testInstance.gameState.subTimer.isPaused,
+            remainingSeconds: testInstance.gameState.subTimer.remainingSeconds
           };
 
           return {
@@ -2037,23 +2041,25 @@ describe('GameSession', () => {
       const gameSession = env.GAME_SESSION.get(id);
 
       const result = await runInDurableObject(gameSession, async (instance) => {
+        const testInstance = instance as unknown as GameSessionTestAccess;
+
         // スコアとDoOrDieカウントを設定
-        await (instance as any).handleAction({ type: 'SCORE_UPDATE', team: 'teamA', points: 25 });
-        await (instance as any).handleAction({ type: 'SCORE_UPDATE', team: 'teamB', points: 30 });
-        await (instance as any).handleAction({ type: 'DO_OR_DIE_UPDATE', team: 'teamA', delta: 2 });
-        await (instance as any).handleAction({ type: 'DO_OR_DIE_UPDATE', team: 'teamB', delta: 1 });
+        await testInstance.handleAction({ type: 'SCORE_UPDATE', team: 'teamA', points: 25 });
+        await testInstance.handleAction({ type: 'SCORE_UPDATE', team: 'teamB', points: 30 });
+        await testInstance.handleAction({ type: 'DO_OR_DIE_UPDATE', team: 'teamA', delta: 2 });
+        await testInstance.handleAction({ type: 'DO_OR_DIE_UPDATE', team: 'teamB', delta: 1 });
 
         // チーム名を変更
-        await (instance as any).handleAction({ type: 'SET_TEAM_NAME', team: 'teamA', name: 'カスタムチームA' });
-        await (instance as any).handleAction({ type: 'SET_TEAM_NAME', team: 'teamB', name: 'カスタムチームB' });
+        await testInstance.handleAction({ type: 'SET_TEAM_NAME', team: 'teamA', name: 'カスタムチームA' });
+        await testInstance.handleAction({ type: 'SET_TEAM_NAME', team: 'teamB', name: 'カスタムチームB' });
 
         // タイマー設定を変更
-        await (instance as any).handleAction({ type: 'TIMER_SET', duration: 600 });
+        await testInstance.handleAction({ type: 'TIMER_SET', duration: 600 });
 
         // コート変更
-        await (instance as any).handleAction({ type: 'COURT_CHANGE' });
+        await testInstance.handleAction({ type: 'COURT_CHANGE' });
 
-        const gameState = (instance as any).gameState;
+        const gameState = testInstance.gameState;
         const beforeReset = {
           teamAName: gameState.teamA.name,
           teamBName: gameState.teamB.name,
@@ -2067,7 +2073,7 @@ describe('GameSession', () => {
         };
 
         // RESET_ALLを実行
-        await (instance as any).handleAction({ type: 'RESET_ALL' });
+        await testInstance.handleAction({ type: 'RESET_ALL' });
 
         const afterReset = {
           teamAName: gameState.teamA.name,
@@ -2198,7 +2204,9 @@ describe('GameSession', () => {
 
       // WebSocketなしでhandleActionを直接呼び出し
       await runInDurableObject(gameSession, async (instance) => {
-        await (instance as any).handleAction({ type: 'GET_GAME_STATE' });
+        const testInstance = instance as unknown as GameSessionTestAccess;
+
+        await testInstance.handleAction({ type: 'GET_GAME_STATE' });
         // エラーが発生しないことを確認（正常に完了すればOK）
       });
     });
