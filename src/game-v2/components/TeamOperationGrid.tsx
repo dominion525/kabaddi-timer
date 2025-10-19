@@ -150,11 +150,16 @@ export function TeamOperationGrid({
           </div>
           {/* リセットボタン行 */}
           <div className={`grid grid-cols-2 ${styles.columnGap}`}>
-            <ScoreResetButton
-              teamId={leftTeamId}
-              onReset={resetTeamScore}
-              size={size}
-            />
+            {/* シンプルモードではスコアリセットボタンのみ非表示 */}
+            {size !== 'mobile-simple' ? (
+              <ScoreResetButton
+                teamId={leftTeamId}
+                onReset={resetTeamScore}
+                size={size}
+              />
+            ) : (
+              <div></div>
+            )}
             <DoOrDieResetButton
               teamId={leftTeamId}
               currentCount={leftTeamId === 'teamA' ? gameState.teamA.doOrDieCount : gameState.teamB.doOrDieCount}
@@ -202,11 +207,16 @@ export function TeamOperationGrid({
               onUpdate={doOrDieUpdate}
               size={size}
             />
-            <ScoreResetButton
-              teamId={rightTeamId}
-              onReset={resetTeamScore}
-              size={size}
-            />
+            {/* シンプルモードではスコアリセットボタンのみ非表示 */}
+            {size !== 'mobile-simple' ? (
+              <ScoreResetButton
+                teamId={rightTeamId}
+                onReset={resetTeamScore}
+                size={size}
+              />
+            ) : (
+              <div></div>
+            )}
           </div>
         </div>
       </div>
