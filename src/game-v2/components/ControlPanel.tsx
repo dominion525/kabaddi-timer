@@ -92,7 +92,7 @@ export function ControlPanel({
 }: Props) {
   const [isVisible, setIsVisible] = useState(false);
   const [isAnimating, setIsAnimating] = useState(false);
-  const [simpleMode, setSimpleMode] = useState(() => getStoredBoolean(STORAGE_KEY_SIMPLE_MODE, false));
+  const [simpleMode, setSimpleMode] = useState(() => getStoredBoolean(STORAGE_KEY_SIMPLE_MODE, true));
   const [scrollLockEnabled, setScrollLockEnabled] = useState(() => getStoredBoolean(STORAGE_KEY_SCROLL_LOCK, true));
 
   // チーム名のローカルstate
