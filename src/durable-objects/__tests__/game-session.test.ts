@@ -542,11 +542,13 @@ describe('GameSession', () => {
 
       // runInDurableObjectを使用して直接アクションを実行
       const result = await runInDurableObject(gameSession, async (instance) => {
+        const testInstance = instance as unknown as GameSessionTestAccess;
+
         // handleActionを直接呼び出し
-        await (instance as any).handleAction({ type: 'SCORE_UPDATE', team: 'teamA', points: 3 });
+        await testInstance.handleAction({ type: 'SCORE_UPDATE', team: 'teamA', points: 3 });
 
         // アクション処理後のゲーム状態を取得
-        const gameState = (instance as any).gameState;
+        const gameState = testInstance.gameState;
         return {
           teamAScore: gameState.teamA.score,
           teamBScore: gameState.teamB.score
@@ -569,18 +571,20 @@ describe('GameSession', () => {
       const gameSession = env.GAME_SESSION.get(id);
 
       const result = await runInDurableObject(gameSession, async (instance) => {
+        const testInstance = instance as unknown as GameSessionTestAccess;
+
         // 複数のスコア更新を同時実行
         const updatePromises = [
-          (instance as any).handleAction({ type: 'SCORE_UPDATE', team: 'teamA', points: 1 }),
-          (instance as any).handleAction({ type: 'SCORE_UPDATE', team: 'teamA', points: 2 }),
-          (instance as any).handleAction({ type: 'SCORE_UPDATE', team: 'teamB', points: 3 }),
-          (instance as any).handleAction({ type: 'SCORE_UPDATE', team: 'teamA', points: 1 }),
-          (instance as any).handleAction({ type: 'SCORE_UPDATE', team: 'teamB', points: 2 })
+          testInstance.handleAction({ type: 'SCORE_UPDATE', team: 'teamA', points: 1 }),
+          testInstance.handleAction({ type: 'SCORE_UPDATE', team: 'teamA', points: 2 }),
+          testInstance.handleAction({ type: 'SCORE_UPDATE', team: 'teamB', points: 3 }),
+          testInstance.handleAction({ type: 'SCORE_UPDATE', team: 'teamA', points: 1 }),
+          testInstance.handleAction({ type: 'SCORE_UPDATE', team: 'teamB', points: 2 })
         ];
 
         await Promise.all(updatePromises);
 
-        const gameState = (instance as any).gameState;
+        const gameState = testInstance.gameState;
         return {
           teamAScore: gameState.teamA.score,
           teamBScore: gameState.teamB.score
@@ -597,16 +601,18 @@ describe('GameSession', () => {
       const gameSession = env.GAME_SESSION.get(id);
 
       const result = await runInDurableObject(gameSession, async (instance) => {
+        const testInstance = instance as unknown as GameSessionTestAccess;
+
         // 同時にタイマー操作を実行
         const timerPromises = [
-          (instance as any).startTimer(),
-          (instance as any).adjustTimerTime(30),
-          (instance as any).adjustTimerTime(-10)
+          testInstance.startTimer(),
+          testInstance.adjustTimerTime(30),
+          testInstance.adjustTimerTime(-10)
         ];
 
         await Promise.all(timerPromises);
 
-        const gameState = (instance as any).gameState;
+        const gameState = testInstance.gameState;
         return {
           isRunning: gameState.timer.isRunning,
           remainingSeconds: gameState.timer.remainingSeconds,
@@ -628,13 +634,14 @@ describe('GameSession', () => {
       const gameSession = env.GAME_SESSION.get(id);
 
       const result = await runInDurableObject(gameSession, async (instance) => {
+        const testInstance = instance as unknown as GameSessionTestAccess;
         const updateCount = 20;
         const updatePromises = [];
 
         // 短時間で大量の更新を実行
         for (let i = 0; i < updateCount; i++) {
           updatePromises.push(
-            (instance as any).handleAction({
+            testInstance.handleAction({
               type: 'SCORE_UPDATE',
               team: i % 2 === 0 ? 'teamA' : 'teamB',
               points: 1
@@ -644,7 +651,7 @@ describe('GameSession', () => {
 
         await Promise.all(updatePromises);
 
-        const gameState = (instance as any).gameState;
+        const gameState = testInstance.gameState;
         const totalScore = gameState.teamA.score + gameState.teamB.score;
 
         return {
@@ -666,18 +673,20 @@ describe('GameSession', () => {
       const gameSession = env.GAME_SESSION.get(id);
 
       const result = await runInDurableObject(gameSession, async (instance, state) => {
+        const testInstance = instance as unknown as GameSessionTestAccess;
+
         // 複数の状態変更操作を同時実行（各操作は内部的に状態保存を行う）
         const operations = [
-          (instance as any).handleAction({ type: 'SCORE_UPDATE', team: 'teamA', points: 5 }),
-          (instance as any).handleAction({ type: 'SET_TEAM_NAME', team: 'teamA', name: '競合テストチーム' }),
-          (instance as any).handleAction({ type: 'SCORE_UPDATE', team: 'teamB', points: 3 }),
-          (instance as any).startTimer(),
-          (instance as any).adjustTimerTime(120)
+          testInstance.handleAction({ type: 'SCORE_UPDATE', team: 'teamA', points: 5 }),
+          testInstance.handleAction({ type: 'SET_TEAM_NAME', team: 'teamA', name: '競合テストチーム' }),
+          testInstance.handleAction({ type: 'SCORE_UPDATE', team: 'teamB', points: 3 }),
+          testInstance.startTimer(),
+          testInstance.adjustTimerTime(120)
         ];
 
         await Promise.all(operations);
 
-        const gameState = (instance as any).gameState;
+        const gameState = testInstance.gameState;
 
         return {
           teamAScore: gameState.teamA.score,
