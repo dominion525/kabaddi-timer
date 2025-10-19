@@ -114,34 +114,27 @@ export function useGameState({ gameId }: UseGameStateOptions): UseGameStateResul
       const data = message.data as GameState;
       const clientTime = Date.now();
 
-      // V1と同じstartTime調整処理: サーバー時刻をクライアント時刻に置換
-      // タイマーが実行中の場合、startTimeを「メッセージ受信時のクライアント時刻」に置き換え
-      // 不変性を保つため、新しいオブジェクトを作成
-      const adjustedData: GameState = {
-        ...data,
-        timer: data.timer && data.timer.isRunning && data.timer.startTime
-          ? (() => {
-              console.log('Adjusting timer startTime for relative calculation:', {
-                originalStartTime: data.timer.startTime,
-                remainingSeconds: data.timer.remainingSeconds,
-                clientTime: clientTime
-              });
-              return { ...data.timer, startTime: clientTime };
-            })()
-          : data.timer,
-        subTimer: data.subTimer && data.subTimer.isRunning && data.subTimer.startTime
-          ? (() => {
-              console.log('Adjusting subTimer startTime for relative calculation:', {
-                originalStartTime: data.subTimer.startTime,
-                remainingSeconds: data.subTimer.remainingSeconds,
-                clientTime: clientTime
-              });
-              return { ...data.subTimer, startTime: clientTime };
-            })()
-          : data.subTimer,
-      };
-
-      setGameState(adjustedData);
+      // カウントダウン中は時刻同期を無視（タイマー情報を保持）
+      setGameState(prevState => {
+        const adjustedData: GameState = {
+          ...data,
+          timer: data.timer
+            ? (data.timer.isRunning && prevState?.timer?.isRunning
+                ? prevState.timer  // 実行中→前回のタイマー情報をそのまま保持
+                : (data.timer.isRunning && data.timer.startTime
+                    ? { ...data.timer, startTime: clientTime }  // 新規開始→startTimeをクライアント時刻に変換
+                    : data.timer))  // 停止中→そのまま
+            : data.timer,
+          subTimer: data.subTimer
+            ? (data.subTimer.isRunning && prevState?.subTimer?.isRunning
+                ? prevState.subTimer  // 実行中→前回のタイマー情報をそのまま保持
+                : (data.subTimer.isRunning && data.subTimer.startTime
+                    ? { ...data.subTimer, startTime: clientTime }  // 新規開始→startTimeをクライアント時刻に変換
+                    : data.subTimer))  // 停止中→そのまま
+            : data.subTimer,
+        };
+        return adjustedData;
+      });
 
       // 時刻同期計算（GET_GAME_STATEレスポンスで実行）
       if (lastSyncRequestRef.current > 0) {
