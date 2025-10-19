@@ -32,7 +32,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - CLAUDE.mdにタイマー状態管理の詳細を追加
 - テストカバレッジ情報をドキュメントに記載
 
-## [0.1.0] - 2025-10-18
+## [0.1.0] - 2025-10-02
 
 ### Added
 - 初回リリース
