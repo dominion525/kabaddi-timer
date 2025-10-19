@@ -1,6 +1,28 @@
 import { describe, it, expect } from 'vitest';
 import { env, runInDurableObject } from 'cloudflare:test';
 import { GameSession } from '../game-session';
+import type { GameState, GameAction } from '../../types/game';
+
+/**
+ * GameSessionのprivateメンバーにテストからアクセスするための型定義
+ */
+type GameSessionTestAccess = {
+  gameState: GameState;
+  loadGameState: () => Promise<void>;
+  saveGameState: () => Promise<void>;
+  saveGameStateWithRetry: () => Promise<void>;
+  handleAction: (action: GameAction) => Promise<void>;
+  startTimer: () => Promise<void>;
+  pauseTimer: () => Promise<void>;
+  resetTimer: () => Promise<void>;
+  adjustTimerTime: (seconds: number) => Promise<void>;
+  updateRemainingTime: () => void;
+  updateSubTimerRemainingTime: () => void;
+  getDefaultGameState: () => GameState;
+  validateGameState: (state: unknown) => state is GameState;
+  repairGameState: (state: unknown) => GameState;
+  isStateLoaded: boolean;
+};
 
 describe('GameSession', () => {
   describe('初期化と基本状態', () => {
@@ -10,7 +32,8 @@ describe('GameSession', () => {
 
       const result = await runInDurableObject(gameSession, async (instance, state) => {
         // デフォルト状態を取得
-        const defaultState = (instance as any).getDefaultGameState();
+        const testInstance = instance as unknown as GameSessionTestAccess;
+        const defaultState = testInstance.getDefaultGameState();
 
         expect(defaultState.teamA.name).toBe('チームA');
         expect(defaultState.teamB.name).toBe('チームB');
@@ -115,7 +138,7 @@ describe('GameSession', () => {
       // 不正なJSONを送信
       webSocket.send('invalid json');
 
-      const errorMessage = await errorPromise as any;
+      const errorMessage = await errorPromise as unknown as { type: string; data: { error: string } };
       expect(errorMessage.type).toBe('error');
       expect(errorMessage.data.error).toBeDefined();
       // JSONパースエラーなので、エラーメッセージに "Unexpected" または "JSON" が含まれることを確認
@@ -159,7 +182,7 @@ describe('GameSession', () => {
       // actionフィールドが無いメッセージを送信
       webSocket.send(JSON.stringify({ type: 'test' }));
 
-      const errorMessage = await errorPromise as any;
+      const errorMessage = await errorPromise as unknown as { type: string; data: { error: string } };
       expect(errorMessage.type).toBe('error');
       expect(errorMessage.data.error).toBe('Missing action field');
     });
@@ -172,8 +195,9 @@ describe('GameSession', () => {
       const gameSession = env.GAME_SESSION.get(id);
 
       const result = await runInDurableObject(gameSession, async (instance, state) => {
-        const defaultState = (instance as any).getDefaultGameState();
-        const isValid = (instance as any).validateGameState(defaultState);
+        const testInstance = instance as unknown as GameSessionTestAccess;
+        const defaultState = testInstance.getDefaultGameState();
+        const isValid = testInstance.validateGameState(defaultState);
 
         expect(isValid).toBe(true);
         return isValid;
@@ -187,17 +211,18 @@ describe('GameSession', () => {
       const gameSession = env.GAME_SESSION.get(id);
 
       const result = await runInDurableObject(gameSession, async (instance, state) => {
+        const testInstance = instance as unknown as GameSessionTestAccess;
         // 不正な状態を作成
         const invalidState = {
           teamA: { name: null }, // 不正なname
           timer: {} // 不正なtimer
         };
 
-        const isValid = (instance as any).validateGameState(invalidState);
+        const isValid = testInstance.validateGameState(invalidState);
         expect(isValid).toBe(false);
 
         // 修復機能をテスト
-        const repaired = (instance as any).repairGameState(invalidState);
+        const repaired = testInstance.repairGameState(invalidState);
         expect(repaired.teamA.name).toBe('チームA');
         expect(repaired.timer.totalDuration).toBe(900);
 
@@ -214,14 +239,16 @@ describe('GameSession', () => {
       const gameSession = env.GAME_SESSION.get(id);
 
       const result = await runInDurableObject(gameSession, async (instance, state) => {
+        const testInstance = instance as unknown as GameSessionTestAccess;
+
         // タイマー開始前の状態確認
-        let gameState = (instance as any).gameState;
+        let gameState = testInstance.gameState;
         expect(gameState.timer.isRunning).toBe(false);
         expect(gameState.timer.startTime).toBe(null);
 
         // タイマー開始
-        await (instance as any).startTimer();
-        gameState = (instance as any).gameState;
+        await testInstance.startTimer();
+        gameState = testInstance.gameState;
 
         expect(gameState.timer.isRunning).toBe(true);
         expect(gameState.timer.startTime).toBeGreaterThan(0);
@@ -238,13 +265,15 @@ describe('GameSession', () => {
       const gameSession = env.GAME_SESSION.get(id);
 
       const result = await runInDurableObject(gameSession, async (instance, state) => {
+        const testInstance = instance as unknown as GameSessionTestAccess;
+
         // タイマー開始
-        await (instance as any).startTimer();
+        await testInstance.startTimer();
         await new Promise(resolve => setTimeout(resolve, 100)); // 少し待機
 
         // タイマー停止
-        await (instance as any).pauseTimer();
-        const gameState = (instance as any).gameState;
+        await testInstance.pauseTimer();
+        const gameState = testInstance.gameState;
 
         expect(gameState.timer.isRunning).toBe(false);
         expect(gameState.timer.isPaused).toBe(true);
@@ -262,17 +291,19 @@ describe('GameSession', () => {
       const gameSession = env.GAME_SESSION.get(id);
 
       const result = await runInDurableObject(gameSession, async (instance, state) => {
+        const testInstance = instance as unknown as GameSessionTestAccess;
+
         // タイマー開始してから停止
-        await (instance as any).startTimer();
-        await (instance as any).pauseTimer();
+        await testInstance.startTimer();
+        await testInstance.pauseTimer();
 
         // リセット前の状態確認
-        let gameState = (instance as any).gameState;
+        let gameState = testInstance.gameState;
         expect(gameState.timer.isPaused).toBe(true);
 
         // リセット実行
-        await (instance as any).resetTimer();
-        gameState = (instance as any).gameState;
+        await testInstance.resetTimer();
+        gameState = testInstance.gameState;
 
         expect(gameState.timer.isRunning).toBe(false);
         expect(gameState.timer.isPaused).toBe(false);
@@ -291,14 +322,16 @@ describe('GameSession', () => {
       const gameSession = env.GAME_SESSION.get(id);
 
       const result = await runInDurableObject(gameSession, async (instance, state) => {
+        const testInstance = instance as unknown as GameSessionTestAccess;
+
         // 30秒追加
-        await (instance as any).adjustTimerTime(30);
-        let gameState = (instance as any).gameState;
+        await testInstance.adjustTimerTime(30);
+        let gameState = testInstance.gameState;
         expect(gameState.timer.remainingSeconds).toBe(930); // 900 + 30
 
         // 60秒減少
-        await (instance as any).adjustTimerTime(-60);
-        gameState = (instance as any).gameState;
+        await testInstance.adjustTimerTime(-60);
+        gameState = testInstance.gameState;
         expect(gameState.timer.remainingSeconds).toBe(870); // 930 - 60
 
         return gameState.timer.remainingSeconds;
