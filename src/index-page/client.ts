@@ -5,6 +5,7 @@
 
 import { generateShortId, validateGameId } from './utils/gameId';
 import '../styles/tailwind.css';
+import { appLogger } from '../utils/logger';
 
 // Lucide icons初期化（TypeScript型定義なし）
 declare const lucide: {
@@ -25,7 +26,7 @@ function createNewTimer(): void {
 function goToTimer(): void {
   const input = document.getElementById('timerIdInput') as HTMLInputElement | null;
   if (!input) {
-    console.error('timerIdInput element not found');
+    appLogger.error('timerIdInput element not found');
     return;
   }
 

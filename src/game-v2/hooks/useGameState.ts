@@ -3,6 +3,7 @@ import type { GameState, GameMessage, GameAction, MESSAGE_TYPES } from '../../ty
 import { useWebSocket } from './useWebSocket';
 import { useIdleTimer } from './useIdleTimer';
 import { isValidScore, isValidDoOrDieCount, isValidTeamName } from '../../utils/score-logic';
+import { gameStateLogger } from '../../utils/logger';
 
 type ConnectionStatus = 'connecting' | 'connected' | 'reconnecting' | 'disconnected' | 'error';
 
@@ -94,7 +95,7 @@ export function useGameState({ gameId }: UseGameStateOptions): UseGameStateResul
 
   // アイドル同期のコールバック（Durable Objectsのハイバネーション防止）
   const handleIdleSync = useCallback(() => {
-    console.log('[IdleTimer] Sending GET_GAME_STATE due to idle timeout');
+    gameStateLogger.debug('[IdleTimer] Sending GET_GAME_STATE due to idle timeout');
     if (sendActionRef.current) {
       lastSyncRequestRef.current = Date.now();
       sendActionRef.current({ type: 'GET_GAME_STATE' });
@@ -109,7 +110,7 @@ export function useGameState({ gameId }: UseGameStateOptions): UseGameStateResul
   });
 
   const handleMessage = useCallback((message: GameMessage) => {
-    console.log('Received WebSocket message:', message.type);
+    gameStateLogger.debug('Received WebSocket message:', message.type);
     if (message.type === 'game_state' && message.data) {
       const data = message.data as GameState;
       const clientTime = Date.now();  // RTT計算用
@@ -201,7 +202,7 @@ export function useGameState({ gameId }: UseGameStateOptions): UseGameStateResul
   }, [resetIdleTimer]);
 
   const handleConnected = useCallback(() => {
-    console.log('Game WebSocket connected');
+    gameStateLogger.info('Game WebSocket connected');
     // 初回接続時のみ状態を要求（重複リクエストを防ぐ）
     if (sendActionRef.current && !hasRequestedInitialState.current) {
       hasRequestedInitialState.current = true;
@@ -213,13 +214,13 @@ export function useGameState({ gameId }: UseGameStateOptions): UseGameStateResul
   }, [sendActionWithIdleReset, resetIdleTimer]);
 
   const handleDisconnected = useCallback(() => {
-    console.log('Game WebSocket disconnected');
+    gameStateLogger.info('Game WebSocket disconnected');
     // 再接続時に状態要求できるようにリセット
     hasRequestedInitialState.current = false;
   }, []);
 
   const handleError = useCallback((error: Event) => {
-    console.error('Game WebSocket error:', error);
+    gameStateLogger.error('Game WebSocket error:', error);
   }, []);
 
   const {
@@ -266,7 +267,7 @@ export function useGameState({ gameId }: UseGameStateOptions): UseGameStateResul
 
     // 新しいスコアが有効範囲（0-999）かチェック
     if (!isValidScore(newScore)) {
-      console.warn(`Invalid score: ${newScore}. Score must be between 0 and 999.`);
+      gameStateLogger.warn(`Invalid score: ${newScore}. Score must be between 0 and 999.`);
       return;
     }
 
@@ -305,7 +306,7 @@ export function useGameState({ gameId }: UseGameStateOptions): UseGameStateResul
 
     // 新しいカウントが有効範囲（0-3）かチェック
     if (!isValidDoOrDieCount(newCount)) {
-      console.warn(`Invalid DoOrDie count: ${newCount}. Count must be between 0 and 3.`);
+      gameStateLogger.warn(`Invalid DoOrDie count: ${newCount}. Count must be between 0 and 3.`);
       return;
     }
 
@@ -325,7 +326,7 @@ export function useGameState({ gameId }: UseGameStateOptions): UseGameStateResul
   const setTeamName = useCallback((team: 'teamA' | 'teamB', name: string) => {
     // チーム名の妥当性を検証
     if (!isValidTeamName(name)) {
-      console.warn(`Invalid team name: "${name}". Name must be 1-20 characters and not empty.`);
+      gameStateLogger.warn(`Invalid team name: "${name}". Name must be 1-20 characters and not empty.`);
       return;
     }
 

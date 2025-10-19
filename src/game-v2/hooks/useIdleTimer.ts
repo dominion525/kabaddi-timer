@@ -1,4 +1,5 @@
 import { useRef, useCallback, useEffect } from 'preact/hooks';
+import { gameStateLogger } from '../../utils/logger';
 
 interface UseIdleTimerOptions {
   isTimerRunning: boolean;
@@ -38,7 +39,7 @@ export function useIdleTimer({
     if (anyTimerRunning) {
       // 5-10秒後に同期（10秒ハイバネーション閾値をカバー）
       const idleDelay = 5000 + Math.random() * 5000;
-      console.log(`[IdleTimer] Timer running - setting idle sync after ${Math.round(idleDelay / 1000)}s`);
+      gameStateLogger.debug(`[IdleTimer] Timer running - setting idle sync after ${Math.round(idleDelay / 1000)}s`);
 
       timeoutRef.current = window.setTimeout(() => {
         onIdleSync();
@@ -46,7 +47,7 @@ export function useIdleTimer({
         resetIdleTimer();
       }, idleDelay);
     } else {
-      console.log('[IdleTimer] Timer stopped - no idle sync needed (hibernation allowed)');
+      gameStateLogger.debug('[IdleTimer] Timer stopped - no idle sync needed (hibernation allowed)');
     }
   }, [isTimerRunning, isSubTimerRunning, onIdleSync]);
 

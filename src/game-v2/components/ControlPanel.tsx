@@ -14,6 +14,7 @@ import { SimpleTimerControl } from './SimpleTimerControl';
 import { SimpleTimerPresetControl } from './SimpleTimerPresetControl';
 import { MobileHandleSection } from './MobileHandleSection';
 import type { GameState } from '../../types/game';
+import { controlPanelLogger } from '../../utils/logger';
 
 // localStorage キー
 const STORAGE_KEY_SIMPLE_MODE = 'v2_kabaddi_simple_mode';
@@ -25,7 +26,7 @@ const getStoredBoolean = (key: string, defaultValue: boolean): boolean => {
     const stored = localStorage.getItem(key);
     return stored !== null ? stored === 'true' : defaultValue;
   } catch (error) {
-    console.error(`Failed to read ${key} from localStorage:`, error);
+    controlPanelLogger.error(`Failed to read ${key} from localStorage:`, error);
     return defaultValue;
   }
 };
@@ -128,7 +129,7 @@ export function ControlPanel({
     try {
       localStorage.setItem(STORAGE_KEY_SIMPLE_MODE, String(simpleMode));
     } catch (error) {
-      console.error('Failed to save simpleMode to localStorage:', error);
+      controlPanelLogger.error('Failed to save simpleMode to localStorage:', error);
     }
   }, [simpleMode]);
 
@@ -136,7 +137,7 @@ export function ControlPanel({
     try {
       localStorage.setItem(STORAGE_KEY_SCROLL_LOCK, String(scrollLockEnabled));
     } catch (error) {
-      console.error('Failed to save scrollLockEnabled to localStorage:', error);
+      controlPanelLogger.error('Failed to save scrollLockEnabled to localStorage:', error);
     }
   }, [scrollLockEnabled]);
 

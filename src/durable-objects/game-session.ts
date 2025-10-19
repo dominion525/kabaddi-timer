@@ -2,6 +2,7 @@
 import { GameState, GameAction, GameMessage, WebSocketMessage, TimeSyncData, MESSAGE_TYPES, ACTION_TYPES } from '../types/game';
 import { isValidScore, isValidDoOrDieCount, clampScore, clampDoOrDieCount } from '../utils/score-logic';
 import { calculateServerRemainingSeconds } from '../utils/timer-logic-server';
+import { gameSessionLogger } from '../utils/logger';
 
 export class GameSession {
   private ctx: DurableObjectState;
@@ -88,7 +89,7 @@ export class GameSession {
 
       await this.handleAction(parsedMessage.action, ws);
     } catch (error) {
-      console.error('Message processing error:', error);
+      gameSessionLogger.error('Message processing error:', error);
       ws.send(JSON.stringify({
         type: MESSAGE_TYPES.ERROR,
         data: { error: error instanceof Error ? error.message : 'Unknown error occurred during message processing' },
@@ -102,7 +103,7 @@ export class GameSession {
   }
 
   async webSocketError(_ws: WebSocket, error: unknown): Promise<void> {
-    console.error('WebSocket error:', error);
+    gameSessionLogger.error('WebSocket error:', error);
   }
 
   private isStateLoaded = false;
@@ -123,7 +124,7 @@ export class GameSession {
           this.gameState = stored;
         } else {
           // 検証失敗の場合は修復を試行
-          console.warn('Invalid game state detected, attempting repair');
+          gameSessionLogger.warn('Invalid game state detected, attempting repair');
           this.gameState = this.repairGameState(stored);
           needsSave = true; // 修復後は保存が必要
         }
@@ -133,7 +134,7 @@ export class GameSession {
       }
     } catch (error) {
       // ストレージアクセスエラーの場合はデフォルト状態で継続（既に初期化済み）
-      console.error('Failed to load game state from storage:', error);
+      gameSessionLogger.error('Failed to load game state from storage:', error);
       needsSave = true; // エラー時も保存してストレージの状態を修復
     }
 
@@ -255,7 +256,7 @@ export class GameSession {
 
       } catch (error) {
         lastError = error instanceof Error ? error : new Error(String(error));
-        console.warn(`Save attempt ${attempt + 1} failed:`, lastError.message);
+        gameSessionLogger.warn(`Save attempt ${attempt + 1} failed:`, lastError.message);
 
         if (attempt < maxRetries - 1) {
           // 最後の試行でなければ遅延後にリトライ
@@ -265,7 +266,7 @@ export class GameSession {
     }
 
     // すべてのリトライが失敗した場合
-    console.error(`Failed to save game state after ${maxRetries} attempts. Last error:`, lastError);
+    gameSessionLogger.error(`Failed to save game state after ${maxRetries} attempts. Last error:`, lastError);
     // 最後のエラーを再スローしてコール元に伝播
     throw lastError || new Error('Save failed after all retries');
   }
@@ -275,7 +276,7 @@ export class GameSession {
       await this.saveGameStateWithRetry();
     } catch (error) {
       // 保存に失敗してもアプリケーションの動作は継続
-      console.error('Critical: Game state could not be saved:', error);
+      gameSessionLogger.error('Critical: Game state could not be saved:', error);
       // ここでアラートや他の通知手段を使って問題を報告することもできる
     }
   }
@@ -441,7 +442,7 @@ export class GameSession {
       try {
         connection.send(messageString);
       } catch (error) {
-        console.warn('Failed to broadcast state to connection:', error);
+        gameSessionLogger.warn('Failed to broadcast state to connection:', error);
       }
     }
   }
@@ -450,7 +451,7 @@ export class GameSession {
     try {
       webSocket.send(JSON.stringify(message));
     } catch (error) {
-      console.warn('Failed to send message to client:', error);
+      gameSessionLogger.warn('Failed to send message to client:', error);
     }
   }
 
