@@ -24,8 +24,9 @@ describe('useTimerAnimation', () => {
       // 実装は省略（テストには不要）
     });
 
-    // Date.nowをモック
+    // Date.nowとperformance.now()をモック
     vi.spyOn(Date, 'now').mockReturnValue(1000000);
+    vi.spyOn(performance, 'now').mockReturnValue(1000000);
   });
 
   afterEach(() => {
@@ -93,6 +94,7 @@ describe('useTimerAnimation', () => {
 
     // 時刻を5秒進める
     vi.spyOn(Date, 'now').mockReturnValue(1005000);
+    vi.spyOn(performance, 'now').mockReturnValue(1005000);
 
     act(() => {
       executeAnimationFrame();
@@ -130,6 +132,7 @@ describe('useTimerAnimation', () => {
 
       // 時刻を3秒進める
       vi.spyOn(Date, 'now').mockReturnValue(1003000);
+      vi.spyOn(performance, 'now').mockReturnValue(1003000);
 
       // 次のアニメーションフレームで新しいgameStateが使われる
       act(() => {
@@ -267,6 +270,7 @@ describe('useTimerAnimation', () => {
 
       // 時刻を10秒進める
       vi.spyOn(Date, 'now').mockReturnValue(1010000);
+      vi.spyOn(performance, 'now').mockReturnValue(1010000);
 
       act(() => {
         executeAnimationFrame();

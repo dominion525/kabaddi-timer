@@ -42,7 +42,7 @@ export function calculateRemainingSeconds(
   if (timer.isRunning && timer.startTime) {
     // 相対時間アプローチ：startTimeを「同期受信時のクライアント時刻」として扱う
     // 同期時点からのクライアント側経過時間を計算
-    const elapsedSinceSync = (Date.now() - timer.startTime) / 1000;
+    const elapsedSinceSync = (performance.now() - timer.startTime) / 1000;
 
     // 同期時点の残り秒数から、クライアント側経過時間を引く
     // 10ミリ秒未満の端数は切り捨ててちらつきを防止
@@ -81,7 +81,7 @@ export function calculateSubTimerRemainingSeconds(
   if (subTimer.isRunning && subTimer.startTime) {
     // 相対時間アプローチ：startTimeを「同期受信時のクライアント時刻」として扱う
     // 同期時点からのクライアント側経過時間を計算
-    const elapsedSinceSync = (Date.now() - subTimer.startTime) / 1000;
+    const elapsedSinceSync = (performance.now() - subTimer.startTime) / 1000;
 
     // 同期時点の残り秒数から、クライアント側経過時間を引く
     // 10ミリ秒未満の端数は切り捨ててちらつきを防止

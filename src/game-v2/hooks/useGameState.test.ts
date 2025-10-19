@@ -355,6 +355,7 @@ describe('useGameState', () => {
   describe('データ不変性の保証', () => {
     beforeEach(() => {
       vi.spyOn(Date, 'now').mockReturnValue(2000000);
+      vi.spyOn(performance, 'now').mockReturnValue(2000000);
     });
 
     it('受信したdataオブジェクトを直接変更しない（タイマー実行中）', () => {
