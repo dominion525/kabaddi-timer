@@ -54,7 +54,7 @@ export const createMockGameState = () => ({
 });
 
 // WebSocketメッセージのファクトリー関数
-export const createGameMessage = (type: string, data?: any) => ({
+export const createGameMessage = (type: string, data?: unknown) => ({
   type,
   data,
   timestamp: Date.now(),
