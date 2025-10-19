@@ -714,10 +714,12 @@ describe('GameSession', () => {
         const gameSession = env.GAME_SESSION.get(id);
 
         const result = await runInDurableObject(gameSession, async (instance, state) => {
+          const testInstance = instance as unknown as GameSessionTestAccess;
+
           // ストレージに何も保存されていない状態での初回ロード
-          await (instance as any).loadGameState();
-          const gameState = (instance as any).gameState;
-          const isStateLoaded = (instance as any).isStateLoaded;
+          await testInstance.loadGameState();
+          const gameState = testInstance.gameState;
+          const isStateLoaded = testInstance.isStateLoaded;
 
           return {
             gameState,
@@ -741,18 +743,20 @@ describe('GameSession', () => {
         const gameSession = env.GAME_SESSION.get(id);
 
         const result = await runInDurableObject(gameSession, async (instance, state) => {
+          const testInstance = instance as unknown as GameSessionTestAccess;
+
           // 最初のロード
-          await (instance as any).loadGameState();
+          await testInstance.loadGameState();
           const firstLoadTime = Date.now();
 
           // 状態を変更
-          (instance as any).gameState.teamA.score = 10;
-          const modifiedScore = (instance as any).gameState.teamA.score;
+          testInstance.gameState.teamA.score = 10;
+          const modifiedScore = testInstance.gameState.teamA.score;
 
           // 2回目のロード（キャッシュが効いているはず）
-          await (instance as any).loadGameState();
-          const cachedScore = (instance as any).gameState.teamA.score;
-          const isStateLoaded = (instance as any).isStateLoaded;
+          await testInstance.loadGameState();
+          const cachedScore = testInstance.gameState.teamA.score;
+          const isStateLoaded = testInstance.isStateLoaded;
 
           return {
             isStateLoaded,
@@ -773,12 +777,14 @@ describe('GameSession', () => {
         const gameSession = env.GAME_SESSION.get(id);
 
         const result = await runInDurableObject(gameSession, async (instance, state) => {
+          const testInstance = instance as unknown as GameSessionTestAccess;
+
           // 状態を変更
-          (instance as any).gameState.teamA.score = 15;
-          (instance as any).gameState.teamB.score = 8;
+          testInstance.gameState.teamA.score = 15;
+          testInstance.gameState.teamB.score = 8;
 
           // 保存実行（1回目で成功するはず）
-          await (instance as any).saveGameStateWithRetry();
+          await testInstance.saveGameStateWithRetry();
 
           // ストレージから直接確認
           const savedData = await state.storage.get('gameState');
@@ -800,18 +806,20 @@ describe('GameSession', () => {
         const gameSession = env.GAME_SESSION.get(id);
 
         const result = await runInDurableObject(gameSession, async (instance, state) => {
+          const testInstance = instance as unknown as GameSessionTestAccess;
+
           // 初期状態をロード
-          await (instance as any).loadGameState();
+          await testInstance.loadGameState();
 
           // 複数の状態を変更
-          (instance as any).gameState.teamA.name = 'テストチームA';
-          (instance as any).gameState.teamB.name = 'テストチームB';
-          (instance as any).gameState.teamA.score = 12;
-          (instance as any).gameState.teamB.score = 7;
-          (instance as any).gameState.teamA.doOrDieCount = 2;
+          testInstance.gameState.teamA.name = 'テストチームA';
+          testInstance.gameState.teamB.name = 'テストチームB';
+          testInstance.gameState.teamA.score = 12;
+          testInstance.gameState.teamB.score = 7;
+          testInstance.gameState.teamA.doOrDieCount = 2;
 
           // 保存実行
-          await (instance as any).saveGameState();
+          await testInstance.saveGameState();
 
           // ストレージから確認
           const savedData = await state.storage.get('gameState');
@@ -838,22 +846,24 @@ describe('GameSession', () => {
         const gameSession = env.GAME_SESSION.get(id);
 
         const result = await runInDurableObject(gameSession, async (instance, state) => {
+          const testInstance = instance as unknown as GameSessionTestAccess;
+
           // 初期状態をロード
-          await (instance as any).loadGameState();
+          await testInstance.loadGameState();
 
           // 複数の保存操作を同時実行
           const savePromises = [
             (async () => {
-              (instance as any).gameState.teamA.score = 5;
-              await (instance as any).saveGameState();
+              testInstance.gameState.teamA.score = 5;
+              await testInstance.saveGameState();
             })(),
             (async () => {
-              (instance as any).gameState.teamB.score = 3;
-              await (instance as any).saveGameState();
+              testInstance.gameState.teamB.score = 3;
+              await testInstance.saveGameState();
             })(),
             (async () => {
-              (instance as any).gameState.teamA.name = '並行保存テスト';
-              await (instance as any).saveGameState();
+              testInstance.gameState.teamA.name = '並行保存テスト';
+              await testInstance.saveGameState();
             })()
           ];
 
@@ -886,31 +896,33 @@ describe('GameSession', () => {
         const gameSession = env.GAME_SESSION.get(id);
 
         const result = await runInDurableObject(gameSession, async (instance, state) => {
+          const testInstance = instance as unknown as GameSessionTestAccess;
+
           // 初期状態をロード
-          await (instance as any).loadGameState();
+          await testInstance.loadGameState();
 
           // タイマーを開始
-          await (instance as any).startTimer();
-          const startTime = (instance as any).gameState.timer.startTime;
+          await testInstance.startTimer();
+          const startTime = testInstance.gameState.timer.startTime;
 
           // 少し時間を経過させる（テストなので短時間）
           await new Promise(resolve => setTimeout(resolve, 100));
 
           // タイマー状態を保存
-          await (instance as any).saveGameState();
+          await testInstance.saveGameState();
 
           // 状態復元をシミュレート（isStateLoadedをリセット）
-          (instance as any).isStateLoaded = false;
+          testInstance.isStateLoaded = false;
 
           // さらに時間を経過させてから復元
           await new Promise(resolve => setTimeout(resolve, 50));
 
-          await (instance as any).loadGameState();
+          await testInstance.loadGameState();
 
           // remainingSecondsを更新
-          (instance as any).updateRemainingTime();
+          testInstance.updateRemainingTime();
 
-          const restoredGameState = (instance as any).gameState;
+          const restoredGameState = testInstance.gameState;
 
           return {
             originalStartTime: startTime,
@@ -932,22 +944,24 @@ describe('GameSession', () => {
         const gameSession = env.GAME_SESSION.get(id);
 
         const result = await runInDurableObject(gameSession, async (instance, state) => {
-          // タイマーを開始して一時停止
-          await (instance as any).startTimer();
-          await new Promise(resolve => setTimeout(resolve, 100));
-          await (instance as any).pauseTimer();
+          const testInstance = instance as unknown as GameSessionTestAccess;
 
-          const pausedAt = (instance as any).gameState.timer.pausedAt;
-          const remainingBeforeSave = (instance as any).gameState.timer.remainingSeconds;
+          // タイマーを開始して一時停止
+          await testInstance.startTimer();
+          await new Promise(resolve => setTimeout(resolve, 100));
+          await testInstance.pauseTimer();
+
+          const pausedAt = testInstance.gameState.timer.pausedAt;
+          const remainingBeforeSave = testInstance.gameState.timer.remainingSeconds;
 
           // 状態を保存
-          await (instance as any).saveGameState();
+          await testInstance.saveGameState();
 
           // 復元をシミュレート
-          (instance as any).isStateLoaded = false;
-          await (instance as any).loadGameState();
+          testInstance.isStateLoaded = false;
+          await testInstance.loadGameState();
 
-          const restoredGameState = (instance as any).gameState;
+          const restoredGameState = testInstance.gameState;
 
           return {
             originalPausedAt: pausedAt,
@@ -970,6 +984,8 @@ describe('GameSession', () => {
         const gameSession = env.GAME_SESSION.get(id);
 
         const result = await runInDurableObject(gameSession, async (instance, state) => {
+          const testInstance = instance as unknown as GameSessionTestAccess;
+
           // 不完全な状態をストレージに直接保存
           const incompleteState = {
             teamA: { name: 'チームA', score: 5 }, // doOrDieCountが欠損
@@ -982,10 +998,10 @@ describe('GameSession', () => {
           await state.storage.put('gameState', incompleteState);
 
           // 状態をロード（修復が行われるはず）
-          (instance as any).isStateLoaded = false;
-          await (instance as any).loadGameState();
+          testInstance.isStateLoaded = false;
+          await testInstance.loadGameState();
 
-          const repairedState = (instance as any).gameState;
+          const repairedState = testInstance.gameState;
 
           return {
             teamAScore: repairedState.teamA.score,
@@ -1015,6 +1031,8 @@ describe('GameSession', () => {
         const gameSession = env.GAME_SESSION.get(id);
 
         const result = await runInDurableObject(gameSession, async (instance, state) => {
+          const testInstance = instance as unknown as GameSessionTestAccess;
+
           // 型が不正な状態をストレージに保存
           const invalidState = {
             teamA: {
@@ -1042,10 +1060,10 @@ describe('GameSession', () => {
           await state.storage.put('gameState', invalidState);
 
           // 状態をロード（修復が行われるはず）
-          (instance as any).isStateLoaded = false;
-          await (instance as any).loadGameState();
+          testInstance.isStateLoaded = false;
+          await testInstance.loadGameState();
 
-          const repairedState = (instance as any).gameState;
+          const repairedState = testInstance.gameState;
 
           return {
             teamAName: repairedState.teamA.name,
